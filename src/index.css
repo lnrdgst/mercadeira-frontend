@@ -1,0 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --color-primary: #006e2f;
+  --color-primary-container: #22c55e;
+  --color-secondary: #0058be;
+  --color-warning: #855300;
+  --color-warning-container: #ef9900;
+  --color-error: #ba1a1a;
+  --color-background: #f8f9ff;
+  --color-surface: #ffffff;
+  --color-foreground: #0b1c30;
+  --color-foreground-muted: #3d4a3d;
+
+  --font-sans: 'Plus Jakarta Sans', sans-serif;
+
+  --text-display: 2rem;
+  --text-display--line-height: 2.5rem;
+  --text-headline-lg: 1.5rem;
+  --text-headline-lg--line-height: 2rem;
+  --text-headline-md: 1.25rem;
+  --text-headline-md--line-height: 1.75rem;
+  --text-body-lg: 1.125rem;
+  --text-body-lg--line-height: 1.75rem;
+  --text-body-md: 1rem;
+  --text-body-md--line-height: 1.5rem;
+  --text-label-lg: 0.875rem;
+  --text-label-lg--line-height: 1.25rem;
+  --text-label-md: 0.75rem;
+  --text-label-md--line-height: 1rem;
+
+  --spacing-gutter: 1rem;
+  --spacing-page: 1.25rem;
+  --spacing-touch: 3.5rem;
+
+  --radius-card: 1.25rem;
+  --radius-control: 9999px;
+  --shadow-soft: 0 4px 16px rgb(11 28 48 / 8%);
+}
+
+@layer base {
+  html {
+    min-height: 100%;
+    background: var(--color-background);
+  }
+
+  body {
+    min-width: 20rem;
+    min-height: 100svh;
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-synthesis: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  #root {
+    min-height: 100svh;
+  }
+}

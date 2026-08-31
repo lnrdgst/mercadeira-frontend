@@ -10,6 +10,8 @@ interface SessionContextValue {
   authenticate: (credentials: LoginRequest) => Promise<FamilyResolution>
   logout: () => void
   retryFamilyResolution: () => Promise<void>
+  resolveActiveFamily: () => Promise<FamilyResolution>
+  setActiveFamily: (family: FamiliaResponse) => void
 }
 
 export const SessionContext = createContext<SessionContextValue | null>(null)

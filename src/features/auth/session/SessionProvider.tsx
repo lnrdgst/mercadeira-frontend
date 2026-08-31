@@ -129,6 +129,23 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     await resolveFamily(session.auth)
   }
 
+  async function resolveActiveFamily(): Promise<FamilyResolution> {
+    if (!session.auth) {
+      clearSession()
+      return 'unauthenticated'
+    }
+
+    return resolveFamily(session.auth)
+  }
+
+  function setActiveFamily(family: FamiliaResponse) {
+    if (!session.auth) {
+      return
+    }
+
+    setSession({ status: 'authenticated-with-family', auth: session.auth, family })
+  }
+
   return (
     <SessionContext
       value={{
@@ -136,6 +153,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         authenticate,
         logout: clearSession,
         retryFamilyResolution,
+        resolveActiveFamily,
+        setActiveFamily,
       }}
     >
       {children}

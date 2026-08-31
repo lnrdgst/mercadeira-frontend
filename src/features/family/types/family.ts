@@ -10,3 +10,40 @@ export interface FamiliaResponse {
   status: FamiliaStatus
   papel: PapelFamiliar
 }
+
+export type StatusSolicitacaoFamilia =
+  | 'PENDENTE'
+  | 'APROVADA'
+  | 'REJEITADA'
+  | 'CANCELADA'
+
+export interface FamiliaSolicitadaResponse {
+  id: UUID
+  nome: string
+}
+
+export interface MinhaSolicitacaoPendenteResponse {
+  id: UUID
+  status: 'PENDENTE'
+  solicitadaEm: string
+  familia: FamiliaSolicitadaResponse
+}
+
+export interface CriarFamiliaRequest {
+  nome: string
+}
+
+export interface SolicitarEntradaRequest {
+  codigoIngresso: string
+}
+
+export interface SolicitacaoCriadaResponse {
+  id: UUID
+  status: 'PENDENTE'
+  solicitadaEm: string
+  solicitante: {
+    id: UUID
+    nome: string
+    email: string
+  }
+}

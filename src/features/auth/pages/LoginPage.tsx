@@ -22,24 +22,12 @@ export function LoginPage() {
     const formData = new FormData(event.currentTarget)
 
     try {
-      const result = await authenticate({
+      await authenticate({
         email: String(formData.get('email') || ''),
         senha: String(formData.get('senha') || ''),
       })
 
-      if (result === 'with-family') {
-        navigate('/inicio', { replace: true })
-        return
-      }
-
-      if (result === 'without-family') {
-        navigate('/familia/entrada', { replace: true })
-        return
-      }
-
-      if (result === 'unauthenticated') {
-        setErrorMessage('Sua sessão não é mais válida. Entre novamente.')
-      }
+      navigate('/', { replace: true })
     } catch (error) {
       setErrorMessage(
         (error as ApiRequestError).message || 'Não foi possível entrar.',

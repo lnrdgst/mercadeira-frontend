@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router'
 import type { ApiRequestError } from '../../../shared/api/apiClient'
 import { useSession } from '../../auth/session/sessionContext'
 import { buscarMinhasSolicitacoesPendentes, criarFamilia, solicitarEntrada } from '../api/familyApi'
+import { useFamilyContext } from '../session/familyContext'
 import type { MinhaSolicitacaoPendenteResponse } from '../types/family'
 
 type FormMode = 'overview' | 'create' | 'join'
 
 export function FamiliaEntradaPage() {
-  const { auth, logout, resolveActiveFamily, setActiveFamily } = useSession()
+  const { auth, logout } = useSession()
+  const { recarregarFamilias } = useFamilyContext()
   const navigate = useNavigate()
   const [requests, setRequests] = useState<MinhaSolicitacaoPendenteResponse[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -42,7 +44,18 @@ export function FamiliaEntradaPage() {
     try {
       const data = new FormData(event.currentTarget)
       const response = await criarFamilia(auth.token, { nome: String(data.get('nome') || '') })
-      if (response.data) { setActiveFamily(response.data); navigate('/inicio', { replace: true }) }
+      if (!response.data) {
+        throw new Error('Não foi possível criar a família.')
+      }
+
+      const familiaSelecionada = await recarregarFamilias(response.data.id)
+
+      if (!familiaSelecionada) {
+        setErrorMessage('Não foi possível atualizar a família criada.')
+        return
+      }
+
+      navigate('/inicio', { replace: true })
     } catch (error) {
       if ((error as ApiRequestError).status === 401) logout()
       else setErrorMessage((error as ApiRequestError).message)
@@ -66,10 +79,16 @@ export function FamiliaEntradaPage() {
 
   async function handleCheckAgain() {
     setIsChecking(true)
-    const result = await resolveActiveFamily()
-    if (result === 'with-family') navigate('/inicio', { replace: true })
-    if (result === 'without-family') await loadRequests()
-    setIsChecking(false)
+    try {
+      const familiaSelecionada = await recarregarFamilias()
+      if (familiaSelecionada) {
+        navigate('/inicio', { replace: true })
+      } else {
+        await loadRequests()
+      }
+    } finally {
+      setIsChecking(false)
+    }
   }
 
   if (isLoading) return <main className="p-page text-body-md text-foreground-muted">Carregando suas solicitações...</main>

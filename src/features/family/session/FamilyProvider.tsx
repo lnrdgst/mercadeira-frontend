@@ -13,6 +13,8 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
     useState<FamiliaResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
+  const [tokenCarregado, setTokenCarregado] = useState<string | null>(null)
+  const carregandoFamilias = Boolean(auth && tokenCarregado !== auth.token && !error) || loading
 
   const limparContexto = useCallback(() => {
     localStorage.removeItem(storageKey)
@@ -20,6 +22,7 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
     setFamiliaSelecionada(null)
     setError(false)
     setLoading(false)
+    setTokenCarregado(null)
   }, [])
 
   const selecionarFamilia = useCallback(
@@ -36,10 +39,10 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
     [familias],
   )
 
-  const recarregarFamilias = useCallback(async () => {
+  const recarregarFamilias = useCallback(async (familiaIdPreferido?: string) => {
     if (!auth) {
       limparContexto()
-      return
+      return null
     }
 
     setLoading(true)
@@ -49,32 +52,43 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
       const response = await buscarFamilias(auth.token)
       const items = response.data || []
       const storedId = localStorage.getItem(storageKey)
-      const storedFamily = items.find((item) => item.id === storedId) || null
+      const familiaPreferida = items.find((item) => item.id === familiaIdPreferido) || null
+      const familiaPersistida = items.find((item) => item.id === storedId) || null
+      let selecionada: FamiliaResponse | null = null
 
       setFamilias(items)
 
       if (items.length === 0) {
         localStorage.removeItem(storageKey)
-        setFamiliaSelecionada(null)
       } else if (items.length === 1) {
-        localStorage.setItem(storageKey, items[0].id)
-        setFamiliaSelecionada(items[0])
-      } else if (storedFamily) {
-        setFamiliaSelecionada(storedFamily)
+        selecionada = items[0]
+      } else if (familiaPreferida) {
+        selecionada = familiaPreferida
+      } else if (familiaPersistida) {
+        selecionada = familiaPersistida
+      }
+
+      if (selecionada) {
+        localStorage.setItem(storageKey, selecionada.id)
       } else {
         localStorage.removeItem(storageKey)
-        setFamiliaSelecionada(null)
       }
+
+      setFamiliaSelecionada(selecionada)
+      setTokenCarregado(auth.token)
+      return selecionada
     } catch {
       setError(true)
       setFamiliaSelecionada(null)
+      setTokenCarregado(auth.token)
+      return null
     } finally {
       setLoading(false)
     }
   }, [auth, limparContexto])
 
   useEffect(() => {
-    void Promise.resolve().then(recarregarFamilias)
+    void Promise.resolve().then(() => recarregarFamilias())
   }, [recarregarFamilias])
 
   return (
@@ -82,7 +96,7 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
       value={{
         familias,
         familiaSelecionada,
-        loading,
+        loading: carregandoFamilias,
         error,
         selecionarFamilia,
         recarregarFamilias,

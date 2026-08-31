@@ -1,27 +1,21 @@
 import { createContext, useContext } from 'react'
-import type { FamiliaResponse } from '../../family/types/family'
 import type { AuthSession, LoginRequest } from '../types/auth'
-import type { FamilyResolution, SessionStatus } from './SessionProvider'
+import type { SessionStatus } from './SessionProvider'
 
 interface SessionContextValue {
   status: SessionStatus
   auth: AuthSession | null
-  family: FamiliaResponse | null
-  authenticate: (credentials: LoginRequest) => Promise<FamilyResolution>
+  authenticate: (credentials: LoginRequest) => Promise<void>
   logout: () => void
-  retryFamilyResolution: () => Promise<void>
-  resolveActiveFamily: () => Promise<FamilyResolution>
-  setActiveFamily: (family: FamiliaResponse) => void
 }
-
 export const SessionContext = createContext<SessionContextValue | null>(null)
 
 export function useSession() {
-  const session = useContext(SessionContext)
+  const value = useContext(SessionContext)
 
-  if (!session) {
+  if (!value) {
     throw new Error('useSession deve ser usado dentro de SessionProvider.')
   }
 
-  return session
+  return value
 }

@@ -5,6 +5,7 @@ import { CadastroPage } from '../../features/auth/pages/CadastroPage'
 import { LoginPage } from '../../features/auth/pages/LoginPage'
 import { FamiliaEntradaPage } from '../../features/family/pages/FamiliaEntradaPage'
 import { FamiliaPage } from '../../features/family/pages/FamiliaPage'
+import { FamiliaSelecionarPage } from '../../features/family/pages/FamiliaSelecionarPage'
 import { HistoricoPage } from '../../features/history/pages/HistoricoPage'
 import { InicioPage } from '../../features/home/pages/InicioPage'
 import { CompraAndamentoPage } from '../../features/shopping/pages/CompraAndamentoPage'
@@ -12,8 +13,9 @@ import { CompraRevisaoPage } from '../../features/shopping/pages/CompraRevisaoPa
 import { ListasPage } from '../../features/shopping-lists/pages/ListasPage'
 import { NotFoundPage } from './NotFoundPage'
 import {
+  AuthenticatedRoute,
   FamilyRequiredRoute,
-  OnboardingRoute,
+  FamilySelectionRoute,
   PublicOnlyRoute,
   RootRedirect,
 } from './routeGuards'
@@ -28,8 +30,12 @@ export function AppRouter() {
         <Route path="/cadastro" element={<CadastroPage />} />
       </Route>
 
-      <Route element={<OnboardingRoute />}>
+      <Route element={<AuthenticatedRoute />}>
         <Route path="/familia/entrada" element={<FamiliaEntradaPage />} />
+      </Route>
+
+      <Route element={<FamilySelectionRoute />}>
+        <Route path="/familia/selecionar" element={<FamiliaSelecionarPage />} />
       </Route>
 
       <Route element={<FamilyRequiredRoute />}>

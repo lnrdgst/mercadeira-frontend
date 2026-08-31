@@ -1,14 +1,16 @@
 import { useSession } from '../../auth/session/sessionContext'
+import { useFamilyContext } from '../session/familyContext'
 
 export function FamiliaPage() {
   const { logout } = useSession()
+  const { familiaSelecionada } = useFamilyContext()
 
   return (
     <section className="space-y-page py-page">
       <div>
         <h1 className="text-headline-lg font-bold">Família</h1>
         <p className="mt-1 text-body-md text-foreground-muted">
-          Esta área será implementada nas próximas etapas.
+          {familiaSelecionada?.nome || 'Esta área será implementada nas próximas etapas.'}
         </p>
       </div>
       <button

@@ -11,10 +11,6 @@ export function buscarFamilias(token: string) {
   return apiRequest<FamiliaResponse[]>('/familias', { token })
 }
 
-export function buscarFamiliaAtiva(token: string) {
-  return apiRequest<FamiliaResponse>('/familias/ativa', { token })
-}
-
 export function buscarMinhasSolicitacoesPendentes(token: string) {
   return apiRequest<MinhaSolicitacaoPendenteResponse[]>(
     '/familias/solicitacoes/minhas-pendentes',

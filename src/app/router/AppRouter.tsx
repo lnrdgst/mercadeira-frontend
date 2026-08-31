@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router'
+import { Route, Routes } from 'react-router'
 import { AppShell } from '../layouts/AppShell'
 import { TransactionalShell } from '../layouts/TransactionalShell'
 import { CadastroPage } from '../../features/auth/pages/CadastroPage'
@@ -11,32 +11,45 @@ import { CompraAndamentoPage } from '../../features/shopping/pages/CompraAndamen
 import { CompraRevisaoPage } from '../../features/shopping/pages/CompraRevisaoPage'
 import { ListasPage } from '../../features/shopping-lists/pages/ListasPage'
 import { NotFoundPage } from './NotFoundPage'
+import {
+  FamilyRequiredRoute,
+  OnboardingRoute,
+  PublicOnlyRoute,
+  RootRedirect,
+} from './routeGuards'
 
 export function AppRouter() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/" element={<RootRedirect />} />
 
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/cadastro" element={<CadastroPage />} />
-      <Route path="/familia/entrada" element={<FamiliaEntradaPage />} />
-
-      <Route element={<AppShell />}>
-        <Route path="/inicio" element={<InicioPage />} />
-        <Route path="/listas" element={<ListasPage />} />
-        <Route path="/familia" element={<FamiliaPage />} />
-        <Route path="/historico" element={<HistoricoPage />} />
+      <Route element={<PublicOnlyRoute />}>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/cadastro" element={<CadastroPage />} />
       </Route>
 
-      <Route element={<TransactionalShell />}>
-        <Route
-          path="/compras/:compraId/andamento"
-          element={<CompraAndamentoPage />}
-        />
-        <Route
-          path="/compras/:compraId/revisao"
-          element={<CompraRevisaoPage />}
-        />
+      <Route element={<OnboardingRoute />}>
+        <Route path="/familia/entrada" element={<FamiliaEntradaPage />} />
+      </Route>
+
+      <Route element={<FamilyRequiredRoute />}>
+        <Route element={<AppShell />}>
+          <Route path="/inicio" element={<InicioPage />} />
+          <Route path="/listas" element={<ListasPage />} />
+          <Route path="/familia" element={<FamiliaPage />} />
+          <Route path="/historico" element={<HistoricoPage />} />
+        </Route>
+
+        <Route element={<TransactionalShell />}>
+          <Route
+            path="/compras/:compraId/andamento"
+            element={<CompraAndamentoPage />}
+          />
+          <Route
+            path="/compras/:compraId/revisao"
+            element={<CompraRevisaoPage />}
+          />
+        </Route>
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />

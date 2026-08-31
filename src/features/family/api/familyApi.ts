@@ -7,6 +7,10 @@ import type {
   SolicitarEntradaRequest,
 } from '../types/family'
 
+export function buscarFamilias(token: string) {
+  return apiRequest<FamiliaResponse[]>('/familias', { token })
+}
+
 export function buscarFamiliaAtiva(token: string) {
   return apiRequest<FamiliaResponse>('/familias/ativa', { token })
 }

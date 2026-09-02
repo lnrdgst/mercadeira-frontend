@@ -11,6 +11,8 @@ import { InicioPage } from '../../features/home/pages/InicioPage'
 import { CompraAndamentoPage } from '../../features/shopping/pages/CompraAndamentoPage'
 import { CompraRevisaoPage } from '../../features/shopping/pages/CompraRevisaoPage'
 import { ListasPage } from '../../features/shopping-lists/pages/ListasPage'
+import { ListaDetalhePage } from '../../features/shopping-lists/pages/ListaDetalhePage'
+import { NovaListaPage } from '../../features/shopping-lists/pages/NovaListaPage'
 import { NotFoundPage } from './NotFoundPage'
 import {
   AuthenticatedRoute,
@@ -42,6 +44,8 @@ export function AppRouter() {
         <Route element={<AppShell />}>
           <Route path="/inicio" element={<InicioPage />} />
           <Route path="/listas" element={<ListasPage />} />
+          <Route path="/listas/nova" element={<NovaListaPage />} />
+          <Route path="/listas/:listaId" element={<ListaDetalhePage />} />
           <Route path="/familia" element={<FamiliaPage />} />
           <Route path="/historico" element={<HistoricoPage />} />
         </Route>

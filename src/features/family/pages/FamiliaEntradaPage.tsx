@@ -91,7 +91,20 @@ export function FamiliaEntradaPage() {
     }
   }
 
-  if (isLoading) return <main className="p-page text-body-md text-foreground-muted">Carregando suas solicitações...</main>
+  if (isLoading) {
+    return (
+      <main className="mx-auto max-w-xl space-y-page py-page text-foreground">
+        <p className="text-body-md text-foreground-muted">Carregando suas solicitações...</p>
+        <button
+          type="button"
+          onClick={logout}
+          className="min-h-touch rounded-control px-page text-label-lg font-semibold text-foreground-muted transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          Sair da conta
+        </button>
+      </main>
+    )
+  }
 
   return (
     <main className="mx-auto max-w-xl space-y-page py-page text-foreground">
@@ -103,6 +116,13 @@ export function FamiliaEntradaPage() {
       {formMode === 'create' && <form onSubmit={handleCreate} className="space-y-gutter rounded-card bg-surface p-page shadow-soft"><label className="block font-semibold" htmlFor="nome">Nome da família</label><input id="nome" name="nome" required maxLength={120} disabled={isSubmitting} className="min-h-touch w-full rounded-card border border-foreground/20 px-gutter" /><div className="flex gap-gutter"><button type="submit" disabled={isSubmitting} className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60">{isSubmitting ? 'Criando...' : 'Criar família'}</button><button type="button" onClick={() => setFormMode('overview')} className="min-h-touch px-page">Voltar</button></div></form>}
       {formMode === 'join' && <form onSubmit={handleJoin} className="space-y-gutter rounded-card bg-surface p-page shadow-soft"><label className="block font-semibold" htmlFor="codigoIngresso">Código de ingresso</label><input id="codigoIngresso" name="codigoIngresso" required maxLength={32} disabled={isSubmitting} className="min-h-touch w-full rounded-card border border-foreground/20 px-gutter" /><div className="flex gap-gutter"><button type="submit" disabled={isSubmitting} className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60">{isSubmitting ? 'Enviando...' : 'Solicitar entrada'}</button><button type="button" onClick={() => setFormMode('overview')} className="min-h-touch px-page">Voltar</button></div></form>}
       {errorMessage && requests.length === 0 && <button type="button" onClick={() => void loadRequests()} className="min-h-touch rounded-control border border-primary px-page font-semibold text-primary">Tentar novamente</button>}
+      <button
+        type="button"
+        onClick={logout}
+        className="min-h-touch w-full rounded-control px-page text-label-lg font-semibold text-foreground-muted transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      >
+        Sair da conta
+      </button>
     </main>
   )
 }

@@ -30,6 +30,19 @@ export interface MinhaSolicitacaoPendenteResponse {
   familia: FamiliaSolicitadaResponse
 }
 
+export interface SolicitanteFamiliaResponse {
+  id: UUID
+  nome: string
+  email: string
+}
+
+export interface SolicitacaoFamiliaResponse {
+  id: UUID
+  status: StatusSolicitacaoFamilia
+  solicitadaEm: string
+  solicitante: SolicitanteFamiliaResponse
+}
+
 export interface CriarFamiliaRequest {
   nome: string
 }

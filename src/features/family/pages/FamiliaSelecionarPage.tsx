@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router'
+import { useSession } from '../../auth/session/sessionContext'
 import { useFamilyContext } from '../session/familyContext'
 
 const papelLabel = {
@@ -8,6 +9,7 @@ const papelLabel = {
 
 export function FamiliaSelecionarPage() {
   const navigate = useNavigate()
+  const { logout } = useSession()
   const { familias, selecionarFamilia } = useFamilyContext()
 
   function handleSelect(familiaId: string) {
@@ -40,6 +42,14 @@ export function FamiliaSelecionarPage() {
           </li>
         ))}
       </ul>
+
+      <button
+        type="button"
+        onClick={logout}
+        className="min-h-touch w-full rounded-control px-page text-label-lg font-semibold text-foreground-muted transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      >
+        Sair da conta
+      </button>
     </main>
   )
 }

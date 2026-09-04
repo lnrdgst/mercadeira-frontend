@@ -1,22 +1,27 @@
-# Mercadeira
+﻿# Mercadeira
 
-Frontend do **Mercadeira**, uma aplicação colaborativa para organização de compras entre membros de famílias e grupos.
+Frontend do Mercadeira, uma aplicação colaborativa para organização de compras entre membros de famílias e grupos.
 
-A aplicação é desenvolvida com abordagem **mobile-first**, priorizando o uso em smartphones, navegação simples e fluxos colaborativos.
+A aplicação segue abordagem mobile-first, priorizando smartphones, navegação simples, contexto familiar explícito e fluxos colaborativos.
 
 ## Stack
 
-- React 19
-- TypeScript 6
-- Vite 8
-- Tailwind CSS 4
-- React Router 7
-- Oxlint
-- Fetch API nativa
+React 19
+
+TypeScript 6
+
+Vite 8
+
+Tailwind CSS 4
+
+React Router 7
+
+Oxlint
+
+Fetch API nativa
 
 ## Estrutura
 
-```text
 src/
 ├── app/
 │   ├── layouts/
@@ -43,78 +48,159 @@ O código é organizado principalmente por feature/domínio, evitando grandes di
 
 Os arquivos em docs/prototipo-stitch/mercadeira-stitch/ são referências visuais e de UX exportadas do Google Stitch. Esse material não representa a arquitetura nem o código de produção.
 
-Navegação
+## Arquitetura de estado
 
-A aplicação possui dois contextos principais de navegação.
+Autenticação, identidade do usuário e contexto familiar são responsabilidades separadas:
 
-Aplicação principal
-
-As áreas principais utilizam o AppShell e compartilham a navegação global:
-
-Rota	Área
-/inicio	Início
-/listas	Listas
-/familia	Família
-/historico	Histórico
-
-Em dispositivos móveis, essas áreas utilizam navegação inferior com foco em alvos de toque adequados e respeito à safe area.
-
-A arquitetura desktop definitiva ainda não foi fechada. O foco atual permanece mobile-first.
-
-Fluxos transacionais
-
-Fluxos que exigem maior foco utilizam o TransactionalShell e não exibem a navegação global.
-
-Rota	Área
-/compras/:compraId/andamento	Compra em andamento
-/compras/:compraId/revisao	Revisão da compra
-
-Esse isolamento permite que processos como compra ativa e finalização evoluam sem ficarem acoplados ao layout principal da aplicação.
-
-Rotas públicas, onboarding e seleção
-Rota	Área
-/login	Login
-/cadastro	Cadastro
-/familia/entrada	Criar família ou solicitar entrada
-/familia/selecionar	Seleção do contexto familiar
-
-Também existe tratamento específico para rotas inexistentes.
-
-Sessão e autenticação
-
-O frontend utiliza a API REST do Mercadeira com autenticação Bearer JWT.
-
-Após o login, são armazenados localmente somente:
-
-token;
-instante de expiração.
-
-A senha nunca é persistida pelo frontend.
-
-A sessão:
-
-é restaurada após atualização da página;
-valida a expiração antes de reutilizar o token;
-limpa credenciais expiradas ou inválidas;
-não utiliza refresh token atualmente.
-
-O JWT contém apenas o UUID do usuário no claim sub.
-
-Informações como família, papel e permissões não são obtidas do token.
-
-A autenticação e o contexto familiar são conceitos separados:
-
-Sessão
+SessionProvider
 ├── token
-└── expiração
+├── expiração
+└── estado de autenticação
 
-Contexto familiar
+AuthenticatedUserProvider
+├── id
+├── nome
+└── email
+
+FamilyProvider
 ├── famílias disponíveis
 └── família selecionada
 
-A família selecionada representa somente o contexto atual de navegação e uso da aplicação. Ela não é prova de autorização.
+O SessionProvider não contém família, papel ou dados de perfil.
 
-O backend permanece responsável por validar vínculo, papel e permissões em cada operação protegida.
+O AuthenticatedUserProvider consulta a identidade real do usuário autenticado e não persiste o perfil como fonte de verdade.
+
+O FamilyProvider concentra a coleção de famílias e o contexto familiar atual. A família selecionada é contexto de navegação e uso, não prova de autorização.
+
+Navegação
+
+Aplicação principal
+
+As áreas principais utilizam o AppShell e compartilham navegação global:
+
+Rota
+
+Área
+
+/inicio
+
+## Dashboard
+
+/listas
+
+### Minhas listas
+
+/familia
+
+Família selecionada
+
+/historico
+
+Histórico
+
+Em dispositivos móveis, essas áreas utilizam navegação inferior com alvos de toque adequados e respeito à safe area.
+
+O AppShell também disponibiliza logout global para as áreas autenticadas principais.
+
+### Listas
+
+Rota
+
+Área
+
+/listas/nova
+
+Criar nova lista
+
+/listas/:listaId
+
+Preparação da lista
+
+O familiaId não faz parte da URL do frontend. O contexto familiar vem do FamilyProvider e é enviado explicitamente às APIs quando o contrato exige.
+
+### Fluxos transacionais
+
+As rotas abaixo já possuem estrutura dedicada com TransactionalShell, mas os fluxos de compra ainda não estão implementados:
+
+Rota
+
+Área
+
+/compras/:compraId/andamento
+
+Compra em andamento
+
+/compras/:compraId/revisao
+
+Revisão da compra
+
+Autenticação, onboarding e seleção de família
+
+Rota
+
+Área
+
+/login
+
+Login
+
+/cadastro
+
+Cadastro
+
+/familia/entrada
+
+Criar família ou solicitar entrada
+
+/familia/selecionar
+
+Selecionar contexto familiar
+
+Também existe tratamento para rotas inexistentes.
+
+Autenticação
+
+A API utiliza Bearer JWT.
+
+Após o login, o frontend persiste somente:
+
+- token
+
+instante de expiração.
+
+A senha nunca é persistida.
+
+A sessão:
+
+- é restaurada após atualização da página
+
+- valida a expiração antes de reutilizar o token
+
+- limpa credenciais expiradas ou inválidas
+
+não utiliza refresh token atualmente.
+
+O JWT contém somente o UUID do usuário no claim sub.
+
+Família, papel e permissões não são inferidos do token.
+
+Usuário autenticado
+
+A identidade do usuário é carregada por:
+
+`GET /api/usuarios/me`
+
+Resposta:
+
+{
+  "id": "uuid",
+  "nome": "Leonardo",
+  "email": "leo@email.com"
+}
+
+O frontend não extrai nome ou email do JWT e não reutiliza valores digitados no cadastro ou login como fonte de verdade.
+
+Após F5, a sessão é restaurada e o perfil é consultado novamente.
 
 Múltiplas famílias
 
@@ -123,54 +209,35 @@ Um usuário pode participar simultaneamente de zero, uma ou várias famílias at
 Exemplo:
 
 Usuário
-├── Minha Casa          — Administrador
-├── Casa dos pais       — Membro
-└── Viagem              — Administrador
+├── Minha Casa       — Administrador
+├── Casa dos pais    — Membro
+└── Viagem           — Administrador
 
 O papel é específico de cada vínculo familiar.
 
-O mesmo usuário pode ser ADMINISTRADOR em uma família e MEMBRO em outra.
+As famílias são carregadas por:
 
-As famílias disponíveis são carregadas por:
-
-GET /api/familias
+`GET /api/familias`
 
 A resposta é sempre 200 OK, inclusive quando não existem famílias:
 
 []
 
-Quando existem famílias:
+Família selecionada
 
-[
-  {
-    "id": "uuid",
-    "nome": "Minha Casa",
-    "codigoIngresso": "ABC123XY",
-    "status": "ATIVA",
-    "papel": "ADMINISTRADOR"
-  }
-]
-Contexto familiar selecionado
-
-O frontend mantém explicitamente uma família selecionada.
-
-Somente o UUID dessa família é persistido no navegador, usando a chave:
+Somente o UUID da família selecionada é persistido em:
 
 mercadeira.familia.selecionada
 
 O objeto completo da família não é persistido como fonte de verdade.
 
-A cada restauração da aplicação, o ID salvo é validado contra a resposta atual de:
-
-GET /api/familias
-
-Se o ID não estiver mais entre as famílias disponíveis, ele é descartado.
+Após carregar GET /api/familias, o ID salvo é validado contra a coleção atual.
 
 Resolução inicial
 
-Após login ou restauração da sessão:
-
-GET /api/familias
+Login / restauração
+        ↓
+`GET /api/familias`
         │
         ├── []
         │    └── /familia/entrada
@@ -188,65 +255,49 @@ GET /api/familias
              └── sem seleção válida
                   └── /familia/selecionar
 
-Quando há várias famílias e nenhuma preferência válida, o frontend não escolhe uma arbitrariamente.
+Quando existem várias famílias e nenhuma seleção válida, o frontend não escolhe uma arbitrariamente.
 
-Onboarding familiar
+## Onboarding familiar
 
 A página /familia/entrada permite:
 
-criar uma nova família;
-solicitar entrada em uma família por código;
-visualizar solicitações de entrada pendentes;
+- criar uma família
+
+- solicitar entrada por código
+
+- visualizar solicitações pendentes do próprio usuário
+
 verificar novamente o estado das solicitações.
 
-O usuário pode utilizar essa página mesmo já participando de outras famílias.
+Pendências do usuário:
 
-Solicitações pendentes do próprio usuário
+`GET /api/familias/solicitacoes/minhas-pendentes`
 
-Endpoint:
+Sem pendências, o backend pode retornar 204 No Content.
 
-GET /api/familias/solicitacoes/minhas-pendentes
-
-Com pendências:
-
-[
-  {
-    "id": "uuid",
-    "status": "PENDENTE",
-    "solicitadaEm": "2026-09-02T13:00:00Z",
-    "familia": {
-      "id": "uuid",
-      "nome": "Família Silva"
-    }
-  }
-]
-
-Sem pendências:
-
-204 No Content
-
-Um usuário pode possuir múltiplas solicitações pendentes simultaneamente.
-
-A ação Verificar novamente atualiza o estado manualmente enquanto o projeto ainda não possui atualização em tempo real por WebSocket.
-
-Não há polling automático.
+Não há polling automático nem WebSocket nesta fase.
 
 Criar família
-POST /api/familias
 
-Após a criação:
+`POST /api/familias`
 
-a lista de famílias é recarregada;
-a nova família é selecionada;
-seu ID é persistido como contexto atual;
+Após sucesso:
+
+- as famílias são recarregadas
+
+- a nova família é selecionada
+
+- seu UUID é persistido como contexto atual
+
 a aplicação navega para /inicio.
 
-Criar uma nova família não substitui as famílias existentes.
+Criar uma família não substitui vínculos existentes.
 
-Solicitar entrada
-POST /api/familias/solicitacoes
+### Solicitar entrada
 
-Solicitar entrada em uma nova família não altera automaticamente o contexto familiar selecionado.
+`POST /api/familias/solicitacoes`
+
+Solicitar entrada em outra família não altera automaticamente a família selecionada.
 
 Guia Família
 
@@ -254,152 +305,339 @@ A rota /familia representa a família atualmente selecionada.
 
 A tela exibe:
 
-nome da família;
-papel do usuário;
-código de ingresso;
-cópia do código;
-compartilhamento;
-solicitações administrativas, quando aplicável;
-troca de família;
-logout.
-Código de ingresso
+- nome da família
 
-O código pode ser copiado usando a Clipboard API.
+- papel do usuário
 
-Quando disponível, o navegador também pode utilizar a Web Share API para compartilhar uma mensagem com o código da família.
+- código de ingresso
 
-Quando a Web Share API não está disponível, a aplicação utiliza a cópia do código como fallback.
+- copiar código
 
-Não existem integrações específicas com WhatsApp, e-mail ou SMS.
+- compartilhar código
 
-Administrador
+- solicitações administrativas, quando aplicável
 
-Quando o usuário possui papel ADMINISTRADOR, a tela consulta as solicitações pendentes da família selecionada:
+troca de família.
 
-GET /api/familias/{familiaId}/solicitacoes
+O código utiliza Clipboard API e, quando disponível, Web Share API.
 
-Cada solicitação pode ser:
+Solicitações administrativas
 
-POST /api/familias/{familiaId}/solicitacoes/{solicitacaoId}/aprovar
+Para administrador:
 
-ou:
+`GET /api/familias/{familiaId}/solicitacoes`
 
-POST /api/familias/{familiaId}/solicitacoes/{solicitacaoId}/rejeitar
+Aprovar:
 
-A identidade do administrador não é enviada pelo frontend. O backend obtém o executor pelo JWT e valida novamente:
+`POST /api/familias/{familiaId}/solicitacoes/{solicitacaoId}/aprovar`
 
-vínculo ativo;
-papel de administrador;
-família informada no path;
-pertencimento da solicitação à família.
+Rejeitar:
 
-Após aprovação ou rejeição, a lista de solicitações é recarregada.
+`POST /api/familias/{familiaId}/solicitacoes/{solicitacaoId}/rejeitar`
 
-Membro
+A identidade do executor não é enviada pelo frontend.
 
-Quando o papel da família selecionada é MEMBRO, o frontend:
+Quando o usuário é MEMBRO, a interface não apresenta as ações administrativas. A autorização real continua sendo responsabilidade do backend.
 
-não consulta o endpoint administrativo de solicitações;
-não exibe ações de Aprovar ou Rejeitar;
-informa que o usuário participa daquela família como membro.
+Membros da família
 
-Essa decisão é apenas de apresentação da interface. A autorização real continua sendo responsabilidade do backend.
+Os membros ativos podem ser consultados por:
 
-Troca de família
+`GET /api/familias/{familiaId}/membros`
 
-A ação Trocar família navega para:
+Esse contrato já é utilizado no fluxo de participantes das listas.
 
-/familia/selecionar
+A Guia Família ainda não possui uma área completa de gestão de membros.
 
-A página apresenta todas as famílias disponíveis e o papel correspondente do usuário.
+## Dashboard
 
-Ao selecionar uma família:
+A rota /inicio já utiliza dados reais.
 
-o FamilyContext atualiza a família selecionada;
-somente o UUID é persistido;
-a aplicação navega para um contexto seguro;
-dados dependentes da família anterior não devem ser reaproveitados.
+O dashboard apresenta:
 
-O familiaId não faz parte atualmente das URLs principais da aplicação.
+- saudação com o usuário autenticado
 
-Chamadas REST que exigirem escopo familiar devem enviar explicitamente o familiaId conforme o contrato do backend.
+- família selecionada
 
-Logout
+- papel do usuário naquela família
 
-O logout está disponível tanto na área principal quanto nos fluxos autenticados que ficam fora do AppShell, como:
+- até três listas EM_PREPARACAO, priorizando as atualizadas mais recentemente
 
-/familia/entrada;
-/familia/selecionar.
+- acesso às listas
+
+- criação de nova lista
+
+- acesso à Guia Família
+
+troca de contexto familiar.
+
+O dashboard não inventa compra ativa, presença, localização, progresso ou dados em tempo real.
+
+Essas áreas serão adicionadas somente quando existirem contratos backend correspondentes.
+
+## Listas de compra
+
+Toda API de lista é escopada pela família selecionada:
+
+`/api/familias/{familiaId}/listas`
+
+Ao trocar de família, dados do contexto anterior não devem ser reaproveitados.
+
+### Minhas listas
+
+`GET /api/familias/{familiaId}/listas`
+
+A tela /listas apresenta:
+
+- nome
+
+- categoria
+
+- estabelecimento, quando informado
+
+- status
+
+acesso ao detalhe.
+
+Estados de loading, vazio e erro são tratados separadamente.
+
+### Criar lista
+
+`POST /api/familias/{familiaId}/listas`
+
+Campos atuais:
+
+- nome
+
+- categoria
+
+estabelecimento opcional.
+
+O criador entra automaticamente como participante ativo.
+
+Após criação, a aplicação navega para:
+
+/listas/:listaId
+
+### Detalhe da lista
+
+`GET /api/familias/{familiaId}/listas/{listaId}`
+
+O detalhe retorna, além dos dados básicos:
+
+- criador
+
+- contexto do usuário autenticado
+
+capabilities fornecidas pelo backend.
+
+Exemplo conceitual:
+
+{
+  "criador": {
+    "membroFamiliaId": "uuid",
+    "usuarioId": "uuid",
+    "nome": "Leonardo"
+  },
+  "contextoUsuario": {
+    "membroFamiliaId": "uuid",
+    "papelFamilia": "ADMINISTRADOR",
+    "participanteAtivo": true,
+    "podeGerenciarParticipantes": true,
+    "podeAlterarItens": true
+  }
+}
+
+### Capabilities de lista
+
+O frontend não reconstrói regras de autorização combinando papel, criador e participação.
+
+A interface utiliza diretamente:
+
+- participanteAtivo
+
+- podeGerenciarParticipantes
+
+podeAlterarItens.
+
+As mutações continuam sendo revalidadas pelo backend.
+
+Um ADMINISTRADOR da família que não participa da lista pode gerenciar participantes, mas não pode alterar itens somente por ser administrador.
+
+### Participantes da lista
+
+Listar participantes:
+
+`GET /api/familias/{familiaId}/listas/{listaId}/participantes`
+
+Adicionar ou reativar participante:
+
+`POST /api/familias/{familiaId}/listas/{listaId}/participantes`
+
+Remover participante:
+
+`DELETE /api/familias/{familiaId}/listas/{listaId}/participantes/{membroFamiliaId}`
+
+O criador da lista não pode ser removido.
+
+Quando permitido pelo backend, um administrador não participante pode entrar explicitamente na lista por meio da ação Participar desta lista.
+
+Não existe autoentrada silenciosa.
+
+### Itens da lista
+
+Listar:
+
+`GET /api/familias/{familiaId}/listas/{listaId}/itens`
+
+Adicionar:
+
+`POST /api/familias/{familiaId}/listas/{listaId}/itens`
+
+Editar:
+
+`PUT /api/familias/{familiaId}/listas/{listaId}/itens/{itemId}`
+
+Remover:
+
+`DELETE /api/familias/{familiaId}/listas/{listaId}/itens/{itemId}`
+
+Campos disponíveis:
+
+- descrição
+
+- quantidade
+
+- unidade de medida
+
+- marca
+
+observações.
+
+Descrição é obrigatória; os demais campos são opcionais.
+
+Adicionar e editar utilizam o mesmo formulário em dialog.
+
+Na preparação da lista não existem checkboxes de compra.
+
+Reordenação de itens
+
+Endpoint:
+
+`PUT /api/familias/{familiaId}/listas/{listaId}/itens/ordem`
+
+A requisição envia todos os IDs ativos na nova sequência.
+
+A interface usa controles de seta para cima/baixo, sem dependência de drag-and-drop.
+
+A reordenação é atualizada localmente e persistida no backend, evitando recargas que desloquem o viewport.
+
+Itens recém-adicionados são colocados no topo e a nova ordem é persistida.
+
+### Status e categorias
+
+Categorias:
+
+SUPERMERCADO
+ROUPAS
+BRINQUEDOS
+ACESSORIOS
+UTENSILIOS
+OUTROS
+
+Status possíveis:
+
+EM_PREPARACAO
+EM_COMPRA
+FINALIZADA
+CANCELADA
+
+Nesta fase, o frontend trabalha funcionalmente principalmente com EM_PREPARACAO.
+
+Estados posteriores não recebem comportamento inventado.
+
+## Logout
+
+O logout global está disponível no AppShell.
+
+As páginas autenticadas fora dele, como /familia/entrada e /familia/selecionar, possuem ação própria de logout.
 
 O logout limpa:
 
-token;
-expiração;
-contexto familiar em memória;
+- token
+
+- expiração
+
+- identidade do usuário em memória
+
+- contexto familiar em memória
+
 mercadeira.familia.selecionada.
 
 Depois, a aplicação retorna para /login.
 
 Configuração da API
 
-O código React acessa a configuração da API por meio de:
+A configuração é centralizada em:
 
 src/config/environment.ts
 
-Esse arquivo centraliza o acesso às variáveis fornecidas pelo Vite.
+Variável
 
-Variável	Uso	Default
-VITE_API_BASE_URL	Base utilizada pelo frontend para chamadas REST	/api
-DEV_API_PROXY_TARGET	Destino do proxy do Vite em desenvolvimento	http://localhost:8080
+Uso
+
+Default
+
+`VITE_API_BASE_URL`
+
+Base das chamadas REST
+
+/api
+
+DEV_API_PROXY_TARGET
+
+Destino do proxy Vite em desenvolvimento
+
+`http://localhost:8080`
 
 Exemplo:
 
-VITE_API_BASE_URL=/api
+`VITE_API_BASE_URL=/api`
 DEV_API_PROXY_TARGET=http://localhost:8080
 
-VITE_API_BASE_URL é utilizada pelo código da aplicação.
+Variáveis VITE_* são incorporadas ao build e não devem conter segredos.
 
-DEV_API_PROXY_TARGET é utilizada somente pela configuração do servidor de desenvolvimento do Vite.
+## Proxy de desenvolvimento
 
-Proxy de desenvolvimento
-
-Durante o desenvolvimento, o navegador pode chamar normalmente:
-
-/api/usuarios
-
-e o Vite encaminha a requisição para o backend local.
-
-Exemplo:
+Em desenvolvimento:
 
 Browser
-  -> http://localhost:5173/api/usuarios
+  -> http://localhost:5173/api/...
 
 Vite proxy
-  -> http://localhost:8080/api/usuarios
+  -> http://localhost:8080/api/...
 
-A porta do frontend pode variar (5173, 5174, etc.) sem afetar a comunicação com o backend.
+A porta do Vite pode variar sem alterar o destino do backend.
 
-O proxy existe apenas no ambiente de desenvolvimento.
+O proxy existe somente no servidor de desenvolvimento.
 
 Produção
 
 O frontend utiliza /api como base padrão.
 
-Em uma implantação em que frontend e backend sejam publicados sob a mesma origem, um reverse proxy poderá encaminhar /api para o backend.
+Se frontend e backend forem publicados sob a mesma origem, um reverse proxy pode encaminhar /api para o backend.
 
-Caso a API seja publicada em outra origem, o build/deploy poderá definir:
+Se a API estiver em outra origem:
 
-VITE_API_BASE_URL=https://api.exemplo.com/api
+`VITE_API_BASE_URL=https://api.exemplo.com/api`
 
-sem necessidade de alteração no código-fonte.
-
-Variáveis VITE_* são incorporadas durante o build e não devem conter segredos.
+não é necessário alterar código-fonte.
 
 Configuração local
 
 O arquivo .env.development contém os defaults de desenvolvimento.
 
-Configurações específicas da máquina podem ser colocadas em arquivos locais, por exemplo:
+Configurações específicas da máquina podem ficar em:
 
 .env.local
 .env.development.local
@@ -408,140 +646,229 @@ Esses arquivos não devem ser versionados.
 
 Execução local
 
-Instale as dependências:
+Instalar dependências:
 
-npm install
+`npm install`
 
-Inicie o frontend:
+Executar:
 
-npm run dev
+`npm run dev`
 
 Build:
 
-npm run build
+`npm run build`
 
 Lint:
 
-npm run lint
+`npm run lint`
 
-O Vite informará no terminal a URL local utilizada.
+## Backend local
 
-Backend local
+Por padrão:
 
-Para integração local, o backend Mercadeira é esperado por padrão em:
+`http://localhost:8080`
 
-http://localhost:8080
-
-com rotas REST sob:
+Rotas REST:
 
 /api
 
-Esse endereço é configurável por DEV_API_PROXY_TARGET.
+O destino é configurável por DEV_API_PROXY_TARGET.
 
-Tratamento de erros
+## Tratamento de erros
 
-A API possui um contrato padronizado de erro:
+A API utiliza estrutura centralizada:
 
 {
-  "timestamp": "2026-09-02T13:00:00Z",
+  "timestamp": "2026-09-04T12:00:00Z",
   "status": 409,
   "erro": "...",
   "mensagem": "...",
   "path": "/api/..."
 }
 
-Erros de validação podem possuir também:
+Erros de validação podem incluir:
 
 {
   "campos": {}
 }
 
-A estrutura interna de campos ainda não deve ser assumida rigidamente pelo frontend.
+### Status relevantes:
 
-Status relevantes:
+- 400 — dados inválidos
 
-400 — request ou validação inválida;
-401 — sessão ausente, inválida ou expirada;
-403 — usuário autenticado sem permissão;
-404 — recurso inexistente;
+- 401 — autenticação ausente, inválida ou expirada
+
+- 403 — sem permissão
+
+- 404 — recurso inexistente naquele contexto
+
 409 — conflito de domínio.
 
-O frontend utiliza preferencialmente a mensagem retornada pelo backend e não exibe detalhes internos ou stack traces.
+O frontend utiliza preferencialmente mensagem e não exibe stack traces.
 
-Estado atual
+## Estado atual
 
-Implementado:
+### Implementado:
 
-fundação React + TypeScript + Vite;
-Tailwind CSS e tokens visuais;
-roteamento;
-AppShell;
-TransactionalShell;
-Cadastro;
-Login;
-exibição/ocultação de senha;
-JWT Bearer;
-persistência e restauração da sessão;
-expiração;
-guards;
-logout;
-cliente HTTP;
-configuração de ambiente;
-proxy de desenvolvimento;
-múltiplas famílias por usuário;
-FamilyContext;
-persistência da família selecionada;
-resolução de 0, 1 ou N famílias;
-seleção e troca de contexto familiar;
-onboarding familiar;
-criação de família;
-solicitação de entrada por código;
-múltiplas solicitações pendentes;
-ação manual para verificar aprovação;
-Guia Família;
-código de ingresso;
-cópia e compartilhamento do código;
-solicitações administrativas;
-aprovação e rejeição de entrada;
-comportamento distinto para ADMINISTRADOR e MEMBRO.
+- fundação React + TypeScript + Vite
 
-Ainda pendente:
+- Tailwind CSS e tokens visuais
 
-consulta/perfil do usuário autenticado;
-gestão/listagem de membros da família;
-promoção ou rebaixamento de membros;
-saída da família;
-edição/desativação da família;
-listas de compras;
-preparação de itens;
-compra ativa;
-revisão/finalização;
-histórico;
-WebSocket/STOMP;
-atualização em tempo real.
-Design
+- roteamento
+
+- AppShell
+
+- TransactionalShell
+
+- Cadastro
+
+- Login
+
+- exibição/ocultação de senha
+
+- JWT Bearer
+
+- persistência e restauração da sessão
+
+- expiração
+
+- guards
+
+- logout global
+
+- cliente HTTP
+
+- configuração de ambiente
+
+- proxy de desenvolvimento
+
+- AuthenticatedUserProvider
+
+- consulta do usuário autenticado
+
+- múltiplas famílias
+
+- FamilyProvider
+
+- persistência e restauração da família selecionada
+
+- onboarding familiar
+
+- criação e entrada em família
+
+- seleção e troca de família
+
+- solicitações administrativas
+
+- aprovação e rejeição
+
+- Guia Família
+
+- Dashboard real
+
+- Minhas Listas
+
+- criação de lista
+
+- detalhe/preparação da lista
+
+- participantes
+
+- gerenciamento de participantes
+
+- capabilities de lista
+
+- adicionar, editar e remover itens
+
+- reordenação de itens
+
+- formulário de item em dialog
+
+preservação de scroll/foco durante edição e reordenação.
+
+### Ainda pendente:
+
+- edição dos dados básicos da lista, como nome, categoria e estabelecimento
+
+- atalho de UX para criar ou entrar em outra família quando o usuário já possui contexto familiar
+
+- gestão completa dos membros pela Guia Família
+
+- promoção/rebaixamento de membros
+
+- saída da família
+
+- edição/desativação da família
+
+- iniciar compra
+
+- compra ativa
+
+- estados de item durante a compra
+
+- revisão/finalização
+
+- histórico real
+
+- WebSocket/STOMP
+
+notificações e atualização em tempo real.
+
+## Design
 
 A interface segue abordagem mobile-first.
 
 Princípios atuais:
 
-idioma da aplicação em PT-BR;
-Plus Jakarta Sans;
-alvos de toque mínimos;
-espaçamentos e cores centralizados em tokens;
-navegação simples;
-feedback de loading e erro;
-foco visível e navegação por teclado;
-confirmações somente quando necessárias;
-nenhuma dependência visual desnecessária.
+- idioma em PT-BR
 
-O Stitch é utilizado apenas como referência de UX e identidade visual. Seu HTML não deve ser copiado diretamente para a aplicação.
+- Plus Jakarta Sans
 
-Cuidados
+- alvos de toque adequados
+
+- espaçamentos e cores centralizados em tokens
+
+- navegação simples
+
+- feedback de loading e erro
+
+- foco visível
+
+- navegação por teclado
+
+- confirmações somente quando necessárias
+
+ausência de dependências visuais desnecessárias.
+
+O Stitch é referência de UX e identidade visual. Seu HTML exportado não deve ser copiado diretamente para a aplicação.
+
+## Cuidados
+
 Não versione .env.local ou variantes locais.
+
 Não coloque tokens, senhas ou segredos em variáveis VITE_*.
+
+Não extraia nome/email do JWT.
+
 Não use o JWT para inferir família, papel ou permissões.
+
 Não persista o objeto completo da família selecionada como fonte de verdade.
+
+Não trate a família selecionada como prova de autorização.
+
+Não reconstrua no frontend capabilities que já são fornecidas pelo backend.
+
+Não envie usuarioId, executorId ou papel como prova de autorização.
+
+Use familiaId explicitamente quando o contrato REST exigir contexto familiar.
+
+Não invente contratos REST para áreas ainda não disponibilizadas.
+
+Não trate 204 No Content como erro quando o contrato o utilizar como estado funcional.
+
+Não implemente polling ou WebSocket antes do contrato correspondente.
+
+Não copie diretamente o HTML/Tailwind gerado pelo Stitch.ecionada como fonte de verdade.
 Não trate a família selecionada como prova de autorização.
 Não envie usuarioId, executorId ou papel como prova de autorização.
 Utilize o familiaId explicitamente quando o contrato REST exigir contexto familiar.
@@ -549,3 +876,4 @@ Não invente contratos REST para áreas ainda não disponibilizadas pelo backend
 Não trate 204 No Content como erro quando o contrato o utilizar como estado funcional.
 Não implemente polling ou WebSocket antes do contrato correspondente.
 Não copie diretamente o código HTML/Tailwind gerado pelo Stitch.
+

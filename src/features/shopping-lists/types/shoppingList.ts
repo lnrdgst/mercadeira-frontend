@@ -1,3 +1,5 @@
+import type { PapelFamilia } from '../../family/types/family'
+
 export type CategoriaCompra =
   | 'SUPERMERCADO'
   | 'ROUPAS'
@@ -47,6 +49,51 @@ export interface CriarListaCompraRequest {
   estabelecimento: string | null
 }
 
+export interface MembroFamiliaResponse {
+  membroFamiliaId: string
+  usuarioId: string
+  nome: string
+  email: string
+  papel: PapelFamilia
+}
+
+export interface ParticipanteListaResponse {
+  membroFamiliaId: string
+  usuarioId: string
+  nome: string
+  papelFamilia: PapelFamilia
+  entrouEm: string
+}
+
+export type UnidadeMedida =
+  | 'UNIDADE'
+  | 'KG'
+  | 'G'
+  | 'LITRO'
+  | 'ML'
+  | 'PACOTE'
+  | 'CAIXA'
+
+export interface ItemListaCompraResponse {
+  id: string
+  descricao: string
+  quantidade: number | null
+  unidadeMedida: UnidadeMedida | null
+  marca: string | null
+  observacoes: string | null
+  ordemExibicao: number
+  criadoEm: string
+  atualizadoEm: string
+}
+
+export interface SalvarItemListaRequest {
+  descricao: string
+  quantidade: number | null
+  unidadeMedida: UnidadeMedida | null
+  marca: string | null
+  observacoes: string | null
+}
+
 export const categoriaCompraLabels: Record<CategoriaCompra, string> = {
   SUPERMERCADO: 'Supermercado',
   ROUPAS: 'Roupas',
@@ -62,4 +109,13 @@ export const statusListaCompraLabels: Record<StatusListaCompra, string> = {
   FINALIZADA: 'Finalizada',
   CANCELADA: 'Cancelada',
 }
-import type { PapelFamilia } from '../../family/types/family'
+
+export const unidadeMedidaLabels: Record<UnidadeMedida, string> = {
+  UNIDADE: 'un.',
+  KG: 'kg',
+  G: 'g',
+  LITRO: 'L',
+  ML: 'ml',
+  PACOTE: 'pacote',
+  CAIXA: 'caixa',
+}

@@ -15,7 +15,7 @@ export type ApiRequestError = Error & {
 }
 
 interface ApiRequestOptions {
-  method?: 'GET' | 'POST'
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
   body?: unknown
   token?: string
 }

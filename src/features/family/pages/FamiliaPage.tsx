@@ -294,13 +294,6 @@ export function FamiliaPage() {
         >
           Trocar família
         </button>
-        <button
-          type="button"
-          onClick={logout}
-          className="min-h-touch w-full rounded-control border border-foreground/20 bg-surface px-page text-label-lg font-semibold text-foreground transition-colors hover:bg-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        >
-          Sair da conta
-        </button>
       </section>
     </section>
   )

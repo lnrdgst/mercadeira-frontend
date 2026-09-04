@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router'
+import { useSession } from '../../features/auth/session/sessionContext'
 
 const navigationItems = [
   { to: '/inicio', label: 'Início' },
@@ -8,8 +9,19 @@ const navigationItems = [
 ]
 
 export function AppShell() {
+  const { logout } = useSession()
+
   return (
     <div className="min-h-[100svh] bg-background text-foreground">
+      <header className="mx-auto flex w-full max-w-5xl justify-end px-page pt-gutter">
+        <button
+          type="button"
+          onClick={logout}
+          className="min-h-touch rounded-control px-gutter text-label-lg font-semibold text-foreground-muted transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          Sair da conta
+        </button>
+      </header>
       <main className="mx-auto w-full max-w-5xl px-page pt-page pb-[calc(var(--spacing-touch)+var(--spacing-gutter)+env(safe-area-inset-bottom))]">
         <Outlet />
       </main>

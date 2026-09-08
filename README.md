@@ -22,6 +22,7 @@ Fetch API nativa
 
 ## Estrutura
 
+```text
 src/
 ├── app/
 │   ├── layouts/
@@ -36,13 +37,15 @@ src/
 │   ├── shopping/
 │   └── shopping-lists/
 ├── shared/
-│   └── api/
+│   ├── api/
+│   └── components/
 ├── App.tsx
 ├── index.css
 └── main.tsx
 
 docs/
 └── prototipo-stitch/
+```
 
 O código é organizado principalmente por feature/domínio, evitando grandes diretórios globais de páginas, serviços ou modelos.
 
@@ -52,6 +55,7 @@ Os arquivos em docs/prototipo-stitch/mercadeira-stitch/ são referências visuai
 
 Autenticação, identidade do usuário e contexto familiar são responsabilidades separadas:
 
+```text
 SessionProvider
 ├── token
 ├── expiração
@@ -65,6 +69,7 @@ AuthenticatedUserProvider
 FamilyProvider
 ├── famílias disponíveis
 └── família selecionada
+```
 
 O SessionProvider não contém família, papel ou dados de perfil.
 
@@ -72,31 +77,18 @@ O AuthenticatedUserProvider consulta a identidade real do usuário autenticado e
 
 O FamilyProvider concentra a coleção de famílias e o contexto familiar atual. A família selecionada é contexto de navegação e uso, não prova de autorização.
 
-Navegação
+## Navegação
 
-Aplicação principal
+### Aplicação principal
 
 As áreas principais utilizam o AppShell e compartilham navegação global:
 
-Rota
-
-Área
-
-/inicio
-
-## Dashboard
-
-/listas
-
-### Minhas listas
-
-/familia
-
-Família selecionada
-
-/historico
-
-Histórico
+| Rota | Área |
+| --- | --- |
+| `/inicio` | Dashboard |
+| `/listas` | Minhas listas |
+| `/familia` | Família selecionada |
+| `/historico` | Estrutura de histórico; dados reais ainda pendentes |
 
 Em dispositivos móveis, essas áreas utilizam navegação inferior com alvos de toque adequados e respeito à safe area.
 
@@ -104,61 +96,36 @@ O AppShell também disponibiliza logout global para as áreas autenticadas princ
 
 ### Listas
 
-Rota
-
-Área
-
-/listas/nova
-
-Criar nova lista
-
-/listas/:listaId
-
-Preparação da lista
+| Rota | Área |
+| --- | --- |
+| `/listas/nova` | Criar nova lista |
+| `/listas/:listaId` | Preparação da lista |
 
 O familiaId não faz parte da URL do frontend. O contexto familiar vem do FamilyProvider e é enviado explicitamente às APIs quando o contrato exige.
 
 ### Fluxos transacionais
 
-As rotas abaixo já possuem estrutura dedicada com TransactionalShell, mas os fluxos de compra ainda não estão implementados:
+As rotas transacionais utilizam `TransactionalShell`, separado da navegação global:
 
-Rota
+| Rota | Área |
+| --- | --- |
+| `/listas/:listaId/compra` | Compra em andamento, com integração REST real |
+| `/compras/:compraId/revisao` | Estrutura de revisão; fluxo ainda pendente |
 
-Área
+A Compra em andamento é recuperada usando o `familiaId` da família selecionada e o `listaId` da rota. Não depende de `compraId` na URL. O identificador real da Compra continua disponível na resposta do backend.
 
-/compras/:compraId/andamento
+### Autenticação, onboarding e seleção de família
 
-Compra em andamento
-
-/compras/:compraId/revisao
-
-Revisão da compra
-
-Autenticação, onboarding e seleção de família
-
-Rota
-
-Área
-
-/login
-
-Login
-
-/cadastro
-
-Cadastro
-
-/familia/entrada
-
-Criar família ou solicitar entrada
-
-/familia/selecionar
-
-Selecionar contexto familiar
+| Rota | Área |
+| --- | --- |
+| `/login` | Login |
+| `/cadastro` | Cadastro |
+| `/familia/entrada` | Criar família ou solicitar entrada |
+| `/familia/selecionar` | Selecionar contexto familiar |
 
 Também existe tratamento para rotas inexistentes.
 
-Autenticação
+## Autenticação
 
 A API utiliza Bearer JWT.
 
@@ -166,7 +133,7 @@ Após o login, o frontend persiste somente:
 
 - token
 
-instante de expiração.
+- instante de expiração.
 
 A senha nunca é persistida.
 
@@ -178,13 +145,13 @@ A sessão:
 
 - limpa credenciais expiradas ou inválidas
 
-não utiliza refresh token atualmente.
+- não utiliza refresh token atualmente.
 
 O JWT contém somente o UUID do usuário no claim sub.
 
 Família, papel e permissões não são inferidos do token.
 
-Usuário autenticado
+## Usuário autenticado
 
 A identidade do usuário é carregada por:
 
@@ -192,26 +159,30 @@ A identidade do usuário é carregada por:
 
 Resposta:
 
+```json
 {
   "id": "uuid",
   "nome": "Leonardo",
   "email": "leo@email.com"
 }
+```
 
 O frontend não extrai nome ou email do JWT e não reutiliza valores digitados no cadastro ou login como fonte de verdade.
 
 Após F5, a sessão é restaurada e o perfil é consultado novamente.
 
-Múltiplas famílias
+## Múltiplas famílias
 
 Um usuário pode participar simultaneamente de zero, uma ou várias famílias ativas.
 
 Exemplo:
 
+```text
 Usuário
 ├── Minha Casa       — Administrador
 ├── Casa dos pais    — Membro
 └── Viagem           — Administrador
+```
 
 O papel é específico de cada vínculo familiar.
 
@@ -223,7 +194,7 @@ A resposta é sempre 200 OK, inclusive quando não existem famílias:
 
 []
 
-Família selecionada
+### Família selecionada
 
 Somente o UUID da família selecionada é persistido em:
 
@@ -233,11 +204,12 @@ O objeto completo da família não é persistido como fonte de verdade.
 
 Após carregar GET /api/familias, o ID salvo é validado contra a coleção atual.
 
-Resolução inicial
+### Resolução inicial
 
+```text
 Login / restauração
         ↓
-`GET /api/familias`
+GET /api/familias
         │
         ├── []
         │    └── /familia/entrada
@@ -254,6 +226,7 @@ Login / restauração
              │
              └── sem seleção válida
                   └── /familia/selecionar
+```
 
 Quando existem várias famílias e nenhuma seleção válida, o frontend não escolhe uma arbitrariamente.
 
@@ -267,7 +240,7 @@ A página /familia/entrada permite:
 
 - visualizar solicitações pendentes do próprio usuário
 
-verificar novamente o estado das solicitações.
+- verificar novamente o estado das solicitações.
 
 Pendências do usuário:
 
@@ -277,7 +250,7 @@ Sem pendências, o backend pode retornar 204 No Content.
 
 Não há polling automático nem WebSocket nesta fase.
 
-Criar família
+### Criar família
 
 `POST /api/familias`
 
@@ -289,7 +262,7 @@ Após sucesso:
 
 - seu UUID é persistido como contexto atual
 
-a aplicação navega para /inicio.
+- a aplicação navega para /inicio.
 
 Criar uma família não substitui vínculos existentes.
 
@@ -299,7 +272,7 @@ Criar uma família não substitui vínculos existentes.
 
 Solicitar entrada em outra família não altera automaticamente a família selecionada.
 
-Guia Família
+## Guia Família
 
 A rota /familia representa a família atualmente selecionada.
 
@@ -317,11 +290,11 @@ A tela exibe:
 
 - solicitações administrativas, quando aplicável
 
-troca de família.
+- troca de família.
 
 O código utiliza Clipboard API e, quando disponível, Web Share API.
 
-Solicitações administrativas
+### Solicitações administrativas
 
 Para administrador:
 
@@ -339,7 +312,7 @@ A identidade do executor não é enviada pelo frontend.
 
 Quando o usuário é MEMBRO, a interface não apresenta as ações administrativas. A autorização real continua sendo responsabilidade do backend.
 
-Membros da família
+### Membros da família
 
 Os membros ativos podem ser consultados por:
 
@@ -369,11 +342,9 @@ O dashboard apresenta:
 
 - acesso à Guia Família
 
-troca de contexto familiar.
+- troca de contexto familiar.
 
-O dashboard não inventa compra ativa, presença, localização, progresso ou dados em tempo real.
-
-Essas áreas serão adicionadas somente quando existirem contratos backend correspondentes.
+O dashboard não exibe resumo de compra ativa, presença, localização, progresso ou dados em tempo real. A Compra em andamento é acessada pelas listas.
 
 ## Listas de compra
 
@@ -397,9 +368,11 @@ A tela /listas apresenta:
 
 - status
 
-acesso ao detalhe.
+- acesso ao detalhe.
 
 Estados de loading, vazio e erro são tratados separadamente.
+
+Cards `EM_PREPARACAO` oferecem Abrir lista e levam a `/listas/{id}`. Cards `EM_COMPRA` oferecem Ver compra e levam a `/listas/{id}/compra`.
 
 ### Criar lista
 
@@ -411,7 +384,7 @@ Campos atuais:
 
 - categoria
 
-estabelecimento opcional.
+- estabelecimento opcional.
 
 O criador entra automaticamente como participante ativo.
 
@@ -429,10 +402,11 @@ O detalhe retorna, além dos dados básicos:
 
 - contexto do usuário autenticado
 
-capabilities fornecidas pelo backend.
+- capabilities fornecidas pelo backend.
 
 Exemplo conceitual:
 
+```json
 {
   "criador": {
     "membroFamiliaId": "uuid",
@@ -447,6 +421,7 @@ Exemplo conceitual:
     "podeAlterarItens": true
   }
 }
+```
 
 ### Capabilities de lista
 
@@ -458,7 +433,7 @@ A interface utiliza diretamente:
 
 - podeGerenciarParticipantes
 
-podeAlterarItens.
+- podeAlterarItens.
 
 As mutações continuam sendo revalidadas pelo backend.
 
@@ -512,7 +487,7 @@ Campos disponíveis:
 
 - marca
 
-observações.
+- observações.
 
 Descrição é obrigatória; os demais campos são opcionais.
 
@@ -520,7 +495,7 @@ Adicionar e editar utilizam o mesmo formulário em dialog.
 
 Na preparação da lista não existem checkboxes de compra.
 
-Reordenação de itens
+### Reordenação de itens
 
 Endpoint:
 
@@ -538,23 +513,115 @@ Itens recém-adicionados são colocados no topo e a nova ordem é persistida.
 
 Categorias:
 
+```text
 SUPERMERCADO
 ROUPAS
 BRINQUEDOS
 ACESSORIOS
 UTENSILIOS
 OUTROS
+```
 
 Status possíveis:
 
+```text
 EM_PREPARACAO
 EM_COMPRA
 FINALIZADA
 CANCELADA
+```
 
-Nesta fase, o frontend trabalha funcionalmente principalmente com EM_PREPARACAO.
+O frontend possui fluxos funcionais para `EM_PREPARACAO` e `EM_COMPRA`. `FINALIZADA` e `CANCELADA` não recebem novos comportamentos de navegação ou mutação.
 
-Estados posteriores não recebem comportamento inventado.
+Após iniciar a Compra, a ListaCompra passa de `EM_PREPARACAO` para `EM_COMPRA`. A preparação deixa de oferecer mutações de itens e participantes e mostra Ver compra em andamento. As capabilities continuam sendo fornecidas e revalidadas pelo backend.
+
+## Compra em andamento
+
+A rota `/listas/:listaId/compra` apresenta nome da lista, categoria, estabelecimento quando informado, status Em andamento, data/hora de início em PT-BR, participantes e itens da Compra.
+
+### Iniciar Compra
+
+`POST /api/familias/{familiaId}/listas/{listaId}/compra`
+
+Sem body. Iniciar compra aparece somente quando a ListaCompra está `EM_PREPARACAO` e `contextoUsuario.participanteAtivo = true`. Ser `ADMINISTRADOR` não concede essa permissão: administrador não participante não pode iniciar.
+
+Um dialog confirma o registro dos participantes e itens atuais e a saída do modo de preparação. Cancelar não inicia a Compra. Durante o POST, o botão fica desabilitado e uma proteção síncrona impede chamadas simultâneas.
+
+O backend retorna `CompraAtivaResponse` tanto em `201 Created` quanto em `200 OK` no replay idempotente. Ambos são sucesso e levam a `/listas/:listaId/compra`. Não há chave de idempotência gerada pelo frontend.
+
+### Recuperação e snapshots
+
+`GET /api/familias/{familiaId}/listas/{listaId}/compra`
+
+O GET é a fonte de verdade para entrada, retorno, reload e F5. A tela é reconstruída usando família selecionada e lista da rota, sem depender do estado em memória produzido pelo POST inicial.
+
+Ao iniciar, o backend registra os participantes ativos da ListaCompra como snapshots de `ParticipanteCompra` e os itens ativos da preparação como `ItemCompra`. Nomes e papéis exibidos vêm desses snapshots.
+
+`ItemLista` e `ItemCompra` são conceitos distintos. Durante a Compra, **`ItemCompra.id` é a identidade operacional**. `itemListaOrigemId` é apenas o vínculo com a origem; não é usado para mutações. O frontend não converte ItemLista em ItemCompra.
+
+### Participação e observadores
+
+`compra.contextoUsuario.participanteCompra` define as ações disponíveis:
+
+- `true`: permite adicionar item e colocar itens pendentes no carrinho.
+- `false`: permite consultar estados e autoria, sem ações de mutação, com o aviso “Você pode acompanhar esta compra, mas não participa dela.”
+
+Não há entrada tardia implementada, nem permissão inferida pelo papel `ADMINISTRADOR`. O backend revalida cada operação.
+
+### Colocar item no carrinho
+
+`POST /api/familias/{familiaId}/listas/{listaId}/compra/itens/{itemCompraId}/colocar-no-carrinho`
+
+Sem body, somente para ParticipanteCompra. A transição implementada é `PENDENTE → NO_CARRINHO`, com resposta `200 OK` contendo o `ItemCompraResponse` atualizado. Repetir a operação em um item já no carrinho é idempotente e preserva a primeira autoria e timestamp.
+
+Cada card possui loading e proteção contra duplo clique próprios, sem bloquear os outros itens. A resposta substitui o item correspondente no estado local; não é feito GET completo apenas para refletir a mutação. Falhas mantêm o item anterior e apresentam a mensagem do backend no card.
+
+A UI mostra Pendente ou ✓ No carrinho. Quando presentes, `colocadoNoCarrinhoPor.nome` e `colocadoNoCarrinhoEm` são exibidos discretamente, por exemplo “Colocado no carrinho por Leonardo”, com data/hora. São snapshots históricos; não são substituídos pelo cadastro atual do usuário.
+
+### Adicionar item durante a Compra
+
+`POST /api/familias/{familiaId}/listas/{listaId}/compra/itens`
+
+Somente participantes veem Adicionar item. O dialog reutiliza a apresentação dos campos comuns da preparação, mantendo requests específicos de cada domínio.
+
+O request envia somente:
+
+```json
+{
+  "descricao": "Arroz",
+  "quantidade": 1,
+  "unidadeMedida": "PACOTE",
+  "marca": null,
+  "observacoes": null
+}
+```
+
+Quantidade, unidade, marca e observações permitem `null`. Identidade do executor, `compraId`, `participanteCompraId`, origem, status, ordem, autoria e timestamps não são enviados: pertencem ao backend.
+
+A resposta `201 Created` contém o `ItemCompraResponse` completo. O novo item pertence somente à Compra, não cria ItemLista nem altera retroativamente a preparação. Inicia `PENDENTE` e aparece ao final, respeitando a `ordemExibicao` definida pelo backend, sem POST de ordem.
+
+Adicionar item **não é idempotente**: dois POSTs válidos criam dois itens. O submit fica desabilitado e uma proteção síncrona impede segundo envio. Não há repetição automática. O dialog fecha somente após sucesso; em erro, mantém os campos preenchidos e mostra a mensagem do backend.
+
+### Origem e autoria dos itens
+
+| Campo | Item originado da preparação | Item adicionado durante a Compra |
+| --- | --- | --- |
+| `itemListaOrigemId` | Identificador da origem | `null` |
+| `adicionadoDuranteCompra` | `false` | `true` |
+| `adicionadoPor` | `null` | Snapshot do autor |
+| `adicionadoEm` | `null` | Timestamp da inclusão |
+
+`adicionadoPor` e `colocadoNoCarrinhoPor`, quando presentes, contêm `participanteCompraId`, `membroFamiliaId`, `usuarioId` e `nome`. A UI exibe “Adicionado por …” com data/hora para itens criados durante a Compra; não inventa autoria de inclusão para itens vindos da preparação.
+
+Após colocar no carrinho, o response substitui o item local. Após adicionar, o response é incluído na coleção local. Atualizações funcionais preservam respostas concorrentes de itens diferentes. Status, autores e timestamps vêm do backend; o GET continua recuperando todos esses dados após F5.
+
+### Limites atuais e realtime
+
+Os únicos estados funcionais de ItemCompra são `PENDENTE` e `NO_CARRINHO`. Remoção solicitada, aprovação, rejeição, removido, desfazer e finalização são backlog, sem contratos funcionais implementados no frontend.
+
+Autoria e timestamps permitem futuramente apresentar eventos como “Leonardo adicionou Arroz” ou “Camila colocou Leite no carrinho”. Hoje são exibidos no próprio item a partir do estado REST. Não há WebSocket, STOMP, polling, notificações em tempo real ou feed global de atividade.
+
+O carregamento possui estado próprio e nova tentativa. GET 404 informa “Esta compra ainda não está disponível.” As mutações preservam as mensagens de validação, permissão e conflito retornadas pelo backend; 401 utiliza a infraestrutura existente de sessão.
 
 ## Logout
 
@@ -572,38 +639,27 @@ O logout limpa:
 
 - contexto familiar em memória
 
-mercadeira.familia.selecionada.
+- `mercadeira.familia.selecionada`.
 
 Depois, a aplicação retorna para /login.
 
-Configuração da API
+## Configuração da API
 
 A configuração é centralizada em:
 
 src/config/environment.ts
 
-Variável
-
-Uso
-
-Default
-
-`VITE_API_BASE_URL`
-
-Base das chamadas REST
-
-/api
-
-DEV_API_PROXY_TARGET
-
-Destino do proxy Vite em desenvolvimento
-
-`http://localhost:8080`
+| Variável | Uso | Default |
+| --- | --- | --- |
+| `VITE_API_BASE_URL` | Base das chamadas REST | `/api` |
+| `DEV_API_PROXY_TARGET` | Destino do proxy Vite em desenvolvimento | `http://localhost:8080` |
 
 Exemplo:
 
-`VITE_API_BASE_URL=/api`
+```dotenv
+VITE_API_BASE_URL=/api
 DEV_API_PROXY_TARGET=http://localhost:8080
+```
 
 Variáveis VITE_* são incorporadas ao build e não devem conter segredos.
 
@@ -611,17 +667,19 @@ Variáveis VITE_* são incorporadas ao build e não devem conter segredos.
 
 Em desenvolvimento:
 
+```text
 Browser
   -> http://localhost:5173/api/...
 
 Vite proxy
   -> http://localhost:8080/api/...
+```
 
 A porta do Vite pode variar sem alterar o destino do backend.
 
 O proxy existe somente no servidor de desenvolvimento.
 
-Produção
+### Produção
 
 O frontend utiliza /api como base padrão.
 
@@ -633,7 +691,7 @@ Se a API estiver em outra origem:
 
 não é necessário alterar código-fonte.
 
-Configuração local
+### Configuração local
 
 O arquivo .env.development contém os defaults de desenvolvimento.
 
@@ -644,7 +702,7 @@ Configurações específicas da máquina podem ficar em:
 
 Esses arquivos não devem ser versionados.
 
-Execução local
+## Execução local
 
 Instalar dependências:
 
@@ -678,6 +736,7 @@ O destino é configurável por DEV_API_PROXY_TARGET.
 
 A API utiliza estrutura centralizada:
 
+```json
 {
   "timestamp": "2026-09-04T12:00:00Z",
   "status": 409,
@@ -685,12 +744,15 @@ A API utiliza estrutura centralizada:
   "mensagem": "...",
   "path": "/api/..."
 }
+```
 
 Erros de validação podem incluir:
 
+```json
 {
   "campos": {}
 }
+```
 
 ### Status relevantes:
 
@@ -702,7 +764,7 @@ Erros de validação podem incluir:
 
 - 404 — recurso inexistente naquele contexto
 
-409 — conflito de domínio.
+- 409 — conflito de domínio.
 
 O frontend utiliza preferencialmente mensagem e não exibe stack traces.
 
@@ -778,13 +840,22 @@ O frontend utiliza preferencialmente mensagem e não exibe stack traces.
 
 - capabilities de lista
 
-- adicionar, editar e remover itens
+- adicionar, editar e remover itens da preparação (ItemLista)
 
-- reordenação de itens
+- reordenação de itens da preparação
 
 - formulário de item em dialog
 
-preservação de scroll/foco durante edição e reordenação.
+- preservação de scroll/foco durante edição e reordenação
+- início real de Compra com confirmação e proteção contra duplo clique
+- criação 201 e replay idempotente 200 no início
+- rota da Compra por listaId e recuperação por GET/F5
+- snapshots de participantes e itens, com ItemCompra.id como identidade operacional
+- observador em modo somente leitura
+- transição PENDENTE → NO_CARRINHO com loading por item e replay idempotente
+- atualização local pelas respostas reais das mutações
+- inclusão de item durante Compra com proteção contra duplo envio
+- autoria de inclusão e de colocação no carrinho, com timestamps históricos
 
 ### Ainda pendente:
 
@@ -800,11 +871,13 @@ preservação de scroll/foco durante edição e reordenação.
 
 - edição/desativação da família
 
-- iniciar compra
-
-- compra ativa
-
-- estados de item durante a compra
+- solicitação de participação em ListaCompra
+- entrada tardia em Compra
+- solicitar remoção de ItemCompra e aprovar/rejeitar remoção
+- remover ou desfazer ItemCompra
+- editar ItemCompra durante Compra
+- reordenar ItemCompra
+- finalizar ou reabrir Compra
 
 - revisão/finalização
 
@@ -812,7 +885,9 @@ preservação de scroll/foco durante edição e reordenação.
 
 - WebSocket/STOMP
 
-notificações e atualização em tempo real.
+- notificações e atualização em tempo real
+
+Esses itens representam backlog; não indicam contratos REST já disponíveis.
 
 ## Design
 
@@ -838,7 +913,7 @@ Princípios atuais:
 
 - confirmações somente quando necessárias
 
-ausência de dependências visuais desnecessárias.
+- ausência de dependências visuais desnecessárias.
 
 O Stitch é referência de UX e identidade visual. Seu HTML exportado não deve ser copiado diretamente para a aplicação.
 
@@ -868,12 +943,17 @@ Não trate 204 No Content como erro quando o contrato o utilizar como estado fun
 
 Não implemente polling ou WebSocket antes do contrato correspondente.
 
-Não copie diretamente o HTML/Tailwind gerado pelo Stitch.ecionada como fonte de verdade.
-Não trate a família selecionada como prova de autorização.
-Não envie usuarioId, executorId ou papel como prova de autorização.
-Utilize o familiaId explicitamente quando o contrato REST exigir contexto familiar.
-Não invente contratos REST para áreas ainda não disponibilizadas pelo backend.
-Não trate 204 No Content como erro quando o contrato o utilizar como estado funcional.
-Não implemente polling ou WebSocket antes do contrato correspondente.
-Não copie diretamente o código HTML/Tailwind gerado pelo Stitch.
+Não copie diretamente o HTML/Tailwind gerado pelo Stitch.
+
+Não use ItemLista.id ou itemListaOrigemId para mutações da Compra; use ItemCompra.id.
+
+Não infira participação na lista ou na Compra pela função ADMINISTRADOR.
+
+Não envie identidade do executor nas mutações da Compra.
+
+Não converta ItemLista em ItemCompra no frontend.
+
+Não crie endpoints de transição de status além dos contratos disponíveis.
+
+Use respostas do backend como fonte da mutação confirmada e GET da Compra como fonte de recuperação.
 

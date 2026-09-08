@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router'
 import type { ApiRequestError } from '../../../shared/api/apiClient'
 import { useSession } from '../../auth/session/sessionContext'
 import { useFamilyContext } from '../../family/session/familyContext'
+import { IniciarCompraButton } from '../../shopping/components/IniciarCompraButton'
 import { ItemForm } from '../components/ItemForm'
 import { adicionarParticipanteLista, atualizarItemLista, buscarItensLista, buscarLista, buscarMembrosFamilia, buscarParticipantesLista, criarItemLista, reordenarItensLista, removerItemLista, removerParticipanteLista } from '../api/shoppingListsApi'
 import type { ItemListaCompraResponse, ListaCompraDetalheResponse, MembroFamiliaResponse, ParticipanteListaResponse, SalvarItemListaRequest } from '../types/shoppingList'
@@ -84,8 +85,9 @@ export function ListaDetalhePage() {
   const lista = detalheKey === chave ? detalhe : null
   const listaParticipantes = participantesKey === chave ? participantes : []
   const listaItens = itensKey === chave ? itens : []
-  const podeGerenciar = lista?.contextoUsuario.podeGerenciarParticipantes === true
-  const podeAlterar = lista?.contextoUsuario.podeAlterarItens === true
+  const emPreparacao = lista?.status === 'EM_PREPARACAO'
+  const podeGerenciar = emPreparacao && lista?.contextoUsuario.podeGerenciarParticipantes === true
+  const podeAlterar = emPreparacao && lista?.contextoUsuario.podeAlterarItens === true
   const candidatos = membrosFamiliaId === familiaSelecionada.id ? membros.filter((membro) => !listaParticipantes.some((participante) => participante.membroFamiliaId === membro.membroFamiliaId)) : []
 
   function fecharDialog() {
@@ -97,14 +99,14 @@ export function ListaDetalhePage() {
   }
 
   async function atualizarParticipante(membroFamiliaId: string, remover = false) {
-    if (!auth || !lista || !familiaSelecionada || !listaId) return
+    if (!auth || !lista || !familiaSelecionada || !listaId || !podeGerenciar) return
     setOperacaoParticipante(membroFamiliaId); setFeedback(null)
     try { if (remover) await removerParticipanteLista(auth.token, familiaSelecionada.id, listaId, membroFamiliaId); else await adicionarParticipanteLista(auth.token, familiaSelecionada.id, listaId, membroFamiliaId); setFeedback(remover ? 'Participante removido.' : 'Participante adicionado.'); await Promise.all([carregarDetalhe(), carregarParticipantes()]) }
     catch (error) { const apiError = error as ApiRequestError; if (apiError.status === 401) logout(); else setFeedback(apiError.message || 'Não foi possível atualizar os participantes.') }
     finally { setOperacaoParticipante(null) }
   }
   async function salvarItem(data: SalvarItemListaRequest) {
-    if (!auth || !lista || !familiaSelecionada || !listaId) return
+    if (!auth || !lista || !familiaSelecionada || !listaId || !podeAlterar) return
     setOperacaoItem(itemEditando === 'novo' ? 'novo' : itemEditando?.id || null); setFeedback(null)
     try {
       if (itemEditando && itemEditando !== 'novo') {
@@ -134,14 +136,14 @@ export function ListaDetalhePage() {
     finally { setOperacaoItem(null) }
   }
   async function removerItem() {
-    if (!auth || !itemParaRemover || !familiaSelecionada || !listaId) return
+    if (!auth || !itemParaRemover || !familiaSelecionada || !listaId || !podeAlterar) return
     setOperacaoItem(itemParaRemover.id); setFeedback(null)
     try { await removerItemLista(auth.token, familiaSelecionada.id, listaId, itemParaRemover.id); setItemParaRemover(null); setFeedback('Item removido.'); await carregarItens() }
     catch (error) { const apiError = error as ApiRequestError; if (apiError.status === 401) logout(); else setFeedback(apiError.message || 'Não foi possível remover o item.') }
     finally { setOperacaoItem(null) }
   }
   async function moverItem(indice: number, direcao: -1 | 1) {
-    if (!auth || !familiaSelecionada || !listaId || reordenando) return
+    if (!auth || !familiaSelecionada || !listaId || reordenando || !podeAlterar) return
     const botaoFocado = document.activeElement instanceof HTMLButtonElement
       ? document.activeElement
       : null
@@ -160,15 +162,17 @@ export function ListaDetalhePage() {
     {(carregandoDetalhe || detalheKey !== chave) && <p className="text-body-md text-foreground-muted">Carregando lista...</p>}
     {!carregandoDetalhe && erroDetalhe && <div className="space-y-gutter rounded-card bg-error/10 p-page text-error"><p>{erroDetalhe}</p><button type="button" onClick={() => void carregarDetalhe()} className="min-h-touch rounded-control border border-current px-page font-semibold">Tentar novamente</button></div>}
     {lista && <><header className="space-y-2 rounded-card bg-surface p-page shadow-soft"><div className="flex flex-wrap gap-2"><span className="rounded-full bg-primary/10 px-gutter py-1 text-label-md font-semibold text-primary">{categoriaCompraLabels[lista.categoria]}</span><span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md text-foreground-muted">{statusListaCompraLabels[lista.status]}</span></div><h1 className="text-headline-lg font-bold">{lista.nome}</h1>{lista.estabelecimento && <p className="text-body-md text-foreground-muted">{lista.estabelecimento}</p>}<p className="text-label-lg text-foreground-muted">Criada por {lista.criador.nome}</p></header>
+    {emPreparacao && lista.contextoUsuario.participanteAtivo && <IniciarCompraButton key={chave} familiaId={familiaSelecionada.id} listaId={listaId} disabled={operacaoParticipante !== null || operacaoItem !== null || reordenando || itemEditando !== null || itemParaRemover !== null} />}
+    {lista.status === 'EM_COMPRA' && <div className="space-y-gutter rounded-card border border-primary/20 bg-primary/5 p-page"><p>A lista saiu do modo de preparação. Acompanhe os participantes e itens registrados na compra.</p><Link to={`/listas/${listaId}/compra`} className="inline-flex min-h-touch items-center rounded-control bg-primary px-page font-semibold text-surface">Ver compra em andamento</Link></div>}
     <section className="space-y-gutter"><div><h2 className="text-headline-md font-semibold">Participantes</h2><p className="text-body-md text-foreground-muted">Pessoas que participam desta lista.</p></div>
     {carregandoParticipantes || participantesKey !== chave ? <p className="text-body-md text-foreground-muted">Carregando participantes...</p> : erroParticipantes ? <div className="space-y-gutter rounded-card bg-error/10 p-page text-error"><p>{erroParticipantes}</p><button type="button" onClick={() => void carregarParticipantes()} className="min-h-touch rounded-control border border-current px-page font-semibold">Tentar novamente</button></div> : <ul className="space-y-2">{listaParticipantes.map((participante) => { const criador = participante.membroFamiliaId === lista.criador.membroFamiliaId; return <li key={participante.membroFamiliaId} className="flex min-h-touch flex-wrap items-center justify-between gap-gutter rounded-card bg-surface p-gutter shadow-soft"><div><p className="font-semibold">{participante.nome}</p><p className="text-label-md text-foreground-muted">{criador ? 'Criador' : participante.papelFamilia}</p></div>{podeGerenciar && !criador && <button type="button" disabled={operacaoParticipante === participante.membroFamiliaId} onClick={() => void atualizarParticipante(participante.membroFamiliaId, true)} className="min-h-touch rounded-control border border-error px-gutter text-label-lg font-semibold text-error disabled:opacity-60">Remover</button>}</li>})}</ul>}
     {!lista.contextoUsuario.participanteAtivo && podeGerenciar && <div className="space-y-gutter rounded-card border border-primary/20 bg-primary/5 p-page"><p>Você não participa desta lista.</p><button type="button" onClick={() => void atualizarParticipante(lista.contextoUsuario.membroFamiliaId)} disabled={operacaoParticipante !== null} className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60">Participar desta lista</button></div>}
     {podeGerenciar && candidatos.length > 0 && <div className="flex flex-wrap gap-gutter rounded-card bg-surface p-page shadow-soft"><select value={membroParaAdicionar} onChange={(event) => setMembroParaAdicionar(event.target.value)} className="min-h-touch flex-1 rounded-control border border-foreground/20 bg-background px-gutter"><option value="">Adicionar participante</option>{candidatos.map((membro) => <option key={membro.membroFamiliaId} value={membro.membroFamiliaId}>{membro.nome}</option>)}</select><button type="button" disabled={!membroParaAdicionar || operacaoParticipante !== null} onClick={() => { void atualizarParticipante(membroParaAdicionar); setMembroParaAdicionar('') }} className="min-h-touch rounded-control border border-primary px-page font-semibold text-primary disabled:opacity-60">Adicionar</button></div>}</section>
-    <section className="space-y-gutter"><div className="flex flex-wrap items-end justify-between gap-gutter"><div><h2 className="text-headline-md font-semibold">Itens</h2><p className="text-body-md text-foreground-muted">Itens em preparação para esta compra.</p></div>{podeAlterar && itemEditando === null && <button type="button" onClick={() => setItemEditando('novo')} className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface">Adicionar item</button>}</div>
+    <section className="space-y-gutter"><div className="flex flex-wrap items-end justify-between gap-gutter"><div><h2 className="text-headline-md font-semibold">Itens</h2><p className="text-body-md text-foreground-muted">{emPreparacao ? 'Itens em preparação para esta compra.' : 'Itens da lista. A preparação está encerrada.'}</p></div>{podeAlterar && itemEditando === null && <button type="button" onClick={() => setItemEditando('novo')} className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface">Adicionar item</button>}</div>
     <dialog ref={itemDialogRef} onClose={fecharDialog} className="m-auto max-h-[calc(100svh-2rem)] w-[calc(100%-2rem)] max-w-xl overflow-y-auto rounded-card bg-surface p-page text-foreground shadow-soft backdrop:bg-foreground/40">
-      {itemEditando && <ItemForm item={itemEditando === 'novo' ? undefined : itemEditando} submitting={operacaoItem !== null} onCancel={fecharDialog} onSubmit={salvarItem} />}
+      {podeAlterar && itemEditando && <ItemForm item={itemEditando === 'novo' ? undefined : itemEditando} submitting={operacaoItem !== null} onCancel={fecharDialog} onSubmit={salvarItem} />}
     </dialog>
-    {itemParaRemover && <div role="dialog" aria-modal="true" className="space-y-gutter rounded-card border border-error/20 bg-surface p-page shadow-soft"><p className="font-semibold">Remover este item da lista?</p><div className="flex gap-gutter"><button type="button" onClick={() => void removerItem()} disabled={operacaoItem !== null} className="min-h-touch rounded-control bg-error px-page font-semibold text-surface disabled:opacity-60">Remover</button><button type="button" onClick={() => setItemParaRemover(null)} disabled={operacaoItem !== null} className="min-h-touch rounded-control border border-foreground/20 px-page font-semibold">Cancelar</button></div></div>}
+    {podeAlterar && itemParaRemover && <div role="dialog" aria-modal="true" className="space-y-gutter rounded-card border border-error/20 bg-surface p-page shadow-soft"><p className="font-semibold">Remover este item da lista?</p><div className="flex gap-gutter"><button type="button" onClick={() => void removerItem()} disabled={operacaoItem !== null} className="min-h-touch rounded-control bg-error px-page font-semibold text-surface disabled:opacity-60">Remover</button><button type="button" onClick={() => setItemParaRemover(null)} disabled={operacaoItem !== null} className="min-h-touch rounded-control border border-foreground/20 px-page font-semibold">Cancelar</button></div></div>}
     {carregandoItens || itensKey !== chave ? <p className="text-body-md text-foreground-muted">Carregando itens...</p> : erroItens ? <div className="space-y-gutter rounded-card bg-error/10 p-page text-error"><p>{erroItens}</p><button type="button" onClick={() => void carregarItens()} className="min-h-touch rounded-control border border-current px-page font-semibold">Tentar novamente</button></div> : listaItens.length === 0 ? <div className="rounded-card bg-surface p-page text-body-md text-foreground-muted shadow-soft">{podeAlterar ? 'Nenhum item adicionado ainda.' : 'Esta lista ainda não possui itens.'}</div> : <ul className="space-y-gutter">{listaItens.map((item, indice) => <li key={item.id} className="space-y-gutter rounded-card bg-surface p-page shadow-soft"><div><h3 className="text-body-lg font-semibold">{item.descricao}</h3>{(item.quantidade !== null || item.marca) && <p className="text-body-md text-foreground-muted">{item.quantidade !== null && `${item.quantidade}${item.unidadeMedida ? ` ${unidadeMedidaLabels[item.unidadeMedida]}` : ''}`}{item.quantidade !== null && item.marca && ' · '}{item.marca}</p>}{item.observacoes && <p className="mt-1 text-label-lg text-foreground-muted">{item.observacoes}</p>}</div>{podeAlterar && <div className="grid gap-2 sm:grid-cols-4"><button type="button" onClick={() => setItemEditando(item)} className="min-h-touch rounded-control border border-primary px-gutter text-label-lg font-semibold text-primary">Editar</button><button type="button" onClick={() => setItemParaRemover(item)} className="min-h-touch rounded-control border border-error px-gutter text-label-lg font-semibold text-error">Remover</button><button type="button" disabled={indice === 0 || operacaoItem !== null} onClick={() => void moverItem(indice, -1)} aria-label={`Mover ${item.descricao} para cima`} title={`Mover ${item.descricao} para cima`} className="flex min-h-touch min-w-touch items-center justify-center rounded-control border border-foreground/20 px-gutter disabled:opacity-60"><svg aria-hidden="true" viewBox="0 0 24 24" className="size-5 fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6" /></svg></button><button type="button" disabled={indice === listaItens.length - 1 || operacaoItem !== null} onClick={() => void moverItem(indice, 1)} aria-label={`Mover ${item.descricao} para baixo`} title={`Mover ${item.descricao} para baixo`} className="flex min-h-touch min-w-touch items-center justify-center rounded-control border border-foreground/20 px-gutter disabled:opacity-60"><svg aria-hidden="true" viewBox="0 0 24 24" className="size-5 fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg></button></div>}</li>)}</ul>}</section></>}
   </section>
 }

@@ -52,7 +52,7 @@ export function AppRouter() {
 
         <Route element={<TransactionalShell />}>
           <Route
-            path="/compras/:compraId/andamento"
+            path="/listas/:listaId/compra"
             element={<CompraAndamentoPage />}
           />
           <Route

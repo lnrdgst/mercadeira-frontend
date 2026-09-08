@@ -3,9 +3,11 @@ import { Link, useParams } from 'react-router'
 import type { ApiRequestError } from '../../../shared/api/apiClient'
 import { useSession } from '../../auth/session/sessionContext'
 import { useFamilyContext } from '../../family/session/familyContext'
-import { categoriaCompraLabels, unidadeMedidaLabels } from '../../shopping-lists/types/shoppingList'
-import { buscarCompra } from '../api/shoppingApi'
-import type { CompraAtivaResponse } from '../types/shopping'
+import { categoriaCompraLabels } from '../../shopping-lists/types/shoppingList'
+import { adicionarItemCompra, buscarCompra, colocarItemNoCarrinho } from '../api/shoppingApi'
+import { AdicionarItemCompraDialog } from '../components/AdicionarItemCompraDialog'
+import { ItemCompraCard } from '../components/ItemCompraCard'
+import type { AdicionarItemCompraRequest, CompraAtivaResponse, ItemCompraResponse } from '../types/shopping'
 
 export function CompraAndamentoPage() {
   const { listaId } = useParams()
@@ -36,6 +38,27 @@ export function CompraAndamentoPage() {
   const compra = !carregando ? resultado?.compra : undefined
   const erro = !carregando ? resultado?.erro : undefined
 
+  function atualizarItem(item: ItemCompraResponse, adicionar = false) {
+    setResultado((atual) => {
+      if (atual?.chave !== chave || !atual.compra || atual.compra.id !== compra?.id) return atual
+      const itens = atual.compra.itens
+      const existe = itens.some((existente) => existente.id === item.id)
+      return { ...atual, compra: { ...atual.compra, itens: adicionar && !existe
+        ? [...itens, item]
+        : itens.map((existente) => existente.id === item.id ? item : existente) } }
+    })
+  }
+
+  async function colocarNoCarrinho(itemId: string) {
+    if (!token || !familiaId || !listaId || !compra?.contextoUsuario.participanteCompra) throw new Error('Não foi possível confirmar sua participação na compra.')
+    atualizarItem(await colocarItemNoCarrinho(token, familiaId, listaId, itemId))
+  }
+
+  async function adicionarItem(data: AdicionarItemCompraRequest) {
+    if (!token || !familiaId || !listaId || !compra?.contextoUsuario.participanteCompra) throw new Error('Não foi possível confirmar sua participação na compra.')
+    atualizarItem(await adicionarItemCompra(token, familiaId, listaId, data), true)
+  }
+
   return <section className="mx-auto max-w-3xl space-y-page">
     <Link to="/listas" className="inline-flex min-h-touch items-center font-semibold text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">Voltar para listas</Link>
     {carregando && <p role="status" className="rounded-card bg-surface p-page text-foreground-muted shadow-soft">Carregando compra...</p>}
@@ -55,18 +78,11 @@ export function CompraAndamentoPage() {
       </header>
       <p className="rounded-card bg-primary/5 p-gutter text-body-md text-foreground-muted">{compra.contextoUsuario.participanteCompra ? 'Você participa desta compra.' : 'Você pode acompanhar esta compra, mas não participa dela.'}</p>
       <section className="space-y-gutter" aria-labelledby="compra-itens">
+        {compra.contextoUsuario.participanteCompra && <AdicionarItemCompraDialog key={chave} onAdicionar={adicionarItem} />}
         <div className="flex items-center justify-between gap-gutter"><h2 id="compra-itens" className="text-headline-md font-semibold">Itens da compra</h2><span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md">{compra.itens.length} {compra.itens.length === 1 ? 'item' : 'itens'}</span></div>
         {compra.itens.length === 0 && <p className="text-foreground-muted">Esta compra não possui itens.</p>}
         <ul className="space-y-gutter">
-          {[...compra.itens].sort((a, b) => a.ordemExibicao - b.ordemExibicao).map((item) => <li key={item.id} className="flex flex-wrap items-start justify-between gap-gutter rounded-card border border-foreground/10 bg-surface p-page shadow-soft">
-            <div className="min-w-0 flex-1 space-y-1 break-words">
-              <h3 className="text-body-lg font-semibold">{item.descricao}</h3>
-              {(item.quantidade !== null || item.unidadeMedida) && <p className="text-body-md text-foreground-muted">{item.quantidade?.toLocaleString('pt-BR')}{item.unidadeMedida && ` ${unidadeMedidaLabels[item.unidadeMedida]}`}</p>}
-              {item.marca && <p className="text-body-md text-foreground-muted">{item.marca}</p>}
-              {item.observacoes && <p className="whitespace-pre-wrap text-label-lg text-foreground-muted">{item.observacoes}</p>}
-            </div>
-            <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md font-semibold text-foreground-muted">{item.status === 'PENDENTE' && 'Pendente'}</span>
-          </li>)}
+          {[...compra.itens].sort((a, b) => a.ordemExibicao - b.ordemExibicao).map((item) => <ItemCompraCard key={`${chave}:${item.id}`} item={item} participante={compra.contextoUsuario.participanteCompra} onColocar={colocarNoCarrinho} />)}
         </ul>
       </section>
       <section className="space-y-gutter" aria-labelledby="compra-participantes">

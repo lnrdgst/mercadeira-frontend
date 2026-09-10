@@ -4,10 +4,10 @@ import type { ApiRequestError } from '../../../shared/api/apiClient'
 import { useSession } from '../../auth/session/sessionContext'
 import { useFamilyContext } from '../../family/session/familyContext'
 import { categoriaCompraLabels } from '../../shopping-lists/types/shoppingList'
-import { adicionarItemCompra, buscarCompra, colocarItemNoCarrinho } from '../api/shoppingApi'
+import { adicionarItemCompra, buscarCompra, colocarItemNoCarrinho, removerItemCompra } from '../api/shoppingApi'
 import { AdicionarItemCompraDialog } from '../components/AdicionarItemCompraDialog'
 import { ItemCompraCard } from '../components/ItemCompraCard'
-import type { AdicionarItemCompraRequest, CompraAtivaResponse, ItemCompraResponse } from '../types/shopping'
+import type { AcaoRemocaoItemCompra, AdicionarItemCompraRequest, CompraAtivaResponse, ItemCompraResponse } from '../types/shopping'
 
 export function CompraAndamentoPage() {
   const { listaId } = useParams()
@@ -16,31 +16,31 @@ export function CompraAndamentoPage() {
   const familiaId = familiaSelecionada?.id
   const token = auth?.token
   const [tentativa, setTentativa] = useState(0)
-  const [resultado, setResultado] = useState<{ chave: string; compra?: CompraAtivaResponse; erro?: string } | null>(null)
+  const [resultado, setResultado] = useState<{ chave: string; token: string; compra?: CompraAtivaResponse; erro?: string } | null>(null)
   const chave = `${familiaId}:${listaId}:${tentativa}`
 
   useEffect(() => {
     if (!token || !familiaId || !listaId) return
     let ativo = true
     void buscarCompra(token, familiaId, listaId).then((compra) => {
-      if (ativo) setResultado({ chave, compra })
+      if (ativo) setResultado({ chave, token, compra })
     }).catch((error: ApiRequestError) => {
       if (!ativo) return
       if (error.status === 401) { logout(); return }
-      setResultado({ chave, erro: error.status === 404
+      setResultado({ chave, token, erro: error.status === 404
         ? 'Esta compra ainda não está disponível.'
         : error.message || 'Não foi possível carregar a compra.' })
     })
     return () => { ativo = false }
   }, [token, familiaId, listaId, chave, logout])
 
-  const carregando = resultado?.chave !== chave
+  const carregando = resultado?.chave !== chave || resultado?.token !== token
   const compra = !carregando ? resultado?.compra : undefined
   const erro = !carregando ? resultado?.erro : undefined
 
   function atualizarItem(item: ItemCompraResponse, adicionar = false) {
     setResultado((atual) => {
-      if (atual?.chave !== chave || !atual.compra || atual.compra.id !== compra?.id) return atual
+      if (atual?.chave !== chave || atual.token !== token || !atual.compra || atual.compra.id !== compra?.id) return atual
       const itens = atual.compra.itens
       const existe = itens.some((existente) => existente.id === item.id)
       return { ...atual, compra: { ...atual.compra, itens: adicionar && !existe
@@ -57,6 +57,19 @@ export function CompraAndamentoPage() {
   async function adicionarItem(data: AdicionarItemCompraRequest) {
     if (!token || !familiaId || !listaId || !compra?.contextoUsuario.participanteCompra) throw new Error('Não foi possível confirmar sua participação na compra.')
     atualizarItem(await adicionarItemCompra(token, familiaId, listaId, data), true)
+  }
+
+  async function reconciliarItem(itemId: string) {
+    if (!token || !familiaId || !listaId) throw new Error('Contexto da compra indisponível.')
+    const atualizada = await buscarCompra(token, familiaId, listaId)
+    const item = atualizada.itens.find((existente) => existente.id === itemId)
+    if (!item) throw new Error('Este item não está mais disponível nesta compra.')
+    atualizarItem(item)
+  }
+
+  async function removerItem(itemId: string, acao: AcaoRemocaoItemCompra) {
+    if (!token || !familiaId || !listaId) throw new Error('Contexto da compra indisponível.')
+    atualizarItem(await removerItemCompra(token, familiaId, listaId, itemId, acao))
   }
 
   return <section className="mx-auto max-w-3xl space-y-page">
@@ -82,7 +95,7 @@ export function CompraAndamentoPage() {
         <div className="flex items-center justify-between gap-gutter"><h2 id="compra-itens" className="text-headline-md font-semibold">Itens da compra</h2><span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md">{compra.itens.length} {compra.itens.length === 1 ? 'item' : 'itens'}</span></div>
         {compra.itens.length === 0 && <p className="text-foreground-muted">Esta compra não possui itens.</p>}
         <ul className="space-y-gutter">
-          {[...compra.itens].sort((a, b) => a.ordemExibicao - b.ordemExibicao).map((item) => <ItemCompraCard key={`${chave}:${item.id}`} item={item} participante={compra.contextoUsuario.participanteCompra} onColocar={colocarNoCarrinho} />)}
+          {[...compra.itens].sort((a, b) => a.ordemExibicao - b.ordemExibicao).map((item) => <ItemCompraCard key={`${chave}:${item.id}`} item={item} participante={compra.contextoUsuario.participanteCompra} onColocar={colocarNoCarrinho} onRemover={removerItem} onReconciliar={reconciliarItem} />)}
         </ul>
       </section>
       <section className="space-y-gutter" aria-labelledby="compra-participantes">

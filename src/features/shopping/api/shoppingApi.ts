@@ -1,5 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import type { AdicionarItemCompraRequest, CompraAtivaResponse, ItemCompraResponse } from '../types/shopping'
+import type { AcaoRemocaoItemCompra, AdicionarItemCompraRequest, CompraAtivaResponse, ItemCompraResponse } from '../types/shopping'
 
 async function requisitarCompra(token: string, familiaId: string, listaId: string, method: 'GET' | 'POST') {
   const response = await apiRequest<CompraAtivaResponse>(
@@ -16,6 +16,15 @@ export function iniciarCompra(token: string, familiaId: string, listaId: string)
 
 export function buscarCompra(token: string, familiaId: string, listaId: string) {
   return requisitarCompra(token, familiaId, listaId, 'GET')
+}
+
+export async function removerItemCompra(token: string, familiaId: string, listaId: string, itemCompraId: string, acao: AcaoRemocaoItemCompra) {
+  const response = await apiRequest<ItemCompraResponse>(
+    `/familias/${familiaId}/listas/${listaId}/compra/itens/${itemCompraId}/${acao}`,
+    { token, method: 'POST' },
+  )
+  if (!response.data) throw new Error('Não foi possível recuperar o item atualizado.')
+  return response.data
 }
 
 export async function colocarItemNoCarrinho(token: string, familiaId: string, listaId: string, itemCompraId: string) {

@@ -13,12 +13,29 @@ export interface ContextoUsuarioCompraResponse {
   participanteCompra: boolean
 }
 
-export interface AutorItemCompraResponse {
+export interface ReferenciaParticipanteCompra {
   participanteCompraId: string
   membroFamiliaId: string
   usuarioId: string
   nome: string
 }
+
+export type AutorItemCompraResponse = ReferenciaParticipanteCompra
+
+export interface AcoesItemCompraResponse {
+  podeSolicitarRemocao: boolean
+  podeDecidirRemocao: boolean
+}
+
+export interface RemocaoItemCompraResponse {
+  solicitadaPor: ReferenciaParticipanteCompra
+  solicitadaEm: string
+  decisao: 'APROVADA' | 'REJEITADA' | null
+  decididaPor: ReferenciaParticipanteCompra | null
+  decididaEm: string | null
+}
+
+export type AcaoRemocaoItemCompra = 'solicitar-remocao' | 'aprovar-remocao' | 'rejeitar-remocao'
 
 export interface AdicionarItemCompraRequest {
   descricao: string
@@ -38,7 +55,9 @@ export interface ItemCompraResponse {
   marca: string | null
   observacoes: string | null
   ordemExibicao: number
-  status: 'PENDENTE' | 'NO_CARRINHO'
+  status: 'PENDENTE' | 'NO_CARRINHO' | 'REMOCAO_SOLICITADA' | 'REMOVIDO'
+  remocao: RemocaoItemCompraResponse | null
+  acoes: AcoesItemCompraResponse
   adicionadoPor: AutorItemCompraResponse | null
   adicionadoEm: string | null
   colocadoNoCarrinhoPor: AutorItemCompraResponse | null

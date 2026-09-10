@@ -617,21 +617,52 @@ Adicionar item **não é idempotente**: dois POSTs válidos criam dois itens. O 
 
 Após colocar no carrinho, o response substitui o item local. Após adicionar, o response é incluído na coleção local. Atualizações funcionais preservam respostas concorrentes de itens diferentes. Status, autores e timestamps vêm do backend; o GET continua recuperando todos esses dados após F5.
 
-### Remoção controlada de ItemCompra — Compra 2E
+### Estados e remoção controlada de ItemCompra
 
-Os três POSTs abaixo não enviam body; o executor vem do Bearer JWT:
+Os estados suportados são `PENDENTE`, `NO_CARRINHO`, `REMOCAO_SOLICITADA` e `REMOVIDO`. O fluxo de solicitação e decisão é:
+
+```text
+PENDENTE → NO_CARRINHO → REMOCAO_SOLICITADA
+                          ├── aprovada → REMOVIDO
+                          └── rejeitada → NO_CARRINHO
+```
+
+Os três endpoints de remoção usam POST sem body; o ator vem exclusivamente do Bearer JWT:
 
 - `/api/familias/{familiaId}/listas/{listaId}/compra/itens/{itemCompraId}/solicitar-remocao`
 - `/api/familias/{familiaId}/listas/{listaId}/compra/itens/{itemCompraId}/aprovar-remocao`
 - `/api/familias/{familiaId}/listas/{listaId}/compra/itens/{itemCompraId}/rejeitar-remocao`
 
-“Solicitar remoção” aparece somente com `podeSolicitarRemocao=true`. “Aprovar remoção” e “Rejeitar remoção” aparecem somente com `podeDecidirRemocao=true`. O frontend não deduz responsabilidade, participação ou permissão pelos autores ou papéis familiares.
+Cada ItemCompra contém `acoes`, sempre presente, com as capabilities que são a fonte de verdade para a UI:
 
-Cada resposta substitui o ItemCompra completo pelo mesmo `id`, sem GET em sucesso. Autoaprovação pode retornar diretamente `REMOVIDO`. Esse estado permanece na coleção e na tela, com badge e descrição atenuada. `REMOCAO_SOLICITADA` recebe destaque e autoria dentro do card. Uma rejeição preserva o ciclo em `remocao`, mesmo em `NO_CARRINHO`, e permite nova solicitação se a capability retornada autorizar.
+- `item.acoes.podeSolicitarRemocao`: quando `true`, mostra “Solicitar remoção”.
+- `item.acoes.podeDecidirRemocao`: quando `true`, mostra “Aprovar remoção” e “Rejeitar remoção”.
 
-Solicitante, decisor e timestamps são snapshots do ciclo atual/mais recente. Não há consulta de nomes atuais nem histórico local de ciclos anteriores. Ações são diretas e explícitas, com loading e proteção síncrona compartilhados por card.
+O backend aplica as regras de domínio. O frontend não reconstrói autorização pelo papel `ADMINISTRADOR`, criador da lista, iniciador da Compra, solicitante, autor da colocação no carrinho ou identidade do usuário atual. Observadores continuam vendo estado e auditoria, com ações indisponíveis conforme as capabilities retornadas.
 
-Em HTTP 409, o card mostra feedback e consulta a Compra por GET para reconciliar aquele item. Os demais cards permanecem interativos e suas respostas locais são preservadas. Se o GET falhar, o card oferece “Atualizar item” e suspende novas mutações até recuperar o estado. HTTP 401 utiliza logout; demais erros preservam a mensagem do backend. Nenhum fluxo compara texto de mensagem.
+**Autoaprovação:** se o participante que colocou o item no carrinho solicitar sua remoção, o backend pode retornar diretamente `status = REMOVIDO` e `remocao.decisao = APROVADA`. O frontend usa o `ItemCompraResponse` recebido, sem presumir que solicitar sempre resulte em `REMOCAO_SOLICITADA` e sem apresentar etapa intermediária de aprovação.
+
+**Auditoria:** o campo `remocao` é `null` quando não há ciclo registrado. Quando preenchido, representa o ciclo atual/mais recente:
+
+| Campo | Informação |
+| --- | --- |
+| `solicitadaPor` | Referência histórica do participante solicitante |
+| `solicitadaEm` | Timestamp da solicitação |
+| `decisao` | `APROVADA`, `REJEITADA` ou `null` enquanto pendente |
+| `decididaPor` | Referência histórica do decisor ou `null` |
+| `decididaEm` | Timestamp da decisão ou `null` |
+
+As referências contêm `participanteCompraId`, `membroFamiliaId`, `usuarioId` e `nome`, como snapshots históricos da Compra. A UI não busca nomes atuais em outros endpoints. Dentro do card, apresenta informações como “Remoção solicitada por Lionel”, “Remoção aprovada por Leonardo” ou “Remoção rejeitada por Leonardo”, com data/hora. `REMOCAO_SOLICITADA` recebe destaque visual. Não há timeline global nem histórico local de ciclos anteriores.
+
+**Rejeição e novo ciclo:** o item volta a `NO_CARRINHO` com `remocao.decisao = REJEITADA`, preservando os dados do ciclo. Portanto, `NO_CARRINHO` não significa que nunca houve solicitação de remoção. Uma nova solicitação fica disponível conforme `item.acoes.podeSolicitarRemocao`; o response seguinte substitui o ciclo anterior.
+
+**Removido:** `REMOVIDO` é um estado de domínio, sem exclusão física. O item continua em `CompraAtivaResponse.itens[]`, recuperável após F5, com autoria e timestamps preservados. A UI o mantém visível com badge “Removido” e descrição atenuada.
+
+Após POST 200, o `ItemCompraResponse` completo substitui localmente o item pelo mesmo `id`, sem GET apenas para refletir o sucesso. Status, autoria, timestamps, auditoria e capabilities não são montados manualmente. Ações são diretas e explícitas, com loading e proteção síncrona compartilhados por card.
+
+Em HTTP 409, o card mostra feedback e consulta a Compra por GET para reconciliar aquele item com o estado vencedor do servidor, sem inventar resultado local. Os demais cards permanecem interativos e suas respostas locais são preservadas. Se o GET falhar, o card oferece “Atualizar item” e suspende novas mutações até recuperar o estado. HTTP 401 utiliza logout; demais erros preservam a mensagem do backend. Nenhum fluxo compara texto de mensagem.
+
+O backend suporta replays autorizados de solicitação já pendente, aprovação já efetivada e rejeição já efetivada. A UI normal continua exibindo ações somente conforme `item.acoes`, sem botões especiais de replay.
 
 O GET/F5 recupera todos os estados, auditoria e capabilities. As capabilities ficam somente em memória e dados de uma sessão anterior não são reaproveitados ao mudar o token.
 
@@ -639,7 +670,7 @@ Relatório e roteiro de validação: [Marco Compra 2E](docs/marco-compra-2e.md).
 
 ### Limites atuais e realtime
 
-Os estados funcionais de ItemCompra são `PENDENTE`, `NO_CARRINHO`, `REMOCAO_SOLICITADA` e `REMOVIDO`. Desfazer remoção e finalização continuam fora do escopo implementado.
+Desfazer remoção aprovada e finalização da Compra continuam fora do escopo implementado.
 
 Autoria e timestamps permitem futuramente apresentar eventos como “Leonardo adicionou Arroz” ou “Camila colocou Leite no carrinho”. Hoje são exibidos no próprio item a partir do estado REST. Não há WebSocket, STOMP, polling, notificações em tempo real ou feed global de atividade.
 
@@ -878,8 +909,10 @@ O frontend utiliza preferencialmente mensagem e não exibe stack traces.
 - atualização local pelas respostas reais das mutações
 - inclusão de item durante Compra com proteção contra duplo envio
 - autoria de inclusão e de colocação no carrinho, com timestamps históricos
-- remoção controlada por capabilities do item, com solicitação, autoaprovação, aprovação e rejeição
-- auditoria do ciclo de remoção e reconciliação do item por GET em conflitos 409
+- remoção controlada de ItemCompra, com capabilities por item, solicitação, aprovação, rejeição e autoaprovação
+- auditoria da remoção, com autoria e timestamps do ciclo atual/mais recente
+- item REMOVIDO preservado na coleção e na tela, inclusive após F5
+- reconciliação do item por GET da Compra em conflitos 409
 
 ### Ainda pendente:
 
@@ -896,7 +929,8 @@ O frontend utiliza preferencialmente mensagem e não exibe stack traces.
 - edição/desativação da família
 
 - solicitação de participação em ListaCompra
-- entrada tardia em Compra
+- entrada/saída tardia em Compra
+- exibir na Compra ativa quem criou a ListaCompra original
 - desfazer remoção aprovada de ItemCompra
 - editar ItemCompra durante Compra
 - reordenar ItemCompra
@@ -904,7 +938,8 @@ O frontend utiliza preferencialmente mensagem e não exibe stack traces.
 
 - revisão/finalização
 
-- histórico real
+- histórico agregado de compras
+- histórico de múltiplos ciclos de remoção
 
 - WebSocket/STOMP
 
@@ -956,6 +991,8 @@ Não trate a família selecionada como prova de autorização.
 
 Não reconstrua no frontend capabilities que já são fornecidas pelo backend.
 
+Para autorização das ações de remoção, use sempre `item.acoes`; não deduza permissão por papel, autoria ou identidade.
+
 Não envie usuarioId, executorId ou papel como prova de autorização.
 
 Use familiaId explicitamente quando o contrato REST exigir contexto familiar.
@@ -978,4 +1015,8 @@ Não converta ItemLista em ItemCompra no frontend.
 
 Não crie endpoints de transição de status além dos contratos disponíveis.
 
-Use respostas do backend como fonte da mutação confirmada e GET da Compra como fonte de recuperação.
+Não exclua itens `REMOVIDO` da coleção local.
+
+Não infira ausência de histórico de remoção apenas pelo status `NO_CARRINHO`.
+
+Use o `ItemCompraResponse` completo como fonte da mutação confirmada e o GET da Compra como fonte de recuperação e reconciliação.

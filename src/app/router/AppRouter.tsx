@@ -56,7 +56,7 @@ export function AppRouter() {
             element={<CompraAndamentoPage />}
           />
           <Route
-            path="/compras/:compraId/revisao"
+            path="/listas/:listaId/compra/revisao"
             element={<CompraRevisaoPage />}
           />
         </Route>

@@ -22,13 +22,21 @@ function DataAutoria({ valor }: { valor: string | null }) {
   return valor ? <> · <time dateTime={valor}>{new Date(valor).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</time></> : null
 }
 
-export function ItemCompraCard({ item, participante, onColocar, onRemover, onReconciliar }: {
-  item: ItemCompraResponse
+type ItemCompraCardProps = { item: ItemCompraResponse } & ({
+  somenteLeitura: true
+  participante?: never
+  onColocar?: never
+  onRemover?: never
+  onReconciliar?: never
+} | {
+  somenteLeitura?: false
   participante: boolean
   onColocar: (itemId: string) => Promise<void>
   onRemover: (itemId: string, acao: AcaoRemocaoItemCompra) => Promise<void>
   onReconciliar: (itemId: string) => Promise<void>
-}) {
+})
+
+export function ItemCompraCard({ item, somenteLeitura, participante, onColocar, onRemover, onReconciliar }: ItemCompraCardProps) {
   const { logout } = useSession()
   const enviandoRef = useRef(false)
   const [enviando, setEnviando] = useState<keyof typeof acaoLabels | 'atualizar' | null>(null)
@@ -38,12 +46,14 @@ export function ItemCompraCard({ item, participante, onColocar, onRemover, onRec
   const remocaoPendente = item.status === 'REMOCAO_SOLICITADA'
   const removido = item.status === 'REMOVIDO'
   const acoes: (keyof typeof acaoLabels)[] = []
-  if (participante && item.status === 'PENDENTE') acoes.push('colocar')
-  if (item.acoes.podeSolicitarRemocao === true) acoes.push('solicitar-remocao')
-  if (item.acoes.podeDecidirRemocao === true) acoes.push('aprovar-remocao', 'rejeitar-remocao')
+  if (!somenteLeitura) {
+    if (participante && item.status === 'PENDENTE') acoes.push('colocar')
+    if (item.acoes.podeSolicitarRemocao === true) acoes.push('solicitar-remocao')
+    if (item.acoes.podeDecidirRemocao === true) acoes.push('aprovar-remocao', 'rejeitar-remocao')
+  }
 
   async function executar(acao: keyof typeof acaoLabels | 'atualizar') {
-    if (enviandoRef.current || (acao !== 'atualizar' && (precisaAtualizar || !acoes.includes(acao)))) return
+    if (somenteLeitura || enviandoRef.current || (acao !== 'atualizar' && (precisaAtualizar || !acoes.includes(acao)))) return
     enviandoRef.current = true
     setEnviando(acao)
     setErro(null)

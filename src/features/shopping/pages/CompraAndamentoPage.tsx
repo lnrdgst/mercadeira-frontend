@@ -7,7 +7,8 @@ import { categoriaCompraLabels } from '../../shopping-lists/types/shoppingList'
 import { adicionarItemCompra, buscarCompra, colocarItemNoCarrinho, removerItemCompra } from '../api/shoppingApi'
 import { AdicionarItemCompraDialog } from '../components/AdicionarItemCompraDialog'
 import { ItemCompraCard } from '../components/ItemCompraCard'
-import type { AcaoRemocaoItemCompra, AdicionarItemCompraRequest, CompraAtivaResponse, ItemCompraResponse } from '../types/shopping'
+import { CompraResumo } from '../components/CompraResumo'
+import type { AcaoRemocaoItemCompra, AdicionarItemCompraRequest, CompraResponse, ItemCompraResponse } from '../types/shopping'
 
 export function CompraAndamentoPage() {
   const { listaId } = useParams()
@@ -16,7 +17,7 @@ export function CompraAndamentoPage() {
   const familiaId = familiaSelecionada?.id
   const token = auth?.token
   const [tentativa, setTentativa] = useState(0)
-  const [resultado, setResultado] = useState<{ chave: string; token: string; compra?: CompraAtivaResponse; erro?: string } | null>(null)
+  const [resultado, setResultado] = useState<{ chave: string; token: string; compra?: CompraResponse; erro?: string } | null>(null)
   const chave = `${familiaId}:${listaId}:${tentativa}`
 
   useEffect(() => {
@@ -40,7 +41,7 @@ export function CompraAndamentoPage() {
 
   function atualizarItem(item: ItemCompraResponse, adicionar = false) {
     setResultado((atual) => {
-      if (atual?.chave !== chave || atual.token !== token || !atual.compra || atual.compra.id !== compra?.id) return atual
+      if (atual?.chave !== chave || atual.token !== token || !atual.compra || atual.compra.status === 'FINALIZADA' || atual.compra.id !== compra?.id) return atual
       const itens = atual.compra.itens
       const existe = itens.some((existente) => existente.id === item.id)
       return { ...atual, compra: { ...atual.compra, itens: adicionar && !existe
@@ -62,6 +63,10 @@ export function CompraAndamentoPage() {
   async function reconciliarItem(itemId: string) {
     if (!token || !familiaId || !listaId) throw new Error('Contexto da compra indisponível.')
     const atualizada = await buscarCompra(token, familiaId, listaId)
+    if (atualizada.status === 'FINALIZADA') {
+      setResultado((atual) => atual?.chave === chave && atual.token === token && atual.compra?.id === atualizada.id ? { ...atual, compra: atualizada } : atual)
+      return
+    }
     const item = atualizada.itens.find((existente) => existente.id === itemId)
     if (!item) throw new Error('Este item não está mais disponível nesta compra.')
     atualizarItem(item)
@@ -71,6 +76,13 @@ export function CompraAndamentoPage() {
     if (!token || !familiaId || !listaId) throw new Error('Contexto da compra indisponível.')
     atualizarItem(await removerItemCompra(token, familiaId, listaId, itemId, acao))
   }
+
+  if (compra?.status === 'FINALIZADA') return <section className="mx-auto max-w-3xl space-y-page">
+    <Link to="/listas" className="inline-flex min-h-touch items-center font-semibold text-primary">Voltar para listas</Link>
+    <h1 className="break-words text-headline-lg font-bold">{compra.nomeLista}</h1>
+    <CompraResumo compra={compra} />
+    <Link to={`/listas/${listaId}/compra/revisao`} className="inline-flex min-h-touch items-center font-semibold text-primary">Ver resumo</Link>
+  </section>
 
   return <section className="mx-auto max-w-3xl space-y-page">
     <Link to="/listas" className="inline-flex min-h-touch items-center font-semibold text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">Voltar para listas</Link>
@@ -90,6 +102,7 @@ export function CompraAndamentoPage() {
         <p className="text-body-md text-foreground-muted">Iniciada em <time dateTime={compra.iniciadaEm}>{new Date(compra.iniciadaEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</time></p>
       </header>
       <p className="rounded-card bg-primary/5 p-gutter text-body-md text-foreground-muted">{compra.contextoUsuario.participanteCompra ? 'Você participa desta compra.' : 'Você pode acompanhar esta compra, mas não participa dela.'}</p>
+      <Link to={`/listas/${listaId}/compra/revisao`} className="inline-flex min-h-touch items-center justify-center rounded-control bg-primary px-page font-semibold text-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">Revisar compra</Link>
       <section className="space-y-gutter" aria-labelledby="compra-itens">
         {compra.contextoUsuario.participanteCompra && <AdicionarItemCompraDialog key={chave} onAdicionar={adicionarItem} />}
         <div className="flex items-center justify-between gap-gutter"><h2 id="compra-itens" className="text-headline-md font-semibold">Itens da compra</h2><span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md">{compra.itens.length} {compra.itens.length === 1 ? 'item' : 'itens'}</span></div>

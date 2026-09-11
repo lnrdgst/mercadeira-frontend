@@ -11,6 +11,7 @@ export interface ParticipanteCompraResponse {
 
 export interface ContextoUsuarioCompraResponse {
   participanteCompra: boolean
+  podeFinalizarCompra: boolean
 }
 
 export interface ReferenciaParticipanteCompra {
@@ -64,14 +65,16 @@ export interface ItemCompraResponse {
   colocadoNoCarrinhoEm: string | null
 }
 
-export interface CompraAtivaResponse {
+export interface CompraResponse {
   id: string
   listaId: string
   nomeLista: string
   categoria: CategoriaCompra
   estabelecimento: string | null
-  status: 'EM_ANDAMENTO'
+  status: 'EM_ANDAMENTO' | 'FINALIZADA'
   iniciadaEm: string
+  finalizadaPor: ReferenciaParticipanteCompra | null
+  finalizadaEm: string | null
   participantes: ParticipanteCompraResponse[]
   itens: ItemCompraResponse[]
   contextoUsuario: ContextoUsuarioCompraResponse

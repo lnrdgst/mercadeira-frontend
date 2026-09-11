@@ -1,8 +1,8 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import type { AcaoRemocaoItemCompra, AdicionarItemCompraRequest, CompraAtivaResponse, ItemCompraResponse } from '../types/shopping'
+import type { AcaoRemocaoItemCompra, AdicionarItemCompraRequest, CompraResponse, ItemCompraResponse } from '../types/shopping'
 
 async function requisitarCompra(token: string, familiaId: string, listaId: string, method: 'GET' | 'POST') {
-  const response = await apiRequest<CompraAtivaResponse>(
+  const response = await apiRequest<CompraResponse>(
     `/familias/${familiaId}/listas/${listaId}/compra`,
     { token, method },
   )
@@ -16,6 +16,15 @@ export function iniciarCompra(token: string, familiaId: string, listaId: string)
 
 export function buscarCompra(token: string, familiaId: string, listaId: string) {
   return requisitarCompra(token, familiaId, listaId, 'GET')
+}
+
+export async function finalizarCompra(token: string, familiaId: string, listaId: string) {
+  const response = await apiRequest<CompraResponse>(
+    `/familias/${familiaId}/listas/${listaId}/compra/finalizar`,
+    { token, method: 'POST' },
+  )
+  if (response.status !== 200 || !response.data) throw new Error('Não foi possível recuperar a compra finalizada. Atualize a compra para conferir o resultado.')
+  return response.data
 }
 
 export async function removerItemCompra(token: string, familiaId: string, listaId: string, itemCompraId: string, acao: AcaoRemocaoItemCompra) {

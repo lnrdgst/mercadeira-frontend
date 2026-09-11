@@ -110,7 +110,7 @@ export function ListasPage() {
           {listasVisiveis.map((lista) => (
             <li key={lista.id}>
               <Link
-                to={lista.status === 'EM_COMPRA' ? `/listas/${lista.id}/compra` : `/listas/${lista.id}`}
+                to={lista.status === 'FINALIZADA' ? `/listas/${lista.id}/compra/revisao` : lista.status === 'EM_COMPRA' ? `/listas/${lista.id}/compra` : `/listas/${lista.id}`}
                 className="block min-h-touch space-y-gutter rounded-card border border-foreground/10 bg-surface p-page shadow-soft transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               >
                 <div className="flex flex-wrap gap-2">
@@ -129,7 +129,7 @@ export function ListasPage() {
                     </p>
                   )}
                 </div>
-                <p className="text-label-lg font-semibold text-primary">{lista.status === 'EM_COMPRA' ? 'Ver compra' : 'Abrir lista'}</p>
+                <p className="text-label-lg font-semibold text-primary">{lista.status === 'FINALIZADA' ? 'Ver resumo' : lista.status === 'EM_COMPRA' ? 'Ver compra' : 'Abrir lista'}</p>
               </Link>
             </li>
           ))}

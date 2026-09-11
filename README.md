@@ -110,7 +110,7 @@ As rotas transacionais utilizam `TransactionalShell`, separado da navegação gl
 | Rota | Área |
 | --- | --- |
 | `/listas/:listaId/compra` | Compra em andamento, com integração REST real |
-| `/compras/:compraId/revisao` | Estrutura de revisão; fluxo ainda pendente |
+| `/listas/:listaId/compra/revisao` | Revisão e resumo da Compra, com finalização REST |
 
 A Compra em andamento é recuperada usando o `familiaId` da família selecionada e o `listaId` da rota. Não depende de `compraId` na URL. O identificador real da Compra continua disponível na resposta do backend.
 
@@ -372,7 +372,7 @@ A tela /listas apresenta:
 
 Estados de loading, vazio e erro são tratados separadamente.
 
-Cards `EM_PREPARACAO` oferecem Abrir lista e levam a `/listas/{id}`. Cards `EM_COMPRA` oferecem Ver compra e levam a `/listas/{id}/compra`.
+Cards `EM_PREPARACAO` oferecem Abrir lista e levam a `/listas/{id}`. Cards `EM_COMPRA` oferecem Ver compra e levam a `/listas/{id}/compra`. Cards `FINALIZADA` oferecem Ver resumo e levam a `/listas/{id}/compra/revisao`.
 
 ### Criar lista
 
@@ -531,7 +531,7 @@ FINALIZADA
 CANCELADA
 ```
 
-O frontend possui fluxos funcionais para `EM_PREPARACAO` e `EM_COMPRA`. `FINALIZADA` e `CANCELADA` não recebem novos comportamentos de navegação ou mutação.
+O frontend possui fluxos funcionais para `EM_PREPARACAO`, `EM_COMPRA` e consulta do resumo de `FINALIZADA`. `CANCELADA` não recebe comportamento operacional próprio.
 
 Após iniciar a Compra, a ListaCompra passa de `EM_PREPARACAO` para `EM_COMPRA`. A preparação deixa de oferecer mutações de itens e participantes e mostra Ver compra em andamento. As capabilities continuam sendo fornecidas e revalidadas pelo backend.
 
@@ -547,7 +547,7 @@ Sem body. Iniciar compra aparece somente quando a ListaCompra está `EM_PREPARAC
 
 Um dialog confirma o registro dos participantes e itens atuais e a saída do modo de preparação. Cancelar não inicia a Compra. Durante o POST, o botão fica desabilitado e uma proteção síncrona impede chamadas simultâneas.
 
-O backend retorna `CompraAtivaResponse` tanto em `201 Created` quanto em `200 OK` no replay idempotente. Ambos são sucesso e levam a `/listas/:listaId/compra`. Não há chave de idempotência gerada pelo frontend.
+O backend retorna `CompraResponse` tanto em `201 Created` quanto em `200 OK` no replay idempotente. Ambos são sucesso e levam a `/listas/:listaId/compra`. Não há chave de idempotência gerada pelo frontend.
 
 ### Recuperação e snapshots
 
@@ -656,7 +656,7 @@ As referências contêm `participanteCompraId`, `membroFamiliaId`, `usuarioId` e
 
 **Rejeição e novo ciclo:** o item volta a `NO_CARRINHO` com `remocao.decisao = REJEITADA`, preservando os dados do ciclo. Portanto, `NO_CARRINHO` não significa que nunca houve solicitação de remoção. Uma nova solicitação fica disponível conforme `item.acoes.podeSolicitarRemocao`; o response seguinte substitui o ciclo anterior.
 
-**Removido:** `REMOVIDO` é um estado de domínio, sem exclusão física. O item continua em `CompraAtivaResponse.itens[]`, recuperável após F5, com autoria e timestamps preservados. A UI o mantém visível com badge “Removido” e descrição atenuada.
+**Removido:** `REMOVIDO` é um estado de domínio, sem exclusão física. O item continua em `CompraResponse.itens[]`, recuperável após F5, com autoria e timestamps preservados. A UI o mantém visível com badge “Removido” e descrição atenuada.
 
 Após POST 200, o `ItemCompraResponse` completo substitui localmente o item pelo mesmo `id`, sem GET apenas para refletir o sucesso. Status, autoria, timestamps, auditoria e capabilities não são montados manualmente. Ações são diretas e explícitas, com loading e proteção síncrona compartilhados por card.
 
@@ -668,9 +668,31 @@ O GET/F5 recupera todos os estados, auditoria e capabilities. As capabilities fi
 
 Relatório e roteiro de validação: [Marco Compra 2E](docs/marco-compra-2e.md). Testes locais: `node --test tests/compra-remocao.test.mjs`.
 
+### Revisão e finalização da Compra
+
+“Revisar compra” abre `/listas/:listaId/compra/revisao`, no TransactionalShell. A página consulta a Compra usando a família selecionada e o listaId da rota, inclusive em acesso direto/F5, sem depender de navigation state. A revisão é uma etapa visual; a Compra continua `EM_ANDAMENTO` até a finalização confirmada pelo backend.
+
+O resumo apresenta todos os itens, agrupados em Comprados (`NO_CARRINHO`), Não comprados (`PENDENTE`), Removidos (`REMOVIDO`) e Remoção pendente (`REMOCAO_SOLICITADA`). Não há valores financeiros. Pendentes recebem aviso de que permanecerão registrados como não comprados; não são convertidos nem removidos. Solicitações de remoção pendentes recebem destaque e orientação para voltar à Compra e resolver.
+
+A ação “Finalizar compra” usa exclusivamente `compra.contextoUsuario.podeFinalizarCompra`. Contagens e estados dos itens servem à apresentação; não reconstroem autorização. O backend retorna a capability indisponível quando há remoção aguardando decisão. Pendentes e removidos não bloqueiam a finalização por si só.
+
+Um dialog confirma que a Compra será encerrada, que pendentes permanecerão não comprados e que os itens não poderão mais ser alterados. Cancelar não envia request. Confirmar executa:
+
+`POST /api/familias/{familiaId}/listas/{listaId}/compra/finalizar`
+
+Sem body, com executor exclusivamente do Bearer JWT. Loading e trava síncrona impedem duplo submit. Primeira finalização e replay autorizado retornam `200 OK` com `CompraResponse` completo. O frontend substitui toda a Compra pelo response, sem GET após sucesso e sem montar status, autoria, datas ou capabilities. Replay preserva a primeira autoria e data efetivas, sem UI específica ou repetição automática.
+
+A tela permanece no resumo e apresenta “Compra finalizada”, `finalizadaPor.nome` e `finalizadaEm` em PT-BR. Esses dados são snapshots históricos. `PENDENTE`, `NO_CARRINHO` e `REMOVIDO` permanecem com seus estados e auditoria. O GET recupera a Compra `FINALIZADA` normalmente após F5. A rota `/listas/:listaId/compra` também apresenta o resumo somente leitura se receber esse estado, sem controles de inclusão, carrinho ou remoção.
+
+A revisão não congela os dados. Em 409, há feedback e GET da Compra para substituir a revisão pelo estado vigente. Se a reconciliação falhar, é necessário “Atualizar compra” antes de tentar finalizar novamente. Erros seguem status HTTP; 401 encerra a sessão mesmo sem JSON, e 403/404/409 usam a mensagem do envelope quando disponível.
+
+Ao voltar para `/listas`, a consulta própria recupera a ListaCompra `FINALIZADA`, com ação “Ver resumo”. Não há navegação automática após finalizar.
+
+Relatório e limites da validação: [Marco Compra 3](docs/marco-compra-3.md). Testes locais: `node --test tests/*.test.mjs`.
+
 ### Limites atuais e realtime
 
-Desfazer remoção aprovada e finalização da Compra continuam fora do escopo implementado.
+Desfazer remoção aprovada, reabertura, cancelamento operacional e pagamento continuam fora do escopo implementado.
 
 Autoria e timestamps permitem futuramente apresentar eventos como “Leonardo adicionou Arroz” ou “Camila colocou Leite no carrinho”. Hoje são exibidos no próprio item a partir do estado REST. Não há WebSocket, STOMP, polling, notificações em tempo real ou feed global de atividade.
 
@@ -913,6 +935,10 @@ O frontend utiliza preferencialmente mensagem e não exibe stack traces.
 - auditoria da remoção, com autoria e timestamps do ciclo atual/mais recente
 - item REMOVIDO preservado na coleção e na tela, inclusive após F5
 - reconciliação do item por GET da Compra em conflitos 409
+- revisão por listaId com resumo dos quatro estados de ItemCompra
+- finalização por capability, confirmação e POST sem body, com replay 200
+- Compra FINALIZADA somente leitura, com autoria/data e recuperação por GET/F5
+- reconciliação da revisão por GET em 409 e acesso ao resumo por Minhas Listas
 
 ### Ainda pendente:
 
@@ -934,9 +960,7 @@ O frontend utiliza preferencialmente mensagem e não exibe stack traces.
 - desfazer remoção aprovada de ItemCompra
 - editar ItemCompra durante Compra
 - reordenar ItemCompra
-- finalizar ou reabrir Compra
-
-- revisão/finalização
+- reabrir Compra
 
 - histórico agregado de compras
 - histórico de múltiplos ciclos de remoção

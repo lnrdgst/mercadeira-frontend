@@ -32,7 +32,7 @@ export function IniciarCompraButton({ familiaId, listaId, disabled = false }: { 
   }
 
   return <>
-    <button ref={buttonRef} type="button" disabled={disabled || enviando} onClick={() => { setErro(null); dialogRef.current?.showModal() }} className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60">Iniciar compra</button>
+    <button ref={buttonRef} type="button" disabled={disabled || enviando} onClick={() => { setErro(null); dialogRef.current?.showModal() }} className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:cursor-not-allowed disabled:bg-foreground/5 disabled:text-foreground-muted">Iniciar compra</button>
     <dialog ref={dialogRef} aria-labelledby="iniciar-compra-titulo" aria-describedby="iniciar-compra-descricao" onCancel={(event) => { if (enviandoRef.current) event.preventDefault() }} onClose={() => buttonRef.current?.focus({ preventScroll: true })} className="m-auto max-h-[calc(100svh-2rem)] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-card bg-surface p-page text-foreground shadow-soft backdrop:bg-foreground/40">
       <div className="space-y-page">
         <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-primary/10 text-primary" aria-hidden="true">

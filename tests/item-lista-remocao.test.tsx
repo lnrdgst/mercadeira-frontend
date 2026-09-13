@@ -24,10 +24,12 @@ afterAll(() => {
   }
 })
 
-function preparar(deletar: () => Promise<Response> = async () => new Response(null, { status: 204 }), podeAlterar = true) {
+function preparar(deletar: () => Promise<Response> = async () => new Response(null, { status: 204 }), podeAlterar = true,
+  respostas: { listar?: () => Promise<Response>; iniciar?: () => Promise<Response> } = {}) {
   let removido = false
   const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, options) => {
     const path = String(input)
+    if (path.endsWith('/compra') && options?.method === 'POST' && respostas.iniciar) return respostas.iniciar()
     if (options?.method === 'DELETE') {
       expect(path).toMatch(/\/familias\/familia-a\/listas\/lista-a\/itens\/item-a$/)
       const resposta = await deletar()
@@ -35,6 +37,7 @@ function preparar(deletar: () => Promise<Response> = async () => new Response(nu
       return resposta
     }
     if (path.endsWith('/participantes')) return Response.json([])
+    if (path.endsWith('/itens') && respostas.listar) return respostas.listar()
     if (path.endsWith('/itens')) return Response.json(removido ? [] : [{
       id: 'item-a', descricao: 'Arroz', quantidade: 1, unidadeMedida: 'KG', marca: null, observacoes: null, ordemExibicao: 0,
     }])
@@ -132,6 +135,8 @@ test('sucesso 204 remove o item e leva foco ao título Itens quando o acionador 
   expect(screen.getByRole('heading', { name: 'Itens' })).toHaveFocus()
   expect(screen.getByRole('status')).toHaveTextContent('Item removido.')
   expect(deletes()).toHaveLength(1)
+  expect(screen.getByRole('button', { name: 'Iniciar compra' })).toBeDisabled()
+  expect(screen.getByText('Adicione pelo menos um item para iniciar a compra.')).toBeInTheDocument()
 })
 
 test('erro é anunciado dentro do modal e permite repetir por teclado antes de cancelar', async () => {
@@ -160,4 +165,55 @@ test('consulta sem capability de alteração não oferece remoção nem modal', 
   expect(await screen.findByRole('heading', { name: 'Arroz' })).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Remover' })).not.toBeInTheDocument()
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+})
+
+test('lista vazia desabilita início, explica o motivo e não abre confirmação nem envia POST', async () => {
+  const showModal = vi.spyOn(HTMLDialogElement.prototype, 'showModal')
+  const { user, fetchMock } = preparar(undefined, true, { listar: async () => Response.json([]) })
+  expect(await screen.findByText('Adicione pelo menos um item para iniciar a compra.')).toBeInTheDocument()
+  const iniciar = screen.getByRole('button', { name: 'Iniciar compra' })
+  expect(iniciar).toBeDisabled()
+  await user.click(iniciar)
+  expect(showModal).not.toHaveBeenCalled()
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  expect(fetchMock.mock.calls.some(([, options]) => options?.method === 'POST')).toBe(false)
+})
+
+test('não inicia durante consulta ou erro; após retry com item ativo permite confirmar ou cancelar', async () => {
+  const consulta = deferred<Response>()
+  const listar = vi.fn().mockReturnValueOnce(consulta.promise).mockImplementation(async () => Response.json([
+    { id: 'item-a', descricao: 'Arroz', quantidade: null, unidadeMedida: null, marca: null, observacoes: null, ordemExibicao: 0 },
+  ]))
+  const { user, fetchMock } = preparar(undefined, true, { listar })
+  const iniciar = await screen.findByRole('button', { name: 'Iniciar compra' })
+  expect(iniciar).toBeDisabled()
+  expect(screen.queryByText('Adicione pelo menos um item para iniciar a compra.')).not.toBeInTheDocument()
+  await act(async () => consulta.resolve(new Response(null, { status: 503 })))
+  const tentarNovamente = await screen.findByRole('button', { name: 'Tentar novamente' })
+  expect(iniciar).toBeDisabled()
+  expect(screen.queryByText('Adicione pelo menos um item para iniciar a compra.')).not.toBeInTheDocument()
+  await user.click(tentarNovamente)
+  expect(await screen.findByRole('heading', { name: 'Arroz' })).toBeInTheDocument()
+  expect(iniciar).toBeEnabled()
+  await user.click(iniciar)
+  const dialog = screen.getByRole('dialog', { name: 'Iniciar compra' })
+  expect(within(dialog).getByRole('button', { name: 'Confirmar e iniciar' })).toBeEnabled()
+  await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }))
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  expect(fetchMock.mock.calls.some(([, options]) => options?.method === 'POST')).toBe(false)
+})
+
+test('mudança concorrente após abrir confirmação continua exibindo o erro real do backend', async () => {
+  const mensagem = 'A lista de compra precisa ter ao menos um item ativo para iniciar a compra.'
+  const { user, fetchMock } = preparar(undefined, true, { iniciar: async () => Response.json({
+    timestamp: '2026-09-13T12:00:00Z', status: 409, erro: 'CONFLITO_DE_ESTADO', mensagem, path: '/api/compra',
+  }, { status: 409 }) })
+  await screen.findByRole('heading', { name: 'Arroz' })
+  await user.click(screen.getByRole('button', { name: 'Iniciar compra' }))
+  const dialog = screen.getByRole('dialog', { name: 'Iniciar compra' })
+  await user.click(within(dialog).getByRole('button', { name: 'Confirmar e iniciar' }))
+  expect(await within(dialog).findByRole('alert')).toHaveTextContent(mensagem)
+  expect(within(dialog).getByRole('button', { name: 'Cancelar' })).toBeEnabled()
+  expect(fetchMock.mock.calls.filter(([, options]) => options?.method === 'POST')).toHaveLength(1)
+  expect(screen.getByRole('heading', { name: 'Compras da semana' })).toBeInTheDocument()
 })

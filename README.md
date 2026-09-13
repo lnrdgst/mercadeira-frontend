@@ -549,6 +549,8 @@ A rota `/listas/:listaId/compra` apresenta nome da lista, categoria, estabelecim
 
 Sem body. Iniciar compra aparece somente quando a ListaCompra está `EM_PREPARACAO` e `contextoUsuario.participanteAtivo = true`. Ser `ADMINISTRADOR` não concede essa permissão: administrador não participante não pode iniciar.
 
+O botão fica desabilitado até a consulta dos itens concluir com sucesso e retornar pelo menos um item. Lista vazia apresenta “Adicione pelo menos um item para iniciar a compra.” junto à ação, sem abrir o dialog. O GET de itens e o início da Compra usam no backend a mesma coleção de itens ativos (`removidoEm IS NULL`); não há filtro adicional de quantidade ou descrição no frontend. Remover o último item volta a bloquear o início. A validação backend permanece responsável por alterações concorrentes e seus erros continuam no dialog.
+
 Um dialog confirma o registro dos participantes e itens atuais e a saída do modo de preparação. Cancelar não inicia a Compra. Durante o POST, o botão fica desabilitado e uma proteção síncrona impede chamadas simultâneas.
 
 O backend retorna `CompraResponse` tanto em `201 Created` quanto em `200 OK` no replay idempotente. Ambos são sucesso e levam a `/listas/:listaId/compra`. Não há chave de idempotência gerada pelo frontend.

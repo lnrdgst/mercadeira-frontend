@@ -1,6 +1,6 @@
 # Plano de fechamento da primeira versão
 
-Escopo do piloto reduzido confirmado pelo usuário em 13/09/2026: sem Histórico dedicado na V1. Issue frontend #8 autorizada para execução. Demais entregas abaixo permanecem propostas; este documento não altera prioridades/status do GitHub.
+Escopo do piloto reduzido confirmado pelo usuário em 13/09/2026: sem Histórico dedicado na V1. Continuidade das Issues obrigatórias autorizada; FE #12 permanece no backlog. Checkpoints concluídos são refletidos nas respectivas Issues e no Project, sem alterar prioridades ou encerrar dependências não implementadas.
 
 ## Base e limite da análise
 
@@ -14,10 +14,10 @@ V1 inicial: piloto reduzido com resumos por Minhas Listas. Lançamento público 
 
 | Entrega | Issues (FE = mercadeira-frontend; BE = mercadeira) | Critério de encerramento |
 | --- | --- | --- |
-| Suíte frontend reproduzível | [FE #8](https://github.com/lnrdgst/mercadeira-frontend/issues/8), implementada localmente; Project ainda Pronto para desenvolver | Concluído: `npm test`, tipos, ambiente DOM, 49 testes aprovados incluindo os 19 anteriores, guards, contexto familiar e estados assíncronos. Build/lint aprovados; sem CI/E2E dentro desta Issue. |
-| Confirmação de remoção acessível | [FE #1](https://github.com/lnrdgst/mercadeira-frontend/issues/1), Média, Backlog | Foco, Tab, Escape e retorno ao acionador corretos; a confirmação atual usa div com aria-modal, sem comportamento modal completo. |
+| Suíte frontend reproduzível | [FE #8](https://github.com/lnrdgst/mercadeira-frontend/issues/8), implementada e versionada | Ambiente reproduzível entregue; evidência mais recente: 58 testes aprovados após FE #1 e correção de início sem itens. |
+| Confirmação de remoção acessível | [FE #1](https://github.com/lnrdgst/mercadeira-frontend/issues/1), implementada e versionada | Dialog nativo, foco, Tab, Escape, envio e retorno de foco cobertos; leitor de tela permanece no gate manual final. |
 | Edição básica da lista | [BE #1](https://github.com/lnrdgst/mercadeira/issues/1) → [FE #2](https://github.com/lnrdgst/mercadeira-frontend/issues/2), Média, Backlog | Corrigir nome, categoria e estabelecimento em preparação com capability e validação backend. Evita recriar lista para corrigir dados básicos; contrato ainda precisa ser implementado. |
-| Documentação operacional correta | [BE #8](https://github.com/lnrdgst/mercadeira/issues/8), Média, Backlog; README frontend conforme mudanças | Execução, configuração, testes e contratos atuais documentados. README backend ainda diz que REST de listas e Compra estão pendentes. |
+| Documentação operacional correta | [BE #8](https://github.com/lnrdgst/mercadeira/issues/8), concluída e enviada (0ef97f4) | README backend alinhado a 31 rotas, V1–V9, configuração, comandos, remoção/restauração, finalização e limites. Links e diff conferidos; Issue fechada e Project Concluído. |
 | Verificação final de uso e ambiente de entrega | Gate de lançamento, sem nova Issue criada | Jornada com duas contas, troca de família, sessão expirada, erros/retry, estados vazios, F5, teclado e viewport móvel; corrigir somente falhas impeditivas. Confirmar endereço de acesso, configuração da API, HTTPS e recuperação do banco no ambiente escolhido antes da publicação. |
 
 Histórico dedicado está fora da V1 por decisão do usuário. Não criar endpoint agregado nem simular histórico local. Resumos das finalizadas por Minhas Listas são suficientes para a primeira entrega.
@@ -41,15 +41,15 @@ Histórico dedicado está fora da V1 por decisão do usuário. Não criar endpoi
 
 ## Ordem recomendada e critério de parada
 
-1. FE #8 implementada localmente, aguardando revisão/versionamento autorizado. Histórico ocultado no piloto; resumos por Minhas Listas preservados.
-2. FE #1; documentação BE #8 quando houver acesso de escrita autorizado ao backend.
+1. FE #8, FE #1 e correção de início sem itens implementadas e versionadas. Histórico ocultado; resumos por Minhas Listas preservados.
+2. BE #8 concluída, enviada para origin/main e encerrada no GitHub/Project.
 3. BE #1 → FE #2 para edição básica.
 4. Verificação final do fluxo completo e do ambiente de entrega; corrigir bloqueios encontrados e encerrar a V1 sem incorporar o restante do backlog.
 
-Não iniciar automaticamente Issues em Backlog nem publicar com base apenas neste documento. Refino das regras novas deve preceder implementação backend/frontend. Commit/push continuam sob autorização explícita.
+O usuário autorizou seguir a próxima Issue obrigatória da V1. FE #12 permanece Backlog / Média e não interrompe a sequência, salvo evidência de bloqueio principal. Refino das regras novas deve preceder implementação backend/frontend. Commit/push autônomos autorizados quando os critérios de checkpoint de estado-projeto.md forem atendidos. Publicação do produto e operações Git destrutivas exigem autorização específica.
 
 ## Inconsistências e candidatos a backlog
 
 - FE #8 ainda fala em 14 cenários; a migração preservou os 19 existentes após Compra 4. FE/BE #10 devem considerar restauração no refinamento futuro, sem perder cenários anteriores.
-- README backend desatualizado já é coberto por BE #8; não criar duplicata.
+- README backend corrigido e enviado na BE #8; não criar duplicata.
 - Preparação do ambiente de entrega e roteiro de aceitação móvel/teclado são candidatos a registro operacional, caso não existam fora do Project consultado. Não foram criadas Issues.

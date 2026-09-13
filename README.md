@@ -495,6 +495,8 @@ Descrição é obrigatória; os demais campos são opcionais.
 
 Adicionar e editar utilizam o mesmo formulário em dialog.
 
+A remoção de ItemLista usa confirmação modal própria: foco inicial em Cancelar, navegação circular por Tab/Shift+Tab e Escape para cancelar enquanto não há envio. Durante a operação, cancelamento e reenvio ficam bloqueados; erros são anunciados dentro da confirmação. Ao cancelar, o foco retorna ao acionador; após remover o item e recarregar a coleção, vai para o título Itens caso o acionador tenha desaparecido.
+
 Na preparação da lista não existem checkboxes de compra.
 
 ### Reordenação de itens
@@ -718,6 +720,8 @@ npm run lint
 A configuração está em `vitest.config.ts`, com jsdom, React Testing Library e user-event. Os 19 cenários de remoção, restauração e finalização foram preservados nos mesmos arquivos, migrados de `node:test` para Vitest. Eles continuam cobrindo HTTP simulado e renderização estática. Os novos testes exercitam guards, seleção persistida/troca de família, descarte visual de dados do contexto anterior, loading/erro/retry/sucesso, listas vazias e `204 No Content` válido no onboarding. A navegação do piloto também possui uma regressão focada.
 
 Checkpoint da Issue #8 em 13/09/2026: 49 testes aprovados em seis arquivos, build e lint aprovados. Uma falha temporária confirmou saída 1 do comando; esse teste foi removido antes da execução final aprovada.
+
+A Issue #1 acrescenta seis testes de confirmação de remoção em `tests/item-lista-remocao.test.tsx`, preservando os 49 anteriores (55 no total). Cobrem abertura por teclado, nome/descrição acessíveis, Tab/Shift+Tab, Escape/cancelamento, retorno de foco, envio pendente, erro e sucesso 204. Como jsdom não implementa o ciclo modal nativo, o arquivo simula somente `showModal`/`close`; foco e eventos usam o código de produção. A conferência com leitor de tela e do fundo inerte em navegador real permanece manual.
 
 Convenções: `tests/helpers.tsx` cria fixtures novas de sessão/família e fornece `renderApp` com contextos e roteador em memória; `deferred` permite controlar respostas pendentes sem sleeps. `tests/setup.ts` desmonta componentes, restaura mocks/globais/timers e limpa os storages entre cenários. Cada teste deve simular suas requisições; o fetch padrão impede acesso ao backend real. Os testes não criam servidores Vite por arquivo e não dependem de portas, navegador ou autenticação externos.
 

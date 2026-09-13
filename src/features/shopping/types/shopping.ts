@@ -26,6 +26,7 @@ export type AutorItemCompraResponse = ReferenciaParticipanteCompra
 export interface AcoesItemCompraResponse {
   podeSolicitarRemocao: boolean
   podeDecidirRemocao: boolean
+  podeRestaurarNoCarrinho: boolean
 }
 
 export interface RemocaoItemCompraResponse {
@@ -34,6 +35,11 @@ export interface RemocaoItemCompraResponse {
   decisao: 'APROVADA' | 'REJEITADA' | null
   decididaPor: ReferenciaParticipanteCompra | null
   decididaEm: string | null
+}
+
+export interface RestauracaoItemCompraResponse {
+  restauradoPor: ReferenciaParticipanteCompra
+  restauradoEm: string
 }
 
 export type AcaoRemocaoItemCompra = 'solicitar-remocao' | 'aprovar-remocao' | 'rejeitar-remocao'
@@ -58,6 +64,7 @@ export interface ItemCompraResponse {
   ordemExibicao: number
   status: 'PENDENTE' | 'NO_CARRINHO' | 'REMOCAO_SOLICITADA' | 'REMOVIDO'
   remocao: RemocaoItemCompraResponse | null
+  restauracao: RestauracaoItemCompraResponse | null
   acoes: AcoesItemCompraResponse
   adicionadoPor: AutorItemCompraResponse | null
   adicionadoEm: string | null

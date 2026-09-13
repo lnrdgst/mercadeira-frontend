@@ -4,7 +4,7 @@ import type { ApiRequestError } from '../../../shared/api/apiClient'
 import { useSession } from '../../auth/session/sessionContext'
 import { useFamilyContext } from '../../family/session/familyContext'
 import { categoriaCompraLabels } from '../../shopping-lists/types/shoppingList'
-import { adicionarItemCompra, buscarCompra, colocarItemNoCarrinho, removerItemCompra } from '../api/shoppingApi'
+import { adicionarItemCompra, buscarCompra, colocarItemNoCarrinho, removerItemCompra, restaurarItemNoCarrinho } from '../api/shoppingApi'
 import { AdicionarItemCompraDialog } from '../components/AdicionarItemCompraDialog'
 import { ItemCompraCard } from '../components/ItemCompraCard'
 import { CompraResumo } from '../components/CompraResumo'
@@ -77,6 +77,11 @@ export function CompraAndamentoPage() {
     atualizarItem(await removerItemCompra(token, familiaId, listaId, itemId, acao))
   }
 
+  async function restaurarNoCarrinho(itemId: string) {
+    if (!token || !familiaId || !listaId) throw new Error('Contexto da compra indisponível.')
+    atualizarItem(await restaurarItemNoCarrinho(token, familiaId, listaId, itemId))
+  }
+
   if (compra?.status === 'FINALIZADA') return <section className="mx-auto max-w-3xl space-y-page">
     <Link to="/listas" className="inline-flex min-h-touch items-center font-semibold text-primary">Voltar para listas</Link>
     <h1 className="break-words text-headline-lg font-bold">{compra.nomeLista}</h1>
@@ -108,7 +113,7 @@ export function CompraAndamentoPage() {
         <div className="flex items-center justify-between gap-gutter"><h2 id="compra-itens" className="text-headline-md font-semibold">Itens da compra</h2><span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md">{compra.itens.length} {compra.itens.length === 1 ? 'item' : 'itens'}</span></div>
         {compra.itens.length === 0 && <p className="text-foreground-muted">Esta compra não possui itens.</p>}
         <ul className="space-y-gutter">
-          {[...compra.itens].sort((a, b) => a.ordemExibicao - b.ordemExibicao).map((item) => <ItemCompraCard key={`${chave}:${item.id}`} item={item} participante={compra.contextoUsuario.participanteCompra} onColocar={colocarNoCarrinho} onRemover={removerItem} onReconciliar={reconciliarItem} />)}
+          {[...compra.itens].sort((a, b) => a.ordemExibicao - b.ordemExibicao).map((item) => <ItemCompraCard key={`${chave}:${item.id}`} item={item} participante={compra.contextoUsuario.participanteCompra} onColocar={colocarNoCarrinho} onRestaurar={restaurarNoCarrinho} onRemover={removerItem} onReconciliar={reconciliarItem} />)}
         </ul>
       </section>
       <section className="space-y-gutter" aria-labelledby="compra-participantes">

@@ -16,7 +16,8 @@ const itens = ['PENDENTE', 'NO_CARRINHO', 'REMOVIDO'].map((status, ordemExibicao
   adicionadoPor: null, adicionadoEm: null, colocadoNoCarrinhoPor: status === 'PENDENTE' ? null : autor,
   colocadoNoCarrinhoEm: status === 'PENDENTE' ? null : '2026-09-11T10:00:00Z',
   remocao: status === 'REMOVIDO' ? { solicitadaPor: autor, solicitadaEm: '2026-09-11T10:01:00Z', decisao: 'APROVADA', decididaPor: autor, decididaEm: '2026-09-11T10:01:00Z' } : null,
-  acoes: { podeSolicitarRemocao: false, podeDecidirRemocao: false },
+  restauracao: null,
+  acoes: { podeSolicitarRemocao: false, podeDecidirRemocao: false, podeRestaurarNoCarrinho: false },
 }))
 const finalizada = { id: 'compra', listaId: 'lista', nomeLista: 'Compras', categoria: 'SUPERMERCADO', estabelecimento: null,
   status: 'FINALIZADA', iniciadaEm: '2026-09-11T09:00:00Z', finalizadaPor: autor, finalizadaEm: '2026-09-11T11:00:00Z',
@@ -70,7 +71,7 @@ test('finalização não aceita sucesso sem body nem 201', async (t) => {
 })
 
 test('resumo final mantém grupos, itens, auditoria e data, sem mutações mesmo com capabilities de item verdadeiras', () => {
-  const compra = { ...finalizada, itens: itens.map((item) => ({ ...item, acoes: { podeSolicitarRemocao: true, podeDecidirRemocao: true } })) }
+  const compra = { ...finalizada, itens: itens.map((item) => ({ ...item, acoes: { podeSolicitarRemocao: true, podeDecidirRemocao: true, podeRestaurarNoCarrinho: true } })) }
   const antes = JSON.stringify(compra)
   const html = render(compra)
   for (const texto of ['Compra finalizada', 'Finalizada por Autora histórica', 'Comprados (1)', 'Não comprados (1)', 'Removidos (1)', 'Remoção aprovada por Autora histórica']) assert.ok(html.includes(texto), texto)

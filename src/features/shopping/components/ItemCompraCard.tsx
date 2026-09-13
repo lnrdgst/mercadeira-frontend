@@ -13,6 +13,7 @@ const statusLabels: Record<ItemCompraResponse['status'], string> = {
 
 const acaoLabels = {
   colocar: 'Colocar no carrinho',
+  restaurar: 'Restaurar ao carrinho',
   'solicitar-remocao': 'Solicitar remoção',
   'aprovar-remocao': 'Aprovar remoção',
   'rejeitar-remocao': 'Rejeitar remoção',
@@ -26,17 +27,19 @@ type ItemCompraCardProps = { item: ItemCompraResponse } & ({
   somenteLeitura: true
   participante?: never
   onColocar?: never
+  onRestaurar?: never
   onRemover?: never
   onReconciliar?: never
 } | {
   somenteLeitura?: false
   participante: boolean
   onColocar: (itemId: string) => Promise<void>
+  onRestaurar: (itemId: string) => Promise<void>
   onRemover: (itemId: string, acao: AcaoRemocaoItemCompra) => Promise<void>
   onReconciliar: (itemId: string) => Promise<void>
 })
 
-export function ItemCompraCard({ item, somenteLeitura, participante, onColocar, onRemover, onReconciliar }: ItemCompraCardProps) {
+export function ItemCompraCard({ item, somenteLeitura, participante, onColocar, onRestaurar, onRemover, onReconciliar }: ItemCompraCardProps) {
   const { logout } = useSession()
   const enviandoRef = useRef(false)
   const [enviando, setEnviando] = useState<keyof typeof acaoLabels | 'atualizar' | null>(null)
@@ -48,6 +51,7 @@ export function ItemCompraCard({ item, somenteLeitura, participante, onColocar, 
   const acoes: (keyof typeof acaoLabels)[] = []
   if (!somenteLeitura) {
     if (participante && item.status === 'PENDENTE') acoes.push('colocar')
+    if (item.acoes.podeRestaurarNoCarrinho === true) acoes.push('restaurar')
     if (item.acoes.podeSolicitarRemocao === true) acoes.push('solicitar-remocao')
     if (item.acoes.podeDecidirRemocao === true) acoes.push('aprovar-remocao', 'rejeitar-remocao')
   }
@@ -60,6 +64,7 @@ export function ItemCompraCard({ item, somenteLeitura, participante, onColocar, 
     try {
       if (acao === 'atualizar') { await onReconciliar(item.id); setPrecisaAtualizar(false) }
       else if (acao === 'colocar') await onColocar(item.id)
+      else if (acao === 'restaurar') await onRestaurar(item.id)
       else await onRemover(item.id, acao)
     }
     catch (error) {
@@ -99,6 +104,7 @@ export function ItemCompraCard({ item, somenteLeitura, participante, onColocar, 
       <p>Remoção solicitada por {item.remocao.solicitadaPor.nome}<DataAutoria valor={item.remocao.solicitadaEm} /></p>
       {item.remocao.decisao && <p>Remoção {item.remocao.decisao === 'APROVADA' ? 'aprovada' : 'rejeitada'}{item.remocao.decididaPor && ` por ${item.remocao.decididaPor.nome}`}<DataAutoria valor={item.remocao.decididaEm} /></p>}
     </div>}
+    {item.restauracao && <p className="break-words text-label-md text-foreground-muted">Restaurado por {item.restauracao.restauradoPor.nome}<DataAutoria valor={item.restauracao.restauradoEm} /></p>}
     {erro && <p role="alert" className="rounded-control bg-error/10 p-gutter text-error">{erro}</p>}
     {enviando && <p role="status" className="text-label-lg text-foreground-muted">{enviando === 'atualizar' ? 'Atualizando item...' : `${acaoLabels[enviando]}: processando...`}</p>}
     {precisaAtualizar && <button type="button" disabled={enviando !== null} onClick={() => void executar('atualizar')} className="min-h-touch rounded-control border border-current px-page font-semibold disabled:opacity-60">Atualizar item</button>}

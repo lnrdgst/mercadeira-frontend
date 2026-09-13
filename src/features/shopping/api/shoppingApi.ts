@@ -45,6 +45,15 @@ export async function colocarItemNoCarrinho(token: string, familiaId: string, li
   return response.data
 }
 
+export async function restaurarItemNoCarrinho(token: string, familiaId: string, listaId: string, itemCompraId: string) {
+  const response = await apiRequest<ItemCompraResponse>(
+    `/familias/${familiaId}/listas/${listaId}/compra/itens/${itemCompraId}/restaurar-no-carrinho`,
+    { token, method: 'POST' },
+  )
+  if (response.status !== 200 || !response.data) throw new Error('Não foi possível recuperar o item restaurado. Atualize a compra para conferir o resultado.')
+  return response.data
+}
+
 export async function adicionarItemCompra(token: string, familiaId: string, listaId: string, data: AdicionarItemCompraRequest) {
   const { descricao, quantidade, unidadeMedida, marca, observacoes } = data
   const response = await apiRequest<ItemCompraResponse>(

@@ -5,7 +5,6 @@ const navigationItems = [
   { to: '/inicio', label: 'Início' },
   { to: '/listas', label: 'Listas' },
   { to: '/familia', label: 'Família' },
-  { to: '/historico', label: 'Histórico' },
 ]
 
 export function AppShell() {
@@ -30,7 +29,7 @@ export function AppShell() {
         aria-label="Navegação principal"
         className="fixed inset-x-0 bottom-0 border-t border-foreground/10 bg-surface/95 px-gutter pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur"
       >
-        <ul className="mx-auto grid w-full max-w-5xl grid-cols-4 gap-1">
+        <ul className="mx-auto grid w-full max-w-5xl grid-cols-3 gap-1">
           {navigationItems.map((item) => (
             <li key={item.to}>
               <NavLink

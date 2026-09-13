@@ -88,9 +88,11 @@ As áreas principais utilizam o AppShell e compartilham navegação global:
 | `/inicio` | Dashboard |
 | `/listas` | Minhas listas |
 | `/familia` | Família selecionada |
-| `/historico` | Estrutura de histórico; dados reais ainda pendentes |
+| `/historico` | Redireciona para `/listas` no piloto; sem item de navegação próprio |
 
 Em dispositivos móveis, essas áreas utilizam navegação inferior com alvos de toque adequados e respeito à safe area.
+
+A V1 segue o piloto reduzido: resumos de compras finalizadas são acessíveis por “Minhas Listas”. A navegação contém Início, Listas e Família. O Histórico dedicado permanece no backlog; seu componente foi preservado para implementação futura, sem expor o placeholder no piloto.
 
 O AppShell também disponibiliza logout global para as áreas autenticadas principais.
 
@@ -677,7 +679,7 @@ Após a restauração, o card volta ao visual `NO_CARRINHO` e apresenta `colocad
 
 O botão tem loading e trava contra duplo clique no próprio card. Em 409, o fluxo existente mostra feedback e executa GET da Compra para reconciliar o item ou adotar a Compra `FINALIZADA`. O GET também é a fonte de verdade após F5. A revisão permanece somente leitura, e uma Compra finalizada não oferece restauração mesmo que uma fixture inconsistente forneça capability verdadeira.
 
-Relatórios e roteiros de validação: [Marco Compra 2E](docs/marco-compra-2e.md) e [Marco Compra 4](docs/marco-compra-4.md). Testes locais: `node --test tests/compra-remocao.test.mjs`.
+Relatórios e roteiros de validação: [Marco Compra 2E](docs/marco-compra-2e.md) e [Marco Compra 4](docs/marco-compra-4.md). Testes focados: `npm test -- tests/compra-remocao.test.mjs`.
 
 ### Revisão e finalização da Compra
 
@@ -699,7 +701,27 @@ A revisão não congela os dados. Em 409, há feedback e GET da Compra para subs
 
 Ao voltar para `/listas`, a consulta própria recupera a ListaCompra `FINALIZADA`, com ação “Ver resumo”. Não há navegação automática após finalizar.
 
-Relatório e limites da validação: [Marco Compra 3](docs/marco-compra-3.md). Testes locais: `node --test tests/*.test.mjs`.
+Relatório e limites da validação: [Marco Compra 3](docs/marco-compra-3.md). Suíte local: `npm test`.
+
+### Testes automatizados do frontend
+
+Requer Node compatível com as dependências do lockfile (validado com Node 22.18.0). Após `npm ci`, execute:
+
+```sh
+npm test
+npm run build
+npm run lint
+```
+
+`npm test` verifica os tipos dos testes TS/TSX e executa `vitest run`, sem watch. Erros de tipos ou testes reprovados retornam código diferente de zero. Um arquivo pode ser selecionado com `npm test -- tests/route-guards.test.tsx`.
+
+A configuração está em `vitest.config.ts`, com jsdom, React Testing Library e user-event. Os 19 cenários de remoção, restauração e finalização foram preservados nos mesmos arquivos, migrados de `node:test` para Vitest. Eles continuam cobrindo HTTP simulado e renderização estática. Os novos testes exercitam guards, seleção persistida/troca de família, descarte visual de dados do contexto anterior, loading/erro/retry/sucesso, listas vazias e `204 No Content` válido no onboarding. A navegação do piloto também possui uma regressão focada.
+
+Checkpoint da Issue #8 em 13/09/2026: 49 testes aprovados em seis arquivos, build e lint aprovados. Uma falha temporária confirmou saída 1 do comando; esse teste foi removido antes da execução final aprovada.
+
+Convenções: `tests/helpers.tsx` cria fixtures novas de sessão/família e fornece `renderApp` com contextos e roteador em memória; `deferred` permite controlar respostas pendentes sem sleeps. `tests/setup.ts` desmonta componentes, restaura mocks/globais/timers e limpa os storages entre cenários. Cada teste deve simular suas requisições; o fetch padrão impede acesso ao backend real. Os testes não criam servidores Vite por arquivo e não dependem de portas, navegador ou autenticação externos.
+
+Esta suíte não comprova layout real, acessibilidade completa ou integração com backend. CI permanece na Issue #9; jornada integrada e fixtures backend permanecem nas Issues #10 dos dois repositórios. Os relatórios de marcos anteriores registram os comandos usados à época; o comando atual é `npm test`.
 
 ### Limites atuais e realtime
 

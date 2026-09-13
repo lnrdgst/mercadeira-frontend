@@ -568,7 +568,7 @@ Ao iniciar, o backend registra os participantes ativos da ListaCompra como snaps
 
 Não há entrada tardia implementada, nem permissão inferida pelo papel `ADMINISTRADOR`. O backend revalida cada operação.
 
-As ações de remoção usam exclusivamente `item.acoes.podeSolicitarRemocao` e `item.acoes.podeDecidirRemocao`, calculadas pelo backend para o JWT atual.
+As ações de remoção e restauração usam exclusivamente as capabilities em `item.acoes`, calculadas pelo backend para o JWT atual.
 
 ### Colocar item no carrinho
 
@@ -637,6 +637,7 @@ Cada ItemCompra contém `acoes`, sempre presente, com as capabilities que são a
 
 - `item.acoes.podeSolicitarRemocao`: quando `true`, mostra “Solicitar remoção”.
 - `item.acoes.podeDecidirRemocao`: quando `true`, mostra “Aprovar remoção” e “Rejeitar remoção”.
+- `item.acoes.podeRestaurarNoCarrinho`: quando `true`, mostra “Restaurar ao carrinho”.
 
 O backend aplica as regras de domínio. O frontend não reconstrói autorização pelo papel `ADMINISTRADOR`, criador da lista, iniciador da Compra, solicitante, autor da colocação no carrinho ou identidade do usuário atual. Observadores continuam vendo estado e auditoria, com ações indisponíveis conforme as capabilities retornadas.
 
@@ -666,7 +667,17 @@ O backend suporta replays autorizados de solicitação já pendente, aprovação
 
 O GET/F5 recupera todos os estados, auditoria e capabilities. As capabilities ficam somente em memória e dados de uma sessão anterior não são reaproveitados ao mudar o token.
 
-Relatório e roteiro de validação: [Marco Compra 2E](docs/marco-compra-2e.md). Testes locais: `node --test tests/compra-remocao.test.mjs`.
+### Restauração de ItemCompra
+
+Um item `REMOVIDO` pode voltar a `NO_CARRINHO` pela ação “Restaurar ao carrinho” quando `item.acoes.podeRestaurarNoCarrinho === true`. O frontend não restringe a ação por papel, participação inferida ou autoria anterior: qualquer participante autorizado pelo backend pode recebê-la.
+
+`POST /api/familias/{familiaId}/listas/{listaId}/compra/itens/{itemCompraId}/restaurar-no-carrinho` usa Bearer JWT e não envia body. O service aceita somente `200 OK` com `ItemCompraResponse` completo. Primeira execução e replay autorizado seguem o mesmo fluxo; o item local é substituído integralmente pelo response, sem montar status, auditoria ou responsável operacional no cliente.
+
+Após a restauração, o card volta ao visual `NO_CARRINHO` e apresenta `colocadoNoCarrinhoPor`/`colocadoNoCarrinhoEm` atuais, a remoção aprovada preservada e “Restaurado por …” com `restauracao.restauradoPor`/`restauradoEm`. O backend expõe somente o ciclo atual/mais recente de remoção e a última restauração; o frontend não acumula snapshots nem simula histórico completo.
+
+O botão tem loading e trava contra duplo clique no próprio card. Em 409, o fluxo existente mostra feedback e executa GET da Compra para reconciliar o item ou adotar a Compra `FINALIZADA`. O GET também é a fonte de verdade após F5. A revisão permanece somente leitura, e uma Compra finalizada não oferece restauração mesmo que uma fixture inconsistente forneça capability verdadeira.
+
+Relatórios e roteiros de validação: [Marco Compra 2E](docs/marco-compra-2e.md) e [Marco Compra 4](docs/marco-compra-4.md). Testes locais: `node --test tests/compra-remocao.test.mjs`.
 
 ### Revisão e finalização da Compra
 
@@ -692,7 +703,7 @@ Relatório e limites da validação: [Marco Compra 3](docs/marco-compra-3.md). T
 
 ### Limites atuais e realtime
 
-Desfazer remoção aprovada, reabertura, cancelamento operacional e pagamento continuam fora do escopo implementado.
+Reabertura, cancelamento operacional e pagamento continuam fora do escopo implementado.
 
 Autoria e timestamps permitem futuramente apresentar eventos como “Leonardo adicionou Arroz” ou “Camila colocou Leite no carrinho”. Hoje são exibidos no próprio item a partir do estado REST. Não há WebSocket, STOMP, polling, notificações em tempo real ou feed global de atividade.
 
@@ -934,6 +945,8 @@ O frontend utiliza preferencialmente mensagem e não exibe stack traces.
 - remoção controlada de ItemCompra, com capabilities por item, solicitação, aprovação, rejeição e autoaprovação
 - auditoria da remoção, com autoria e timestamps do ciclo atual/mais recente
 - item REMOVIDO preservado na coleção e na tela, inclusive após F5
+- restauração de ItemCompra removido por capability, com replay 200 e resposta completa
+- auditoria da última restauração e responsável operacional atual preservados após GET/F5
 - reconciliação do item por GET da Compra em conflitos 409
 - revisão por listaId com resumo dos quatro estados de ItemCompra
 - finalização por capability, confirmação e POST sem body, com replay 200
@@ -957,7 +970,6 @@ O frontend utiliza preferencialmente mensagem e não exibe stack traces.
 - solicitação de participação em ListaCompra
 - entrada/saída tardia em Compra
 - exibir na Compra ativa quem criou a ListaCompra original
-- desfazer remoção aprovada de ItemCompra
 - editar ItemCompra durante Compra
 - reordenar ItemCompra
 - reabrir Compra

@@ -1,15 +1,11 @@
 import assert from 'node:assert/strict'
-import { after, test } from 'node:test'
+import { test, vi } from 'vitest'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { createServer } from 'vite'
 
-// Usa o transformador já instalado no projeto, sem novas dependências.
-const server = await createServer({ server: { middlewareMode: true, hmr: false }, appType: 'custom' })
-after(() => server.close())
-const { removerItemCompra, restaurarItemNoCarrinho } = await server.ssrLoadModule('/src/features/shopping/api/shoppingApi.ts')
-const { ItemCompraCard } = await server.ssrLoadModule('/src/features/shopping/components/ItemCompraCard.tsx')
-const { SessionContext } = await server.ssrLoadModule('/src/features/auth/session/sessionContext.ts')
+import { removerItemCompra, restaurarItemNoCarrinho } from '../src/features/shopping/api/shoppingApi.ts'
+import { ItemCompraCard } from '../src/features/shopping/components/ItemCompraCard.tsx'
+import { SessionContext } from '../src/features/auth/session/sessionContext.ts'
 
 const autor = { participanteCompraId: 'participante', membroFamiliaId: 'membro', usuarioId: 'usuario', nome: 'Nome histórico' }
 const remocao = { solicitadaPor: autor, solicitadaEm: '2026-09-10T12:00:00Z', decisao: null, decididaPor: null, decididaEm: null }
@@ -27,7 +23,7 @@ function render(item, participante = false) {
     createElement(ItemCompraCard, { item, participante, onColocar: async () => {}, onRestaurar: async () => {}, onRemover: async () => {}, onReconciliar: async () => {} })))
 }
 
-test('POSTs usam ItemCompra.id, Bearer e nenhum body; preservam response completo inclusive autoaprovação', async (t) => {
+test('POSTs usam ItemCompra.id, Bearer e nenhum body; preservam response completo inclusive autoaprovação', async () => {
   for (const [acao, status, decisao] of [
     ['solicitar-remocao', 'REMOCAO_SOLICITADA', null],
     ['solicitar-remocao', 'REMOVIDO', 'APROVADA'],
@@ -35,7 +31,7 @@ test('POSTs usam ItemCompra.id, Bearer e nenhum body; preservam response complet
     ['rejeitar-remocao', 'NO_CARRINHO', 'REJEITADA'],
   ]) {
     const resposta = { ...base, status, remocao: { ...remocao, decisao, decididaPor: decisao ? autor : null, decididaEm: decisao ? '2026-09-10T12:01:00Z' : null } }
-    const fetchMock = t.mock.method(globalThis, 'fetch', async (url, options) => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, options) => {
       assert.ok(url.endsWith(`/familias/familia/listas/lista/compra/itens/item-compra/${acao}`))
       assert.equal(options.method, 'POST')
       assert.equal(options.body, undefined)
@@ -44,19 +40,19 @@ test('POSTs usam ItemCompra.id, Bearer e nenhum body; preservam response complet
       return Response.json(resposta)
     })
     assert.deepEqual(await removerItemCompra('token-de-teste', 'familia', 'lista', base.id, acao), resposta)
-    assert.equal(fetchMock.mock.callCount(), 1)
-    fetchMock.mock.restore()
+    assert.equal(fetchMock.mock.calls.length, 1)
+    fetchMock.mockRestore()
   }
 })
 
-test('erros preservam status HTTP independentemente da mensagem', async (t) => {
+test('erros preservam status HTTP independentemente da mensagem', async () => {
   for (const status of [401, 403, 404, 409]) {
-    const fetchMock = t.mock.method(globalThis, 'fetch', async () => Response.json({
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => Response.json({
       timestamp: '2026-09-10T12:00:00Z', status, erro: 'CODIGO', mensagem: 'Texto variável', path: '/api/compra',
     }, { status }))
     await assert.rejects(removerItemCompra('token', 'familia', 'lista', base.id, 'aprovar-remocao'),
       (error) => error.status === status && error.message === 'Texto variável')
-    fetchMock.mock.restore()
+    fetchMock.mockRestore()
   }
 })
 
@@ -99,7 +95,7 @@ test('regressão: colocar no carrinho disponível somente para pendente e partic
   assert.doesNotMatch(render(base, true), /<button/)
 })
 
-test('restauração usa endpoint do ItemCompra, Bearer e POST sem body; replay usa o mesmo sucesso completo', async (t) => {
+test('restauração usa endpoint do ItemCompra, Bearer e POST sem body; replay usa o mesmo sucesso completo', async () => {
   const aprovada = { ...remocao, decisao: 'APROVADA', decididaPor: autor, decididaEm: '2026-09-10T12:01:00Z' }
   const restaurador = { ...autor, participanteCompraId: 'participante-b', nome: 'Camila' }
   const resposta = {
@@ -109,7 +105,7 @@ test('restauração usa endpoint do ItemCompra, Bearer e POST sem body; replay u
     colocadoNoCarrinhoPor: restaurador,
     colocadoNoCarrinhoEm: '2026-09-10T12:05:00Z',
   }
-  const fetchMock = t.mock.method(globalThis, 'fetch', async (url, options) => {
+  const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, options) => {
     assert.ok(url.endsWith('/familias/familia/listas/lista/compra/itens/item-compra/restaurar-no-carrinho'))
     assert.equal(options.method, 'POST')
     assert.equal(options.body, undefined)
@@ -118,24 +114,24 @@ test('restauração usa endpoint do ItemCompra, Bearer e POST sem body; replay u
     return Response.json(resposta)
   })
   for (let i = 0; i < 2; i++) assert.deepEqual(await restaurarItemNoCarrinho('token-de-teste', 'familia', 'lista', base.id), resposta)
-  assert.equal(fetchMock.mock.callCount(), 2)
+  assert.equal(fetchMock.mock.calls.length, 2)
 })
 
-test('restauração exige 200 com ItemCompra completo', async (t) => {
+test('restauração exige 200 com ItemCompra completo', async () => {
   for (const response of [new Response(null, { status: 200 }), new Response(null, { status: 204 }), Response.json(base, { status: 201 })]) {
-    const fetchMock = t.mock.method(globalThis, 'fetch', async () => response)
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => response)
     await assert.rejects(restaurarItemNoCarrinho('token', 'familia', 'lista', base.id), /Não foi possível recuperar o item restaurado/)
-    fetchMock.mock.restore()
+    fetchMock.mockRestore()
   }
 })
 
-test('restauração preserva 401/403/404/409 sem depender da mensagem', async (t) => {
+test('restauração preserva 401/403/404/409 sem depender da mensagem', async () => {
   for (const status of [401, 403, 404, 409]) {
-    const fetchMock = t.mock.method(globalThis, 'fetch', async () => status === 401
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => status === 401
       ? new Response(null, { status })
       : Response.json({ status, erro: 'CODIGO_VARIAVEL', mensagem: 'Texto variável' }, { status }))
     await assert.rejects(restaurarItemNoCarrinho('token', 'familia', 'lista', base.id), (error) => error.status === status)
-    fetchMock.mock.restore()
+    fetchMock.mockRestore()
   }
 })
 

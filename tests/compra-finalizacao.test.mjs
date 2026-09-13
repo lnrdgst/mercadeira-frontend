@@ -1,14 +1,11 @@
 import assert from 'node:assert/strict'
-import { after, test } from 'node:test'
+import { test, vi } from 'vitest'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { createServer } from 'vite'
 
-const server = await createServer({ server: { middlewareMode: true, hmr: false }, appType: 'custom' })
-after(() => server.close())
-const { finalizarCompra, buscarCompra } = await server.ssrLoadModule('/src/features/shopping/api/shoppingApi.ts')
-const { CompraResumo } = await server.ssrLoadModule('/src/features/shopping/components/CompraResumo.tsx')
-const { SessionContext } = await server.ssrLoadModule('/src/features/auth/session/sessionContext.ts')
+import { finalizarCompra, buscarCompra } from '../src/features/shopping/api/shoppingApi.ts'
+import { CompraResumo } from '../src/features/shopping/components/CompraResumo.tsx'
+import { SessionContext } from '../src/features/auth/session/sessionContext.ts'
 const autor = { participanteCompraId: 'participante-a', membroFamiliaId: 'membro-a', usuarioId: 'usuario-a', nome: 'Autora histórica' }
 const itens = ['PENDENTE', 'NO_CARRINHO', 'REMOVIDO'].map((status, ordemExibicao) => ({
   id: `item-${status}`, descricao: `Produto ${status}`, status, ordemExibicao, quantidade: 1,
@@ -26,8 +23,8 @@ function render(compra) {
   return renderToStaticMarkup(createElement(SessionContext.Provider, { value: { logout() {} } }, createElement(CompraResumo, { compra })))
 }
 
-test('finalização e replay retornam Compra completa com mesmos estados e primeira autoria, sem body ou GET', async (t) => {
-  const mock = t.mock.method(globalThis, 'fetch', async (url, options) => {
+test('finalização e replay retornam Compra completa com mesmos estados e primeira autoria, sem body ou GET', async () => {
+  const mock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, options) => {
     assert.ok(url.endsWith('/familias/familia/listas/lista/compra/finalizar'))
     assert.equal(options.method, 'POST')
     assert.equal(options.body, undefined)
@@ -36,15 +33,15 @@ test('finalização e replay retornam Compra completa com mesmos estados e prime
     return Response.json(finalizada)
   })
   for (let i = 0; i < 2; i++) assert.deepEqual(await finalizarCompra('teste', 'familia', 'lista'), finalizada)
-  assert.equal(mock.mock.callCount(), 2)
+  assert.equal(mock.mock.calls.length, 2)
   assert.equal(finalizada.itens.find((item) => item.id === 'item-PENDENTE').status, 'PENDENTE')
   assert.equal(finalizada.itens.find((item) => item.id === 'item-REMOVIDO').status, 'REMOVIDO')
   assert.equal(finalizada.finalizadaPor, autor)
   assert.equal(finalizada.finalizadaEm, '2026-09-11T11:00:00Z')
 })
 
-test('GET recupera Compra FINALIZADA com todos os itens e auditoria', async (t) => {
-  t.mock.method(globalThis, 'fetch', async (url, options) => {
+test('GET recupera Compra FINALIZADA com todos os itens e auditoria', async () => {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, options) => {
     assert.ok(url.endsWith('/familias/familia/listas/lista/compra'))
     assert.equal(options.method, 'GET')
     return Response.json(finalizada)
@@ -52,21 +49,21 @@ test('GET recupera Compra FINALIZADA com todos os itens e auditoria', async (t) 
   assert.deepEqual(await buscarCompra('teste', 'familia', 'lista'), finalizada)
 })
 
-test('401 sem JSON preserva status; 403/404/409 preservam envelope sem comparar mensagem', async (t) => {
+test('401 sem JSON preserva status; 403/404/409 preservam envelope sem comparar mensagem', async () => {
   for (const status of [401, 403, 404, 409]) {
-    const mock = t.mock.method(globalThis, 'fetch', async () => status === 401 ? new Response(null, { status }) : Response.json({
+    const mock = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => status === 401 ? new Response(null, { status }) : Response.json({
       timestamp: '2026-09-11T11:00:00Z', status, erro: 'CONFLITO_DE_ESTADO', mensagem: 'Mensagem variável', path: '/api/compra/finalizar', campos: {},
     }, { status }))
     await assert.rejects(finalizarCompra('teste', 'familia', 'lista'), (error) => error.status === status && (status === 401 || error.response.mensagem === 'Mensagem variável'))
-    mock.mock.restore()
+    mock.mockRestore()
   }
 })
 
-test('finalização não aceita sucesso sem body nem 201', async (t) => {
+test('finalização não aceita sucesso sem body nem 201', async () => {
   for (const response of [new Response(null, { status: 200 }), new Response(null, { status: 204 }), Response.json(finalizada, { status: 201 })]) {
-    const mock = t.mock.method(globalThis, 'fetch', async () => response)
+    const mock = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => response)
     await assert.rejects(finalizarCompra('teste', 'familia', 'lista'), /Não foi possível recuperar/)
-    mock.mock.restore()
+    mock.mockRestore()
   }
 })
 

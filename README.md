@@ -1,4 +1,4 @@
-﻿# Mercadeira
+# Mercadeira
 
 Frontend do Mercadeira, uma aplicação colaborativa para organização de compras entre membros de famílias e grupos.
 
@@ -435,11 +435,23 @@ A interface utiliza diretamente:
 
 - podeGerenciarParticipantes
 
-- podeAlterarItens.
+- podeAlterarItens;
+
+- podeEditarDadosBasicos.
 
 As mutações continuam sendo revalidadas pelo backend.
 
 Um ADMINISTRADOR da família que não participa da lista pode gerenciar participantes, mas não pode alterar itens somente por ser administrador.
+
+### Edição dos dados básicos
+
+“Editar dados da lista” abre um formulário na página, preenchido com nome, categoria e estabelecimento atuais. A ação usa exclusivamente `contextoUsuario.podeEditarDadosBasicos`: o backend permite criador ou administrador ativo da família somente em `EM_PREPARACAO`; participação isolada não concede permissão.
+
+`PUT /api/familias/{familiaId}/listas/{listaId}` recebe `{ nome, categoria, estabelecimento }` e retorna o detalhe completo com contexto atualizado. Nome é obrigatório, até 120 caracteres; categoria é obrigatória; estabelecimento é opcional, até 120 caracteres, enviado como null quando vazio. Após sucesso, a representação completa substitui o detalhe local sem recarga da página.
+
+Loading impede envios duplicados. Falhas são apresentadas junto ao formulário e preservam os valores. Em 403/409, GET reconcilia estado e capability; se essa consulta falhar, novos envios ficam bloqueados até “Atualizar lista” ter sucesso. GET/F5 recupera os dados persistidos. Depois de iniciar a compra, a capability fica falsa e os dados são somente leitura.
+
+Contrato backend: `docs/contrato-edicao-lista.md` no repositório `lnrdgst/mercadeira`.
 
 ### Participantes da lista
 
@@ -980,10 +992,9 @@ O frontend utiliza preferencialmente mensagem e não exibe stack traces.
 - finalização por capability, confirmação e POST sem body, com replay 200
 - Compra FINALIZADA somente leitura, com autoria/data e recuperação por GET/F5
 - reconciliação da revisão por GET em 409 e acesso ao resumo por Minhas Listas
+- edição dos dados básicos da lista por capability, com PUT, resposta completa e reconciliação em 403/409
 
 ### Ainda pendente:
-
-- edição dos dados básicos da lista, como nome, categoria e estabelecimento
 
 - atalho de UX para criar ou entrar em outra família quando o usuário já possui contexto familiar
 

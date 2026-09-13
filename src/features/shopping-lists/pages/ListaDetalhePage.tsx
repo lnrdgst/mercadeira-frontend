@@ -4,6 +4,7 @@ import type { ApiRequestError } from '../../../shared/api/apiClient'
 import { useSession } from '../../auth/session/sessionContext'
 import { useFamilyContext } from '../../family/session/familyContext'
 import { IniciarCompraButton } from '../../shopping/components/IniciarCompraButton'
+import { EditarDadosLista } from '../components/EditarDadosLista'
 import { ItemForm } from '../components/ItemForm'
 import { ConfirmarRemocaoItemDialog } from '../components/ConfirmarRemocaoItemDialog'
 import { adicionarParticipanteLista, atualizarItemLista, buscarItensLista, buscarLista, buscarMembrosFamilia, buscarParticipantesLista, criarItemLista, reordenarItensLista, removerItemLista, removerParticipanteLista } from '../api/shoppingListsApi'
@@ -165,6 +166,7 @@ export function ListaDetalhePage() {
     {(carregandoDetalhe || detalheKey !== chave) && <p className="text-body-md text-foreground-muted">Carregando lista...</p>}
     {!carregandoDetalhe && erroDetalhe && <div className="space-y-gutter rounded-card bg-error/10 p-page text-error"><p>{erroDetalhe}</p><button type="button" onClick={() => void carregarDetalhe()} className="min-h-touch rounded-control border border-current px-page font-semibold">Tentar novamente</button></div>}
     {lista && <><header className="space-y-2 rounded-card bg-surface p-page shadow-soft"><div className="flex flex-wrap gap-2"><span className="rounded-full bg-primary/10 px-gutter py-1 text-label-md font-semibold text-primary">{categoriaCompraLabels[lista.categoria]}</span><span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md text-foreground-muted">{statusListaCompraLabels[lista.status]}</span></div><h1 className="text-headline-lg font-bold">{lista.nome}</h1>{lista.estabelecimento && <p className="text-body-md text-foreground-muted">{lista.estabelecimento}</p>}<p className="text-label-lg text-foreground-muted">Criada por {lista.criador.nome}</p></header>
+    <EditarDadosLista key={chave} familiaId={familiaSelecionada.id} lista={lista} onAtualizada={(atualizada) => { setDetalhe(atualizada); setDetalheKey(chave) }} />
     {emPreparacao && lista.contextoUsuario.participanteAtivo && <div className="space-y-gutter">
       <IniciarCompraButton key={chave} familiaId={familiaSelecionada.id} listaId={listaId} disabled={!itensProntos || listaItens.length === 0 || operacaoParticipante !== null || operacaoItem !== null || reordenando || itemEditando !== null || itemParaRemover !== null} />
       {itensProntos && listaItens.length === 0 && <p className="rounded-card bg-error/10 p-gutter text-body-md font-normal text-error">Adicione pelo menos um item para iniciar a compra.</p>}

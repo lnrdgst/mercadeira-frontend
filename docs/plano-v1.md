@@ -16,7 +16,7 @@ V1 inicial: piloto reduzido com resumos por Minhas Listas. Lançamento público 
 | --- | --- | --- |
 | Suíte frontend reproduzível | [FE #8](https://github.com/lnrdgst/mercadeira-frontend/issues/8), implementada e versionada | Ambiente reproduzível entregue; evidência mais recente: 58 testes aprovados após FE #1 e correção de início sem itens. |
 | Confirmação de remoção acessível | [FE #1](https://github.com/lnrdgst/mercadeira-frontend/issues/1), implementada e versionada | Dialog nativo, foco, Tab, Escape, envio e retorno de foco cobertos; leitor de tela permanece no gate manual final. |
-| Edição básica da lista | [BE #1](https://github.com/lnrdgst/mercadeira/issues/1) → [FE #2](https://github.com/lnrdgst/mercadeira-frontend/issues/2), Média, Backlog | Corrigir nome, categoria e estabelecimento em preparação com capability e validação backend. Evita recriar lista para corrigir dados básicos; contrato ainda precisa ser implementado. |
+| Edição básica da lista | [BE #1](https://github.com/lnrdgst/mercadeira/issues/1) → [FE #2](https://github.com/lnrdgst/mercadeira-frontend/issues/2), concluídas e aprovadas manualmente | Nome, categoria e estabelecimento editáveis somente em preparação, por criador ou administrador ativo; capability exclusiva no frontend. Backend 315 testes; frontend 69 testes, build/lint aprovados. Validação manual integrada aprovada pelo usuário; checkpoint autorizado. |
 | Documentação operacional correta | [BE #8](https://github.com/lnrdgst/mercadeira/issues/8), concluída e enviada (0ef97f4) | README backend alinhado a 31 rotas, V1–V9, configuração, comandos, remoção/restauração, finalização e limites. Links e diff conferidos; Issue fechada e Project Concluído. |
 | Verificação final de uso e ambiente de entrega | Gate de lançamento, sem nova Issue criada | Jornada com duas contas, troca de família, sessão expirada, erros/retry, estados vazios, F5, teclado e viewport móvel; corrigir somente falhas impeditivas. Confirmar endereço de acesso, configuração da API, HTTPS e recuperação do banco no ambiente escolhido antes da publicação. |
 
@@ -43,10 +43,10 @@ Histórico dedicado está fora da V1 por decisão do usuário. Não criar endpoi
 
 1. FE #8, FE #1 e correção de início sem itens implementadas e versionadas. Histórico ocultado; resumos por Minhas Listas preservados.
 2. BE #8 concluída, enviada para origin/main e encerrada no GitHub/Project.
-3. BE #1 → FE #2 para edição básica.
+3. BE #1 → FE #2 concluídas, com validações automatizadas e manuais aprovadas; checkpoint autorizado.
 4. Verificação final do fluxo completo e do ambiente de entrega; corrigir bloqueios encontrados e encerrar a V1 sem incorporar o restante do backlog.
 
-O usuário autorizou seguir a próxima Issue obrigatória da V1. FE #12 permanece Backlog / Média e não interrompe a sequência, salvo evidência de bloqueio principal. Refino das regras novas deve preceder implementação backend/frontend. Commit/push autônomos autorizados quando os critérios de checkpoint de estado-projeto.md forem atendidos. Publicação do produto e operações Git destrutivas exigem autorização específica.
+O usuário autorizou seguir a próxima Issue obrigatória da V1. FE #12 permanece Backlog / Média e não interrompe a sequência, salvo evidência de bloqueio principal. Refino das regras novas deve preceder implementação backend/frontend. O usuário autorizou commit/push após aprovação dos testes manuais da edição. Respeitar os critérios de checkpoint em estado-projeto.md. Publicação do produto e operações Git destrutivas exigem autorização específica.
 
 ## Inconsistências e candidatos a backlog
 

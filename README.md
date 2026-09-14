@@ -726,6 +726,14 @@ A revisão não congela os dados. Em 409, há feedback e GET da Compra para subs
 
 Ao voltar para `/listas`, a consulta própria recupera a ListaCompra `FINALIZADA`, com ação “Ver resumo”. Não há navegação automática após finalizar.
 
+### Reutilização de compra finalizada
+
+No resumo acessível por Minhas Listas, “Usar esta lista novamente” depende exclusivamente de `compra.contextoUsuario.podeReutilizarLista`. A confirmação informa que a nova preparação preservará nome, categoria e estabelecimento e copiará os campos descritivos dos ItemCompra `NO_CARRINHO` e `PENDENTE`, incluindo itens adicionados durante a compra. `REMOVIDO` não é copiado. Se todos estiverem removidos, a confirmação explica que a nova preparação será vazia.
+
+`POST /api/familias/{familiaId}/listas/{listaId}/reutilizar`, sem body, retorna `201` com a nova lista e `Location`. O frontend navega para `/listas/{novoId}`. Cada item é um novo ItemLista editável, sem vínculos, estados ou auditorias operacionais antigos; somente o executor participa inicialmente. A origem permanece intacta.
+
+A confirmação usa dialog nativo, foco inicial em Cancelar e retorno ao acionador. Durante envio, confirmação e cancelamento ficam bloqueados. `401` encerra sessão; `403/409` reconciliam a Compra via GET e respeitam a capability atual. Falha na reconciliação exige atualizar antes de repetir. A criação não é idempotente: não há retry automático e, diante de falha de conexão, a interface orienta conferir Minhas Listas antes de tentar novamente. Contrato backend: `docs/contrato-reutilizacao-lista.md`.
+
 Relatório e limites da validação: [Marco Compra 3](docs/marco-compra-3.md). Suíte local: `npm test`.
 
 ### Testes automatizados do frontend

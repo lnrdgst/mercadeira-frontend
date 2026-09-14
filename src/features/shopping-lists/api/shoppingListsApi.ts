@@ -41,6 +41,12 @@ export function buscarLista(token: string, familiaId: string, listaId: string) {
   })
 }
 
+export async function reutilizarLista(token: string, familiaId: string, listaId: string) {
+  const response = await apiRequest<ListaCompraResumoResponse>(`${listasPath(familiaId)}/${listaId}/reutilizar`, { token, method: 'POST' })
+  if (!response.data) throw new Error('Não foi possível confirmar a criação. Confira Minhas Listas antes de tentar novamente.')
+  return response.data
+}
+
 function listaPath(familiaId: string, listaId: string) {
   return `${listasPath(familiaId)}/${listaId}`
 }

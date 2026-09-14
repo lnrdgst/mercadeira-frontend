@@ -5,6 +5,7 @@ import { useSession } from '../../auth/session/sessionContext'
 import { useFamilyContext } from '../../family/session/familyContext'
 import { buscarCompra, finalizarCompra } from '../api/shoppingApi'
 import { CompraResumo } from '../components/CompraResumo'
+import { ReutilizarListaButton } from '../components/ReutilizarListaButton'
 import type { CompraResponse } from '../types/shopping'
 
 export function CompraRevisaoPage() {
@@ -107,6 +108,7 @@ function RevisaoCompra({ token, familiaId, listaId }: { token: string; familiaId
     {!carregando && (!compra || precisaAtualizar) && <button type="button" disabled={enviando} onClick={atualizar} className="min-h-touch rounded-control border border-primary px-page font-semibold text-primary disabled:opacity-60">Atualizar compra</button>}
     {compra && <>
       <CompraResumo compra={compra} />
+      {!carregando && compra.status === 'FINALIZADA' && <ReutilizarListaButton compra={compra} familiaId={familiaId} onAtualizada={setCompra} />}
       {!carregando && compra.status === 'EM_ANDAMENTO' && compra.contextoUsuario.podeFinalizarCompra === true && <button ref={botaoRef} type="button" disabled={enviando || precisaAtualizar} onClick={() => { setErro(null); dialogRef.current?.showModal() }} className="min-h-touch w-full rounded-control bg-primary px-page font-semibold text-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60">{enviando ? 'Finalizando compra...' : 'Finalizar compra'}</button>}
       {compra.status === 'EM_ANDAMENTO' && !compra.contextoUsuario.podeFinalizarCompra && <p className="text-body-md text-foreground-muted">A finalização não está disponível para você no estado atual desta compra.</p>}
     </>}

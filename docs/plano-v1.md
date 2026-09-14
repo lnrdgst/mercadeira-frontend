@@ -7,7 +7,7 @@ Escopo do piloto reduzido confirmado pelo usuário em 13/09/2026: sem Histórico
 A nova ordem aprovada substitui a sequência anterior de ir diretamente ao gate final:
 
 1. Sugestões de itens da família — BE #11 / FE #13 implementadas, com 28 testes backend e 78 frontend aprovados; build/lint/diff-check aprovados.
-2. Reutilizar lista finalizada — investigar a fonte dos itens antes do contrato. Preparação original e Compra finalizada preservam conjuntos diferentes; a segunda pode conter itens adicionados durante a compra.
+2. Reutilizar lista finalizada — BE #12 / FE #14 implementadas e aprovadas manualmente pelo usuário em 14/09/2026; checkpoint autorizado. Fonte decidida: ItemCompra da Compra finalizada, estados NO_CARRINHO/PENDENTE, incluindo os adicionados durante a compra e excluindo REMOVIDO. Gera novos ItemLista independentes, sem auditorias ou vínculos antigos; somente executor participa inicialmente.
 3. Corrigir somente UX essencial (erros, recuperação, acessibilidade e mobile); avaliar FE #12 nesta etapa, sem melhorias cosméticas laterais.
 4. Gestão familiar mínima: conferir se alguém fica sem saída; somente operações necessárias, com decisão explícita para políticas administrativas novas.
 5. Gate final: avaliar se falta algo que impeça um pequeno grupo familiar de usar o produto diariamente e encerrar V1. Histórico dedicado, realtime e backlog futuro permanecem fora.

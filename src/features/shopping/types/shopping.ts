@@ -12,6 +12,7 @@ export interface ParticipanteCompraResponse {
 export interface ContextoUsuarioCompraResponse {
   participanteCompra: boolean
   podeFinalizarCompra: boolean
+  podeReutilizarLista: boolean
 }
 
 export interface ReferenciaParticipanteCompra {

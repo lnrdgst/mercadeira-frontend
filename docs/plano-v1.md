@@ -2,6 +2,17 @@
 
 Escopo do piloto reduzido confirmado pelo usuário em 13/09/2026: sem Histórico dedicado na V1. Continuidade das Issues obrigatórias autorizada; FE #12 permanece no backlog. Checkpoints concluídos são refletidos nas respectivas Issues e no Project, sem alterar prioridades ou encerrar dependências não implementadas.
 
+## Escopo de fechamento aprovado em 14/09/2026
+
+A nova ordem aprovada substitui a sequência anterior de ir diretamente ao gate final:
+
+1. Sugestões de itens da família — BE #11 / FE #13 implementadas, com 28 testes backend e 78 frontend aprovados; build/lint/diff-check aprovados.
+2. Reutilizar lista finalizada — investigar a fonte dos itens antes do contrato. Preparação original e Compra finalizada preservam conjuntos diferentes; a segunda pode conter itens adicionados durante a compra.
+3. Corrigir somente UX essencial (erros, recuperação, acessibilidade e mobile); avaliar FE #12 nesta etapa, sem melhorias cosméticas laterais.
+4. Gestão familiar mínima: conferir se alguém fica sem saída; somente operações necessárias, com decisão explícita para políticas administrativas novas.
+5. Gate final: avaliar se falta algo que impeça um pequeno grupo familiar de usar o produto diariamente e encerrar V1. Histórico dedicado, realtime e backlog futuro permanecem fora.
+
+Sugestões não copiam quantidade, marca ou observações e não exigem selecionar uma opção. Reutilização nunca deve transportar estados, auditorias, participantes snapshot ou identidades de ItemCompra.
 ## Base e limite da análise
 
 Consultados router, páginas de Família, Listas, Histórico, preparação e Compra, APIs frontend, guards, scripts, README, controllers/consulta de listas backend, contratos Compra e os 21 itens do Project. Não foi realizada auditoria visual completa nem validação de implantação em produção.

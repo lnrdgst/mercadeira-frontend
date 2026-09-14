@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ItemDescriptionCombobox, type LoadItemSuggestions } from './ItemDescriptionCombobox'
 import type { UnidadeMedida } from '../../features/shopping-lists/types/shoppingList'
 import { unidadeMedidaLabels } from '../../features/shopping-lists/types/shoppingList'
 
@@ -11,6 +12,7 @@ export interface ItemFieldsValues {
 }
 
 interface ItemFieldsFormProps {
+  loadSuggestions?: LoadItemSuggestions
   item?: ItemFieldsValues
   submitting: boolean
   onCancel: () => void
@@ -19,7 +21,7 @@ interface ItemFieldsFormProps {
 
 const unidades = Object.keys(unidadeMedidaLabels) as UnidadeMedida[]
 
-export function ItemFieldsForm({ item, submitting, onCancel, onSubmit }: ItemFieldsFormProps) {
+export function ItemFieldsForm({ item, submitting, onCancel, onSubmit, loadSuggestions }: ItemFieldsFormProps) {
   const [descricao, setDescricao] = useState(item?.descricao || '')
   const [quantidade, setQuantidade] = useState(item?.quantidade?.toString() || '')
   const [unidadeMedida, setUnidadeMedida] = useState<UnidadeMedida | ''>(item?.unidadeMedida || '')
@@ -49,7 +51,7 @@ export function ItemFieldsForm({ item, submitting, onCancel, onSubmit }: ItemFie
       <h2 className="text-headline-md font-semibold">{item ? 'Editar item' : 'Adicionar item'}</h2>
       <div className="space-y-1">
         <label htmlFor="item-descricao" className="block text-label-lg font-semibold">Descrição</label>
-        <input id="item-descricao" value={descricao} onChange={(event) => setDescricao(event.target.value)} required autoFocus disabled={submitting} className="min-h-touch w-full rounded-card border border-foreground/20 bg-background px-gutter focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60" />
+        {loadSuggestions ? <ItemDescriptionCombobox value={descricao} disabled={submitting} load={loadSuggestions} onChange={setDescricao} onSelect={(item) => { setDescricao(item.descricao); setUnidadeMedida(item.unidadeMedida || '') }} /> : <input id="item-descricao" value={descricao} onChange={(event) => setDescricao(event.target.value)} required autoFocus disabled={submitting} className="min-h-touch w-full rounded-card border border-foreground/20 bg-background px-gutter focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60" />}
       </div>
       <div className="grid gap-gutter sm:grid-cols-2">
         <div className="space-y-1">

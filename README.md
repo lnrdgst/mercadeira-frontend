@@ -453,6 +453,15 @@ Loading impede envios duplicados. Falhas são apresentadas junto ao formulário 
 
 Contrato backend: `docs/contrato-edicao-lista.md` no repositório `lnrdgst/mercadeira`.
 
+### Sugestões de itens da família
+
+Na preparação, o campo Descrição oferece autocomplete tanto ao adicionar quanto ao editar item. Texto livre continua permitido. Ao focar vazio, mostra usados recentemente; ao digitar, consulta após 200 ms.
+
+`GET /api/familias/{familiaId}/itens/sugestoes?termo=arr` retorna até 10 objetos `{ descricao, unidadeMedida }`. Backend filtra por família, remove duplicatas por caixa/espaços e ordena por recência. Usa ItemLista da preparação e ItemCompra das compras em andamento/finalizadas, sem removidos ou listas canceladas; não existe cadastro mestre novo.
+
+Setas percorrem as sugestões, Enter seleciona a opção ativa, Escape fecha a lista sem fechar o diálogo e Tab segue o formulário. Clique/toque também seleciona. Apenas descrição e unidade são preenchidas; quantidade, marca e observações atuais são preservadas. Loading, nenhum resultado ou falha na busca não impedem salvar texto livre. Respostas antigas são ignoradas ao mudar termo/família ou fechar as sugestões.
+
+Contrato backend: `docs/contrato-sugestoes-itens.md`. A inclusão durante a Compra mantém o formulário existente sem autocomplete nesta entrega.
 ### Participantes da lista
 
 Listar participantes:

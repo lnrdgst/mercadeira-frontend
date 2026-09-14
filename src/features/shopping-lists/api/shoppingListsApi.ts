@@ -13,6 +13,12 @@ function listasPath(familiaId: string) {
   return `/familias/${familiaId}/listas`
 }
 
+export interface SugestaoItem { descricao: string; unidadeMedida: import('../types/shoppingList').UnidadeMedida | null }
+
+export function buscarSugestoesItens(token: string, familiaId: string, termo: string) {
+  return apiRequest<SugestaoItem[]>(`/familias/${familiaId}/itens/sugestoes?termo=${encodeURIComponent(termo)}`, { token })
+}
+
 export function buscarListas(token: string, familiaId: string) {
   return apiRequest<ListaCompraResumoResponse[]>(listasPath(familiaId), { token })
 }

@@ -1,5 +1,14 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import type { AcaoRemocaoItemCompra, AdicionarItemCompraRequest, CompraResponse, ItemCompraResponse } from '../types/shopping'
+import type { AcaoRemocaoItemCompra, AdicionarItemCompraRequest, CompraResponse, DeclaracaoPresenca, ItemCompraResponse } from '../types/shopping'
+
+export async function alterarMinhaPresenca(token: string, familiaId: string, listaId: string, estado: DeclaracaoPresenca) {
+  const response = await apiRequest<CompraResponse>(
+    `/familias/${familiaId}/listas/${listaId}/compra/minha-presenca`,
+    { token, method: 'PUT', body: { estado } },
+  )
+  if (response.status !== 200 || !response.data) throw new Error('Não foi possível confirmar sua presença. Atualize a compra para conferir o resultado.')
+  return response.data
+}
 
 async function requisitarCompra(token: string, familiaId: string, listaId: string, method: 'GET' | 'POST') {
   const response = await apiRequest<CompraResponse>(

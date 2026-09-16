@@ -89,8 +89,9 @@ test('removido permanece legível com badge e auditoria, sem ação de carrinho'
   assert.doesNotMatch(html, /<button/)
 })
 
-test('regressão: colocar no carrinho disponível somente para pendente e participante', () => {
-  assert.match(render({ ...base, status: 'PENDENTE' }, true), /Colocar no carrinho/)
+test('colocar no carrinho depende exclusivamente da capability, sem fallback para participação', () => {
+  assert.match(render({ ...base, status: 'PENDENTE', acoes: { ...base.acoes, podeColocarNoCarrinho: true } }, false), /Colocar no carrinho/)
+  assert.doesNotMatch(render({ ...base, status: 'PENDENTE' }, true), /<button/)
   assert.doesNotMatch(render({ ...base, status: 'PENDENTE' }), /<button/)
   assert.doesNotMatch(render(base, true), /<button/)
 })

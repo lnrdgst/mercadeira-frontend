@@ -1,5 +1,13 @@
 import type { CategoriaCompra, UnidadeMedida } from '../../shopping-lists/types/shoppingList'
 
+export type PresencaOperacional = 'NAO_INFORMADA' | 'PRESENTE' | 'NAO_PRESENTE'
+export type DeclaracaoPresenca = Exclude<PresencaOperacional, 'NAO_INFORMADA'>
+export const presencaLabels: Record<PresencaOperacional, string> = {
+  NAO_INFORMADA: 'Presença não informada',
+  PRESENTE: 'No mercado',
+  NAO_PRESENTE: 'Não está no mercado',
+}
+
 export interface ParticipanteCompraResponse {
   id: string
   membroFamiliaId: string
@@ -7,10 +15,12 @@ export interface ParticipanteCompraResponse {
   nome: string
   papel: 'ADMINISTRADOR' | 'MEMBRO'
   geradoEm: string
+  presencaOperacional: { estado: PresencaOperacional; alteradaEm: string | null }
 }
 
 export interface ContextoUsuarioCompraResponse {
   participanteCompra: boolean
+  podeAlterarPresenca: boolean
   podeFinalizarCompra: boolean
   podeReutilizarLista: boolean
 }
@@ -25,6 +35,7 @@ export interface ReferenciaParticipanteCompra {
 export type AutorItemCompraResponse = ReferenciaParticipanteCompra
 
 export interface AcoesItemCompraResponse {
+  podeColocarNoCarrinho: boolean
   podeSolicitarRemocao: boolean
   podeDecidirRemocao: boolean
   podeRestaurarNoCarrinho: boolean

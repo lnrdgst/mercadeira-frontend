@@ -39,7 +39,7 @@ type ItemCompraCardProps = { item: ItemCompraResponse } & ({
   onReconciliar: (itemId: string) => Promise<void>
 })
 
-export function ItemCompraCard({ item, somenteLeitura, participante, onColocar, onRestaurar, onRemover, onReconciliar }: ItemCompraCardProps) {
+export function ItemCompraCard({ item, somenteLeitura, onColocar, onRestaurar, onRemover, onReconciliar }: ItemCompraCardProps) {
   const { logout } = useSession()
   const enviandoRef = useRef(false)
   const [enviando, setEnviando] = useState<keyof typeof acaoLabels | 'atualizar' | null>(null)
@@ -50,7 +50,7 @@ export function ItemCompraCard({ item, somenteLeitura, participante, onColocar, 
   const removido = item.status === 'REMOVIDO'
   const acoes: (keyof typeof acaoLabels)[] = []
   if (!somenteLeitura) {
-    if (participante && item.status === 'PENDENTE') acoes.push('colocar')
+    if (item.acoes.podeColocarNoCarrinho === true) acoes.push('colocar')
     if (item.acoes.podeRestaurarNoCarrinho === true) acoes.push('restaurar')
     if (item.acoes.podeSolicitarRemocao === true) acoes.push('solicitar-remocao')
     if (item.acoes.podeDecidirRemocao === true) acoes.push('aprovar-remocao', 'rejeitar-remocao')

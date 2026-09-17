@@ -71,15 +71,15 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
     let encerrado = false
     let timer: ReturnType<typeof setInterval> | undefined
     let ultimaConsulta = 0
-    const intervalo = 15_000
+    const intervalo = 5_000
 
     function agendar() {
       clearInterval(timer)
-      if (!encerrado && document.visibilityState === 'visible') timer = setInterval(() => void consultar(), intervalo)
+      if (!encerrado && document.visibilityState === 'visible' && navigator.onLine) timer = setInterval(() => void consultar(), intervalo)
     }
 
     async function consultar() {
-      if (encerrado || document.visibilityState !== 'visible') return
+      if (encerrado || document.visibilityState !== 'visible' || !navigator.onLine) return
       // Uma operação local tem prioridade. Foco/visibility próximos compartilham a consulta.
       if (operacao.current || leituraPeriodica.current || Date.now() - Math.max(ultimaConsulta, ultimaOperacao.current) < 1_000) {
         return
@@ -102,8 +102,9 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
       }
     }
 
-    function visibilidade() {
-      if (document.visibilityState === 'hidden') {
+    // onLine é apenas um sinal do navegador; o GET continua confirmando a conectividade real.
+    function disponibilidade() {
+      if (document.visibilityState !== 'visible' || !navigator.onLine) {
         clearInterval(timer)
         leituraPeriodica.current?.abort()
         leituraPeriodica.current = null
@@ -112,15 +113,19 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
     }
     function foco() { void consultar() }
     agendar()
-    document.addEventListener('visibilitychange', visibilidade)
+    document.addEventListener('visibilitychange', disponibilidade)
     window.addEventListener('focus', foco)
+    window.addEventListener('offline', disponibilidade)
+    window.addEventListener('online', disponibilidade)
     return () => {
       encerrado = true
       clearInterval(timer)
       leituraPeriodica.current?.abort()
       leituraPeriodica.current = null
-      document.removeEventListener('visibilitychange', visibilidade)
+      document.removeEventListener('visibilitychange', disponibilidade)
       window.removeEventListener('focus', foco)
+      window.removeEventListener('offline', disponibilidade)
+      window.removeEventListener('online', disponibilidade)
     }
   }, [compra?.status, chave, token, familiaId, listaId, logout])
 

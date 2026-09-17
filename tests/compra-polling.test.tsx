@@ -31,6 +31,7 @@ beforeEach(() => {
   vi.useFakeTimers()
   vi.setSystemTime(new Date('2026-09-17T12:00:00Z'))
   vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible')
+  vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(true)
 })
 
 async function preparar({ inicial = compra(), get = async () => Response.json(compra()), post = async () => Response.json(compra().itens[0]) } = {}) {
@@ -47,9 +48,104 @@ async function preparar({ inicial = compra(), get = async () => Response.json(co
   return { ...view, http, gets: () => http.mock.calls.filter(([, options]) => options?.method === 'GET') }
 }
 
-async function avancar(ms = 15_000) { await act(async () => { await vi.advanceTimersByTimeAsync(ms) }) }
+async function avancar(ms = 5_000) { await act(async () => { await vi.advanceTimersByTimeAsync(ms) }) }
 
-test('15s aplica Compra completa: novo item, presença, contexto e capabilities sem loading recorrente', async () => {
+async function conexao(online: boolean) {
+  vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(online)
+  await act(async () => { fireEvent(window, new Event(online ? 'online' : 'offline')) })
+}
+
+test('offline suspende sem apagar dados; online reconcilia imediatamente a Compra completa e retoma um único timer', async () => {
+  const nova = compra(); nova.nomeLista = 'Reconectada'
+  nova.participantes[0].presencaOperacional.estado = 'NAO_PRESENTE'
+  nova.itens[0].acoes.podeColocarNoCarrinho = false
+  nova.itens.push({ ...nova.itens[0], id: 'i-b', descricao: 'Item remoto' })
+  const { gets } = await preparar({ get: async () => Response.json(nova) })
+  await conexao(false)
+  expect(vi.getTimerCount()).toBe(0)
+  await avancar(30_000)
+  fireEvent(window, new Event('focus'))
+  expect(gets()).toHaveLength(1)
+  expect(screen.getByRole('heading', { name: 'Semana' })).toBeInTheDocument()
+  await conexao(true)
+  expect(gets()).toHaveLength(2)
+  expect(screen.getByRole('heading', { name: 'Reconectada' })).toBeInTheDocument()
+  expect(screen.getByText('Não está no mercado')).toBeInTheDocument()
+  expect(screen.getByText('Item remoto')).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /Colocar no carrinho:/ })).not.toBeInTheDocument()
+  await act(async () => { fireEvent(window, new Event('focus')); fireEvent(document, new Event('visibilitychange')); fireEvent(window, new Event('online')) })
+  expect(gets()).toHaveLength(2)
+  expect(vi.getTimerCount()).toBe(1)
+  await avancar()
+  expect(gets()).toHaveLength(3)
+})
+
+test('online não garante conexão: falha preserva estado e próximo ciclo recupera sem retry agressivo', async () => {
+  let falhar = true
+  const nova = compra(); nova.nomeLista = 'Recuperada'
+  const { gets } = await preparar({ get: async () => { if (falhar) throw new TypeError('rede instável'); return Response.json(nova) } })
+  await conexao(false); await conexao(true)
+  expect(gets()).toHaveLength(2)
+  expect(screen.getByRole('heading', { name: 'Semana' })).toBeInTheDocument()
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  await avancar(4_999)
+  expect(gets()).toHaveLength(2)
+  falhar = false; await avancar(1)
+  expect(screen.getByRole('heading', { name: 'Recuperada' })).toBeInTheDocument()
+  expect(gets()).toHaveLength(3)
+})
+
+test('offline aborta consulta antiga; reconexão não permite reaplicar resposta anterior', async () => {
+  const pendente = deferred<Response>(); let consultas = 0
+  const nova = compra(); nova.nomeLista = 'Depois da reconexão'
+  const { gets } = await preparar({ get: () => ++consultas === 1 ? pendente.promise : Promise.resolve(Response.json(nova)) })
+  await avancar()
+  await conexao(false)
+  expect(gets()[1][1]!.signal!.aborted).toBe(true)
+  await conexao(true)
+  await act(async () => pendente.resolve(Response.json(compra())))
+  expect(screen.getByRole('heading', { name: 'Depois da reconexão' })).toBeInTheDocument()
+})
+
+test('online em aba oculta aguarda visibilidade e depois reconhece finalização remota', async () => {
+  const finalizada = compra(); finalizada.status = 'FINALIZADA'
+  const { gets } = await preparar({ get: async () => Response.json(finalizada) })
+  await conexao(false)
+  vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden')
+  fireEvent(document, new Event('visibilitychange'))
+  await conexao(true); await avancar(20_000)
+  expect(gets()).toHaveLength(1)
+  vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible')
+  await act(async () => { fireEvent(document, new Event('visibilitychange')) })
+  expect(screen.getByRole('link', { name: 'Ver resumo' })).toBeInTheDocument()
+  expect(vi.getTimerCount()).toBe(0)
+  await conexao(false); await conexao(true); await avancar(20_000)
+  expect(gets()).toHaveLength(2)
+})
+
+test('online durante escrita respeita prioridade local; próximo ciclo continua normalmente', async () => {
+  const pendente = deferred<Response>()
+  const { gets } = await preparar({ post: () => pendente.promise })
+  fireEvent.click(screen.getByRole('button', { name: 'Colocar no carrinho: Arroz' }))
+  await conexao(false); await conexao(true)
+  expect(gets()).toHaveLength(1)
+  await act(async () => pendente.resolve(Response.json(compra().itens[0])))
+  await avancar()
+  expect(gets()).toHaveLength(2)
+})
+
+test('inicialmente offline mantém carregamento existente, mas não inicia polling até online', async () => {
+  vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
+  const { gets } = await preparar()
+  await avancar(20_000)
+  expect(gets()).toHaveLength(1)
+  expect(vi.getTimerCount()).toBe(0)
+  await conexao(true)
+  expect(gets()).toHaveLength(2)
+  expect(vi.getTimerCount()).toBe(1)
+})
+
+test('5s aplica Compra completa: novo item, presença, contexto e capabilities sem loading recorrente', async () => {
   const nova = compra()
   nova.itens.push({ ...nova.itens[0], id: 'i-b', descricao: 'Feijão remoto', ordemExibicao: 2 })
   nova.participantes[0].presencaOperacional.estado = 'NAO_PRESENTE'
@@ -58,7 +154,7 @@ test('15s aplica Compra completa: novo item, presença, contexto e capabilities 
   nova.itens.forEach(i => { i.acoes.podeColocarNoCarrinho = false })
   const { gets } = await preparar({ get: async () => Response.json(nova) })
   expect(gets()).toHaveLength(1)
-  await avancar(14_999)
+  await avancar(4_999)
   expect(gets()).toHaveLength(1)
   await avancar(1)
   expect(gets()).toHaveLength(2)
@@ -160,6 +256,7 @@ test('desmontagem cancela request e remove timers/listeners', async () => {
   expect(signal.aborted).toBe(true)
   expect(vi.getTimerCount()).toBe(0)
   fireEvent(window, new Event('focus')); fireEvent(document, new Event('visibilitychange'))
+  fireEvent(window, new Event('online')); fireEvent(window, new Event('offline'))
   await avancar(60_000)
   await act(async () => pendente.resolve(Response.json(compra())))
   expect(gets()).toHaveLength(2)

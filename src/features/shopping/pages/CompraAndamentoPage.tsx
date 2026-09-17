@@ -25,6 +25,9 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
   const { usuario, loading: usuarioCarregando, error: usuarioErro } = useAuthenticatedUser()
   const ativo = useRef(true)
   const operacao = useRef(false)
+  const geracao = useRef(0)
+  const leituraPeriodica = useRef<AbortController | null>(null)
+  const ultimaOperacao = useRef(0)
   const [ocupada, setOcupada] = useState(false)
   useEffect(() => { ativo.current = true; return () => { ativo.current = false } }, [])
 
@@ -32,9 +35,12 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
   async function executar(acao: () => Promise<void>) {
     if (!ativo.current || operacao.current) throw new Error('Aguarde a atualização da compra.')
     operacao.current = true
+    geracao.current += 1
+    leituraPeriodica.current?.abort()
+    leituraPeriodica.current = null
     setOcupada(true)
     try { await acao() }
-    finally { operacao.current = false; if (ativo.current) setOcupada(false) }
+    finally { operacao.current = false; ultimaOperacao.current = Date.now(); if (ativo.current) setOcupada(false) }
   }
   const [tentativa, setTentativa] = useState(0)
   const [resultado, setResultado] = useState<{ chave: string; token: string; compra?: CompraResponse; erro?: string } | null>(null)
@@ -43,7 +49,8 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
   useEffect(() => {
     if (!token || !familiaId || !listaId) return
     let ativo = true
-    void buscarCompra(token, familiaId, listaId).then((compra) => {
+    const controller = new AbortController()
+    void buscarCompra(token, familiaId, listaId, controller.signal).then((compra) => {
       if (ativo) setResultado({ chave, token, compra })
     }).catch((error: ApiRequestError) => {
       if (!ativo) return
@@ -52,12 +59,70 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
         ? 'Esta compra ainda não está disponível.'
         : error.message || 'Não foi possível carregar a compra.' })
     })
-    return () => { ativo = false }
+    return () => { ativo = false; controller.abort() }
   }, [token, familiaId, listaId, chave, logout])
 
   const carregando = resultado?.chave !== chave || resultado?.token !== token
   const compra = !carregando ? resultado?.compra : undefined
   const erro = !carregando ? resultado?.erro : undefined
+
+  useEffect(() => {
+    if (compra?.status !== 'EM_ANDAMENTO') return
+    let encerrado = false
+    let timer: ReturnType<typeof setInterval> | undefined
+    let ultimaConsulta = 0
+    const intervalo = 15_000
+
+    function agendar() {
+      clearInterval(timer)
+      if (!encerrado && document.visibilityState === 'visible') timer = setInterval(() => void consultar(), intervalo)
+    }
+
+    async function consultar() {
+      if (encerrado || document.visibilityState !== 'visible') return
+      // Uma operação local tem prioridade. Foco/visibility próximos compartilham a consulta.
+      if (operacao.current || leituraPeriodica.current || Date.now() - Math.max(ultimaConsulta, ultimaOperacao.current) < 1_000) {
+        return
+      }
+      const controller = new AbortController()
+      leituraPeriodica.current = controller
+      const versao = geracao.current
+      ultimaConsulta = Date.now()
+      try {
+        const atualizada = await buscarCompra(token, familiaId, listaId, controller.signal)
+        if (encerrado || controller.signal.aborted || versao !== geracao.current) return
+        setResultado((atual) => atual?.chave === chave && atual.token === token && atual.compra?.id === atualizada.id ? { ...atual, compra: atualizada } : atual)
+        if (atualizada.status !== 'EM_ANDAMENTO') { encerrado = true; clearInterval(timer) }
+      } catch (error) {
+        if (encerrado || controller.signal.aborted || versao !== geracao.current) return
+        if ((error as ApiRequestError).status === 401) { encerrado = true; clearInterval(timer); logout() }
+        // Rede/servidor indisponível: preservar dados e tentar no próximo ciclo.
+      } finally {
+        if (leituraPeriodica.current === controller) leituraPeriodica.current = null
+      }
+    }
+
+    function visibilidade() {
+      if (document.visibilityState === 'hidden') {
+        clearInterval(timer)
+        leituraPeriodica.current?.abort()
+        leituraPeriodica.current = null
+        ultimaConsulta = 0
+      } else { void consultar(); agendar() }
+    }
+    function foco() { void consultar() }
+    agendar()
+    document.addEventListener('visibilitychange', visibilidade)
+    window.addEventListener('focus', foco)
+    return () => {
+      encerrado = true
+      clearInterval(timer)
+      leituraPeriodica.current?.abort()
+      leituraPeriodica.current = null
+      document.removeEventListener('visibilitychange', visibilidade)
+      window.removeEventListener('focus', foco)
+    }
+  }, [compra?.status, chave, token, familiaId, listaId, logout])
 
   function atualizarItem(item: ItemCompraResponse, adicionar = false) {
     if (!ativo.current) return

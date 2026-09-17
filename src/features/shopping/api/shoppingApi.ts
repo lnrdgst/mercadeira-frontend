@@ -10,10 +10,10 @@ export async function alterarMinhaPresenca(token: string, familiaId: string, lis
   return response.data
 }
 
-async function requisitarCompra(token: string, familiaId: string, listaId: string, method: 'GET' | 'POST') {
+async function requisitarCompra(token: string, familiaId: string, listaId: string, method: 'GET' | 'POST', signal?: AbortSignal) {
   const response = await apiRequest<CompraResponse>(
     `/familias/${familiaId}/listas/${listaId}/compra`,
-    { token, method },
+    { token, method, signal },
   )
   if (!response.data) throw new Error('Não foi possível recuperar os dados da compra.')
   return response.data
@@ -23,8 +23,8 @@ export function iniciarCompra(token: string, familiaId: string, listaId: string)
   return requisitarCompra(token, familiaId, listaId, 'POST')
 }
 
-export function buscarCompra(token: string, familiaId: string, listaId: string) {
-  return requisitarCompra(token, familiaId, listaId, 'GET')
+export function buscarCompra(token: string, familiaId: string, listaId: string, signal?: AbortSignal) {
+  return requisitarCompra(token, familiaId, listaId, 'GET', signal)
 }
 
 export async function finalizarCompra(token: string, familiaId: string, listaId: string) {

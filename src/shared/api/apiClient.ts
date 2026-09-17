@@ -18,6 +18,7 @@ interface ApiRequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
   body?: unknown
   token?: string
+  signal?: AbortSignal
 }
 
 interface ApiResponse<T> {
@@ -69,7 +70,7 @@ async function parseJson(response: Response): Promise<unknown | null> {
 
 export async function apiRequest<T>(
   path: string,
-  { method = 'GET', body, token }: ApiRequestOptions = {},
+  { method = 'GET', body, token, signal }: ApiRequestOptions = {},
 ): Promise<ApiResponse<T>> {
   const headers = new Headers({ Accept: 'application/json' })
 
@@ -86,6 +87,7 @@ export async function apiRequest<T>(
   try {
     response = await fetch(buildUrl(path), {
       method,
+      signal,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
     })

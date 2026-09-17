@@ -1,5 +1,7 @@
 # Presença operacional na Compra
 
+> FE #16 acrescenta atualização periódica do GET completo na Compra em andamento. As regras de presença permanecem iguais; ver [atualização periódica](atualizacao-periodica-compra.md). As referências abaixo a ausência de polling descrevem o marco original da FE #17.
+
 Issue frontend #17. Depende de `lnrdgst/mercadeira#13`, contrato validado no commit backend `f42fc70e48f95acb691fe60ffbc3e0c9ea492c96`.
 
 ## Interface e contrato

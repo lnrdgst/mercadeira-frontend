@@ -5,12 +5,12 @@ import { useSession } from '../../auth/session/sessionContext'
 import { useAuthenticatedUser } from '../../auth/user/AuthenticatedUserContext'
 import { useFamilyContext } from '../../family/session/familyContext'
 import { categoriaCompraLabels } from '../../shopping-lists/types/shoppingList'
-import { adicionarItemCompra, alterarMinhaPresenca, buscarCompra, colocarItemNoCarrinho, removerItemCompra, restaurarItemNoCarrinho } from '../api/shoppingApi'
+import { adicionarItemCompra, alterarMinhaPresenca, buscarCompra, cancelarSolicitacaoPresenca, cancelarSolicitacaoResponsabilidade, colocarItemNoCarrinho, decidirSolicitacaoPresenca, decidirSolicitacaoResponsabilidade, removerItemCompra, restaurarItemNoCarrinho, solicitarMinhaPresenca, solicitarResponsabilidade } from '../api/shoppingApi'
 import { AdicionarItemCompraDialog } from '../components/AdicionarItemCompraDialog'
 import { ItemCompraCard } from '../components/ItemCompraCard'
 import { CompraResumo } from '../components/CompraResumo'
 import { MinhaPresenca } from '../components/MinhaPresenca'
-import type { AcaoRemocaoItemCompra, AdicionarItemCompraRequest, CompraResponse, DeclaracaoPresenca, ItemCompraResponse } from '../types/shopping'
+import type { AcaoRemocaoItemCompra, AdicionarItemCompraRequest, CompraResponse, ItemCompraResponse } from '../types/shopping'
 
 export function CompraAndamentoPage() {
   const { listaId } = useParams()
@@ -160,9 +160,37 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
     await executar(async () => atualizarCompra(await buscarCompra(token, familiaId, listaId)))
   }
 
-  async function declararPresenca(estado: DeclaracaoPresenca) {
-    if (compra?.contextoUsuario.podeAlterarPresenca !== true) throw new Error('A declaração de presença não está disponível.')
-    await executar(async () => atualizarCompra(await alterarMinhaPresenca(token, familiaId, listaId, estado)))
+  async function solicitarPresenca() {
+    if (compra?.contextoUsuario.podeSolicitarPresenca !== true) throw new Error('A solicitação de presença não está disponível.')
+    await executar(async () => atualizarCompra(await solicitarMinhaPresenca(token, familiaId, listaId)))
+  }
+
+  async function cancelarPresenca(solicitacaoId: string) {
+    if (compra?.contextoUsuario.podeCancelarSolicitacaoPresenca !== true) throw new Error('O cancelamento não está disponível.')
+    await executar(async () => atualizarCompra(await cancelarSolicitacaoPresenca(token, familiaId, listaId, solicitacaoId)))
+  }
+
+  async function decidirPresenca(solicitacaoId: string, decisao: 'aprovar' | 'rejeitar') {
+    if (compra?.solicitacoesPresencaPendentes?.find((pedido) => pedido.id === solicitacaoId)?.acoes.podeDecidirPresenca !== true) throw new Error('A decisão não está disponível.')
+    await executar(async () => atualizarCompra(await decidirSolicitacaoPresenca(token, familiaId, listaId, solicitacaoId, decisao)))
+  }
+
+  async function declararSaida() {
+    if (compra?.contextoUsuario.podeDeclararSaida !== true) throw new Error('A declaração de saída não está disponível.')
+    await executar(async () => atualizarCompra(await alterarMinhaPresenca(token, familiaId, listaId, 'NAO_PRESENTE')))
+  }
+
+  async function solicitarResponsabilidadeOperacional() {
+    if (compra?.contextoUsuario.podeSolicitarResponsabilidade !== true) throw new Error('A solicitação de responsabilidade não está disponível.')
+    await executar(async () => atualizarCompra(await solicitarResponsabilidade(token, familiaId, listaId)))
+  }
+  async function cancelarResponsabilidade(solicitacaoId: string) {
+    if (compra?.contextoUsuario.podeCancelarSolicitacaoResponsabilidade !== true) throw new Error('O cancelamento não está disponível.')
+    await executar(async () => atualizarCompra(await cancelarSolicitacaoResponsabilidade(token, familiaId, listaId, solicitacaoId)))
+  }
+  async function decidirResponsabilidade(solicitacaoId: string, decisao: 'aprovar' | 'rejeitar') {
+    if (compra?.solicitacoesResponsabilidadePendentes?.find((pedido) => pedido.id === solicitacaoId)?.acoes.podeDecidirResponsabilidade !== true) throw new Error('A decisão não está disponível.')
+    await executar(async () => atualizarCompra(await decidirSolicitacaoResponsabilidade(token, familiaId, listaId, solicitacaoId, decisao)))
   }
 
   async function removerItem(itemId: string, acao: AcaoRemocaoItemCompra) {
@@ -200,7 +228,7 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
         <p className="text-body-md text-foreground-muted">Iniciada em <time dateTime={compra.iniciadaEm}>{new Date(compra.iniciadaEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</time></p>
       </header>
       <p className="rounded-card bg-primary/5 p-gutter text-body-md text-foreground-muted">{compra.contextoUsuario.participanteCompra ? 'Você participa desta compra.' : 'Você pode acompanhar esta compra, mas não participa dela.'}</p>
-      <MinhaPresenca participantes={compra.participantes} usuarioId={!usuarioCarregando && !usuarioErro ? usuario?.id : undefined} permitida={compra.contextoUsuario.podeAlterarPresenca === true} ocupada={ocupada} onAlterar={declararPresenca} onAtualizar={reconciliarCompra} />
+      <MinhaPresenca compra={compra} usuarioId={!usuarioCarregando && !usuarioErro ? usuario?.id : undefined} ocupada={ocupada} onSolicitar={solicitarPresenca} onCancelar={cancelarPresenca} onDecidir={decidirPresenca} onSair={declararSaida} onSolicitarResponsabilidade={solicitarResponsabilidadeOperacional} onCancelarResponsabilidade={cancelarResponsabilidade} onDecidirResponsabilidade={decidirResponsabilidade} onAtualizar={reconciliarCompra} />
       <Link to={`/listas/${listaId}/compra/revisao`} className="inline-flex min-h-touch items-center justify-center rounded-control bg-primary px-page font-semibold text-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">Revisar compra</Link>
       <fieldset disabled={ocupada} className="min-w-0 space-y-gutter" aria-labelledby="compra-itens">
         {compra.contextoUsuario.participanteCompra && <AdicionarItemCompraDialog key={chave} onAdicionar={adicionarItem} />}

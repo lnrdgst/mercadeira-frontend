@@ -10,6 +10,39 @@ export async function alterarMinhaPresenca(token: string, familiaId: string, lis
   return response.data
 }
 
+async function comandoPresenca(token: string, familiaId: string, listaId: string, caminho: string, body?: unknown) {
+  const response = await apiRequest<CompraResponse>(
+    `/familias/${familiaId}/listas/${listaId}/compra${caminho}`,
+    { token, method: 'POST', body },
+  )
+  if (response.status !== 200 || !response.data) throw new Error('Não foi possível atualizar a presença. Atualize a compra para conferir o resultado.')
+  return response.data
+}
+
+export function solicitarMinhaPresenca(token: string, familiaId: string, listaId: string) {
+  return comandoPresenca(token, familiaId, listaId, '/minha-presenca/solicitacoes')
+}
+
+export function cancelarSolicitacaoPresenca(token: string, familiaId: string, listaId: string, solicitacaoId: string) {
+  return comandoPresenca(token, familiaId, listaId, `/minha-presenca/solicitacoes/${solicitacaoId}/cancelar`)
+}
+
+export function decidirSolicitacaoPresenca(token: string, familiaId: string, listaId: string, solicitacaoId: string, decisao: 'aprovar' | 'rejeitar') {
+  return comandoPresenca(token, familiaId, listaId, `/solicitacoes-presenca/${solicitacaoId}/${decisao}`)
+}
+
+export function solicitarResponsabilidade(token: string, familiaId: string, listaId: string) {
+  return comandoPresenca(token, familiaId, listaId, '/responsabilidade-operacional/solicitacoes')
+}
+
+export function cancelarSolicitacaoResponsabilidade(token: string, familiaId: string, listaId: string, solicitacaoId: string) {
+  return comandoPresenca(token, familiaId, listaId, `/responsabilidade-operacional/solicitacoes/${solicitacaoId}/cancelar`)
+}
+
+export function decidirSolicitacaoResponsabilidade(token: string, familiaId: string, listaId: string, solicitacaoId: string, decisao: 'aprovar' | 'rejeitar') {
+  return comandoPresenca(token, familiaId, listaId, `/solicitacoes-responsabilidade/${solicitacaoId}/${decisao}`)
+}
+
 async function requisitarCompra(token: string, familiaId: string, listaId: string, method: 'GET' | 'POST', signal?: AbortSignal) {
   const response = await apiRequest<CompraResponse>(
     `/familias/${familiaId}/listas/${listaId}/compra`,

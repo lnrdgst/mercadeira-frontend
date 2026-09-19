@@ -1,7 +1,7 @@
 import type { CategoriaCompra, UnidadeMedida } from '../../shopping-lists/types/shoppingList'
 
 export type PresencaOperacional = 'NAO_INFORMADA' | 'PRESENTE' | 'NAO_PRESENTE'
-export type DeclaracaoPresenca = Exclude<PresencaOperacional, 'NAO_INFORMADA'>
+export type DeclaracaoPresenca = 'NAO_PRESENTE'
 export const presencaLabels: Record<PresencaOperacional, string> = {
   NAO_INFORMADA: 'Presença não informada',
   PRESENTE: 'No mercado',
@@ -23,6 +23,12 @@ export interface ContextoUsuarioCompraResponse {
   podeAlterarPresenca: boolean
   podeFinalizarCompra: boolean
   podeReutilizarLista: boolean
+  podeSolicitarPresenca?: boolean
+  podeCancelarSolicitacaoPresenca?: boolean
+  podeDeclararSaida?: boolean
+  podeSolicitarResponsabilidade?: boolean
+  podeCancelarSolicitacaoResponsabilidade?: boolean
+  precisaEstarPresenteParaFinalizar?: boolean
 }
 
 export interface ReferenciaParticipanteCompra {
@@ -33,6 +39,47 @@ export interface ReferenciaParticipanteCompra {
 }
 
 export type AutorItemCompraResponse = ReferenciaParticipanteCompra
+
+export type EstadoSolicitacaoPresenca = 'PENDENTE' | 'APROVADA' | 'REJEITADA' | 'CANCELADA'
+export type MotivoCancelamentoPresenca = 'SOLICITANTE' | 'SEM_PRESENTES' | 'COMPRA_FINALIZADA'
+export type MotivoResponsabilidade = 'INICIO_COMPRA' | 'PRIMEIRA_ENTRADA' | 'SUCESSAO' | 'REASSUNCAO' | 'SEM_PRESENTES' | 'BOOTSTRAP_V10' | 'LEGADO_SEM_ELEGIVEL'
+
+export interface ResponsabilidadeOperacionalResponse {
+  responsavel: ReferenciaParticipanteCompra | null
+  ciclo: number
+  cicloAtivo: boolean
+  revisao: number
+  responsavelAnteriorId: string | null
+  alteradaPorParticipanteCompraId: string | null
+  alteradaEm: string | null
+  motivo: MotivoResponsabilidade | null
+}
+
+export interface SolicitacaoPresencaResponse {
+  id: string
+  solicitanteParticipanteCompraId: string
+  ciclo: number
+  solicitadaEm: string
+  estado: EstadoSolicitacaoPresenca
+  encerradaPorParticipanteCompraId: string | null
+  encerradaEm: string | null
+  motivoCancelamento: MotivoCancelamentoPresenca | null
+  acoes: { podeDecidirPresenca: boolean }
+}
+
+export type EstadoSolicitacaoResponsabilidade = 'PENDENTE' | 'APROVADA' | 'REJEITADA' | 'CANCELADA'
+export interface SolicitacaoResponsabilidadeResponse {
+  id: string
+  solicitanteParticipanteCompraId: string
+  responsavelAtualParticipanteCompraId: string
+  ciclo: number
+  revisao: number
+  solicitadaEm: string
+  estado: EstadoSolicitacaoResponsabilidade
+  encerradaPorParticipanteCompraId: string | null
+  encerradaEm: string | null
+  acoes: { podeDecidirResponsabilidade: boolean }
+}
 
 export interface AcoesItemCompraResponse {
   podeColocarNoCarrinho: boolean
@@ -94,6 +141,11 @@ export interface CompraResponse {
   iniciadaEm: string
   finalizadaPor: ReferenciaParticipanteCompra | null
   finalizadaEm: string | null
+  responsabilidadeOperacional?: ResponsabilidadeOperacionalResponse
+  minhaSolicitacaoPresenca?: SolicitacaoPresencaResponse | null
+  solicitacoesPresencaPendentes?: SolicitacaoPresencaResponse[]
+  minhaSolicitacaoResponsabilidade?: SolicitacaoResponsabilidadeResponse | null
+  solicitacoesResponsabilidadePendentes?: SolicitacaoResponsabilidadeResponse[]
   participantes: ParticipanteCompraResponse[]
   itens: ItemCompraResponse[]
   contextoUsuario: ContextoUsuarioCompraResponse

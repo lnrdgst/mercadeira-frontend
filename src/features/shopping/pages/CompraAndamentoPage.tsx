@@ -210,34 +210,159 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
     <Link to={`/listas/${listaId}/compra/revisao`} className="inline-flex min-h-touch items-center font-semibold text-primary">Ver resumo</Link>
   </section>
 
-  return <section className="mx-auto max-w-3xl space-y-page">
-    <Link to="/listas" className="inline-flex min-h-touch items-center font-semibold text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">Voltar para listas</Link>
-    {carregando && <p role="status" className="rounded-card bg-surface p-page text-foreground-muted shadow-soft">Carregando compra...</p>}
-    {erro && <div role="alert" className="space-y-gutter rounded-card bg-error/10 p-page text-error">
-      <h1 className="text-headline-md font-semibold">Compra em andamento</h1><p>{erro}</p>
-      <button type="button" onClick={() => setTentativa((valor) => valor + 1)} className="min-h-touch rounded-control border border-current px-page font-semibold">Tentar novamente</button>
-    </div>}
-    {compra && <>
-      <header className="space-y-gutter rounded-card bg-surface p-page shadow-soft">
-        <div className="flex flex-wrap gap-2">
-          <span className="rounded-full bg-primary/10 px-gutter py-1 text-label-md font-semibold text-primary">Em andamento</span>
-          <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md text-foreground-muted">{categoriaCompraLabels[compra.categoria]}</span>
+  return (
+  <section className="mx-auto max-w-3xl space-y-page">
+    <Link
+      to="/listas"
+      className="inline-flex min-h-touch items-center font-semibold text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+    >
+      Voltar para listas
+    </Link>
+
+    {carregando && (
+      <p
+        role="status"
+        className="rounded-card bg-surface p-page text-foreground-muted shadow-soft"
+      >
+        Carregando compra...
+      </p>
+    )}
+
+    {erro && (
+      <div
+        role="alert"
+        className="space-y-gutter rounded-card bg-error/10 p-page text-error"
+      >
+        <h1 className="text-headline-md font-semibold">
+          Compra em andamento
+        </h1>
+
+        <p>{erro}</p>
+
+        <button
+          type="button"
+          onClick={() => setTentativa((valor) => valor + 1)}
+          className="min-h-touch rounded-control border border-current px-page font-semibold"
+        >
+          Tentar novamente
+        </button>
+      </div>
+    )}
+
+    {compra && (
+      <>
+        <header className="space-y-gutter rounded-card bg-surface p-page shadow-soft">
+          <div className="flex flex-wrap gap-2">
+            <span className="rounded-full bg-primary/10 px-gutter py-1 text-label-md font-semibold text-primary">
+              Em andamento
+            </span>
+
+            <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md text-foreground-muted">
+              {categoriaCompraLabels[compra.categoria]}
+            </span>
+          </div>
+
+          <h1 className="break-words text-headline-lg font-bold">
+            {compra.nomeLista}
+          </h1>
+
+          {compra.estabelecimento && (
+            <p className="break-words text-body-lg font-semibold text-primary">
+              {compra.estabelecimento}
+            </p>
+          )}
+
+          <p className="text-body-md text-foreground-muted">
+            Iniciada em{' '}
+            <time dateTime={compra.iniciadaEm}>
+              {new Date(compra.iniciadaEm).toLocaleString('pt-BR', {
+                dateStyle: 'short',
+                timeStyle: 'short',
+              })}
+            </time>
+          </p>
+        </header>
+
+        <p className="rounded-card bg-primary/5 p-gutter text-body-md text-foreground-muted">
+          {compra.contextoUsuario.participanteCompra
+            ? 'Você participa desta compra.'
+            : 'Você pode acompanhar esta compra, mas não participa dela.'}
+        </p>
+
+        <MinhaPresenca
+          compra={compra}
+          usuarioId={
+            !usuarioCarregando && !usuarioErro ? usuario?.id : undefined
+          }
+          ocupada={ocupada}
+          onSolicitar={solicitarPresenca}
+          onCancelar={cancelarPresenca}
+          onDecidir={decidirPresenca}
+          onSair={declararSaida}
+          onSolicitarResponsabilidade={solicitarResponsabilidadeOperacional}
+          onCancelarResponsabilidade={cancelarResponsabilidade}
+          onDecidirResponsabilidade={decidirResponsabilidade}
+          onAtualizar={reconciliarCompra}
+        />
+
+        <fieldset
+          disabled={ocupada}
+          className="min-w-0 space-y-gutter"
+          aria-labelledby="compra-itens"
+        >
+          {compra.contextoUsuario.participanteCompra && (
+            <AdicionarItemCompraDialog
+              key={chave}
+              onAdicionar={adicionarItem}
+            />
+          )}
+
+          <div className="flex items-center justify-between gap-gutter">
+            <h2
+              id="compra-itens"
+              className="text-headline-md font-semibold"
+            >
+              Itens da compra
+            </h2>
+
+            <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md">
+              {compra.itens.length}{' '}
+              {compra.itens.length === 1 ? 'item' : 'itens'}
+            </span>
+          </div>
+
+          {compra.itens.length === 0 && (
+            <p className="text-foreground-muted">
+              Esta compra não possui itens.
+            </p>
+          )}
+
+          <ul className="space-y-gutter">
+            {[...compra.itens]
+              .sort((a, b) => a.ordemExibicao - b.ordemExibicao)
+              .map((item) => (
+                <ItemCompraCard
+                  key={`${chave}:${item.id}`}
+                  item={item}
+                  participante={compra.contextoUsuario.participanteCompra}
+                  onColocar={colocarNoCarrinho}
+                  onRestaurar={restaurarNoCarrinho}
+                  onRemover={removerItem}
+                  onReconciliar={reconciliarCompra}
+                />
+              ))}
+          </ul>
+        </fieldset>
+
+        <div className="pt-page">
+          <Link
+            to={`/listas/${listaId}/compra/revisao`}
+            className="flex min-h-touch w-full items-center justify-center rounded-control bg-primary px-page font-semibold text-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            Revisar compra
+          </Link>
         </div>
-        <h1 className="break-words text-headline-lg font-bold">{compra.nomeLista}</h1>
-        {compra.estabelecimento && <p className="break-words text-body-lg font-semibold text-primary">{compra.estabelecimento}</p>}
-        <p className="text-body-md text-foreground-muted">Iniciada em <time dateTime={compra.iniciadaEm}>{new Date(compra.iniciadaEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</time></p>
-      </header>
-      <p className="rounded-card bg-primary/5 p-gutter text-body-md text-foreground-muted">{compra.contextoUsuario.participanteCompra ? 'Você participa desta compra.' : 'Você pode acompanhar esta compra, mas não participa dela.'}</p>
-      <MinhaPresenca compra={compra} usuarioId={!usuarioCarregando && !usuarioErro ? usuario?.id : undefined} ocupada={ocupada} onSolicitar={solicitarPresenca} onCancelar={cancelarPresenca} onDecidir={decidirPresenca} onSair={declararSaida} onSolicitarResponsabilidade={solicitarResponsabilidadeOperacional} onCancelarResponsabilidade={cancelarResponsabilidade} onDecidirResponsabilidade={decidirResponsabilidade} onAtualizar={reconciliarCompra} />
-      <Link to={`/listas/${listaId}/compra/revisao`} className="inline-flex min-h-touch items-center justify-center rounded-control bg-primary px-page font-semibold text-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">Revisar compra</Link>
-      <fieldset disabled={ocupada} className="min-w-0 space-y-gutter" aria-labelledby="compra-itens">
-        {compra.contextoUsuario.participanteCompra && <AdicionarItemCompraDialog key={chave} onAdicionar={adicionarItem} />}
-        <div className="flex items-center justify-between gap-gutter"><h2 id="compra-itens" className="text-headline-md font-semibold">Itens da compra</h2><span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md">{compra.itens.length} {compra.itens.length === 1 ? 'item' : 'itens'}</span></div>
-        {compra.itens.length === 0 && <p className="text-foreground-muted">Esta compra não possui itens.</p>}
-        <ul className="space-y-gutter">
-          {[...compra.itens].sort((a, b) => a.ordemExibicao - b.ordemExibicao).map((item) => <ItemCompraCard key={`${chave}:${item.id}`} item={item} participante={compra.contextoUsuario.participanteCompra} onColocar={colocarNoCarrinho} onRestaurar={restaurarNoCarrinho} onRemover={removerItem} onReconciliar={reconciliarCompra} />)}
-        </ul>
-      </fieldset>
-    </>}
+      </>
+    )}
   </section>
-}
+)}

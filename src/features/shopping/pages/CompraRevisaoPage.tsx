@@ -96,8 +96,23 @@ function RevisaoCompra({ token, familiaId, listaId }: { token: string; familiaId
 
   return <section className="mx-auto max-w-3xl space-y-page">
     <nav className="flex flex-wrap gap-gutter" aria-label="Navegação da revisão">
-      <Link to={`/listas/${listaId}/compra`} className="inline-flex min-h-touch items-center font-semibold text-primary focus-visible:outline-2">Voltar à compra</Link>
-      <Link to="/listas" className="inline-flex min-h-touch items-center font-semibold text-primary focus-visible:outline-2">Voltar para listas</Link>
+      <Link
+        to={`/listas/${listaId}/compra`}
+        className="inline-flex min-h-touch items-center gap-2 font-semibold text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      >
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          className="size-5 fill-none stroke-current"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="m15 18-6-6 6-6" />
+        </svg>
+
+        Voltar à compra
+      </Link>
     </nav>
     <header className="space-y-1">
       <h1 ref={tituloRef} tabIndex={-1} className="text-headline-lg font-bold">{compra?.status === 'FINALIZADA' ? 'Resumo da compra' : 'Revisão da compra'}</h1>

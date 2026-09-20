@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router'
 import type { ApiRequestError } from '../../../shared/api/apiClient'
 import { PasswordField } from '../components/PasswordField'
 import { useSession } from '../session/sessionContext'
+import logoMercadeira from '../../../assets/branding/mercadeira/logo-mercadeira.png'
 
 export function LoginPage() {
   const { authenticate } = useSession()
@@ -38,12 +39,19 @@ export function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-[100svh] items-center justify-center bg-background px-page py-page text-foreground">
-      <div className="w-full max-w-md space-y-page">
-        <div className="space-y-1 text-center">
+    <main className="min-h-[100svh] bg-background px-page py-6 text-foreground sm:flex sm:items-center sm:justify-center sm:py-page">
+      <div className="mx-auto w-full max-w-md space-y-5 sm:space-y-page">
+        <div className="space-y-2 text-center">
+          <img
+            src={logoMercadeira}
+            alt="Mercadeira — Listas que aproximam"
+            className="mx-auto w-full max-w-[260px] sm:max-w-xs"
+          />
+
           <h1 className="text-headline-lg font-bold">Login</h1>
+
           <p className="text-body-md text-foreground-muted">
-            Entre para acessar sua família.
+            Entre para gerenciar e acompanhar suas listas de compras.
           </p>
         </div>
 

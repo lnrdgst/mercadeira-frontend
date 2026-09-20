@@ -213,11 +213,22 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
   return (
   <section className="mx-auto max-w-3xl space-y-page">
     <Link
-      to="/listas"
-      className="inline-flex min-h-touch items-center font-semibold text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-    >
-      Voltar para listas
-    </Link>
+        to="/listas"
+        className="inline-flex min-h-touch items-center gap-2 font-semibold text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      >
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          className="size-5 fill-none stroke-current"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="m15 18-6-6 6-6" />
+        </svg>
+
+        Voltar para listas
+      </Link>
 
     {carregando && (
       <p

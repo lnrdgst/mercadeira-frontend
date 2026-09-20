@@ -109,7 +109,7 @@ export function ItemCompraCard({ item, somenteLeitura, onColocar, onRestaurar, o
     {enviando && <p role="status" className="text-label-lg text-foreground-muted">{enviando === 'atualizar' ? 'Atualizando item...' : `${acaoLabels[enviando]}: processando...`}</p>}
     {precisaAtualizar && <button type="button" disabled={enviando !== null} onClick={() => void executar('atualizar')} className="min-h-touch rounded-control border border-current px-page font-semibold disabled:opacity-60">Atualizar item</button>}
     {acoes.length > 0 && <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-      {acoes.map((acao) => <button key={acao} type="button" disabled={enviando !== null || precisaAtualizar} onClick={() => void executar(acao)} aria-label={`${acaoLabels[acao]}: ${item.descricao}`} className={`min-h-touch rounded-control border px-page font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-60 ${acao === 'aprovar-remocao' ? 'border-error text-error' : 'border-primary text-primary'}`}>{acaoLabels[acao]}</button>)}
+      {acoes.map((acao) => <button key={acao} type="button" disabled={enviando !== null || precisaAtualizar} onClick={() => void executar(acao)} aria-label={`${acaoLabels[acao]}: ${item.descricao}`} className={`min-h-touch rounded-control border px-page font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-60 ${acao === 'aprovar-remocao' ? 'border-error text-error' : 'border-blue text-blue-500'}`}>{acaoLabels[acao]}</button>)}
     </div>}
   </li>
 }

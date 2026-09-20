@@ -164,8 +164,19 @@ export function ListaDetalhePage() {
     <section className="mx-auto max-w-3xl space-y-page py-page">
       <Link
         to="/listas"
-        className="inline-flex min-h-touch items-center text-label-lg font-semibold text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        className="inline-flex min-h-touch items-center gap-2 font-semibold text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          className="size-5 fill-none stroke-current"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="m15 18-6-6 6-6" />
+        </svg>
+
         Voltar para listas
       </Link>
 
@@ -395,7 +406,7 @@ export function ListaDetalhePage() {
                 <button
                   type="button"
                   onClick={() => setItemEditando('novo')}
-                  className="mt-gutter flex min-h-touch w-full items-center justify-center gap-2 rounded-control border border-blue-500 bg-transparent px-page font-semibold text-blue-700 hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+                  className="mt-gutter flex min-h-touch w-full items-center justify-center gap-2 rounded-control border border-primary bg-transparent px-page font-semibold text-green-700 hover:bg-green-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-500"
                 >
                   Adicionar item na lista
 
@@ -500,7 +511,8 @@ export function ListaDetalhePage() {
                         <button
                           type="button"
                           onClick={() => setItemEditando(item)}
-                          className="min-h-touch rounded-control border border-primary px-gutter text-label-lg font-semibold text-primary"
+                          className="min-h-touch rounded-control border border border-blue-500 bg-transparent px-page font-semibold text-blue-700 hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+
                         >
                           Editar
                         </button>

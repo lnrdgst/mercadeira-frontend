@@ -110,26 +110,56 @@ export function ListasPage() {
           {listasVisiveis.map((lista) => (
             <li key={lista.id}>
               <Link
-                to={lista.status === 'FINALIZADA' ? `/listas/${lista.id}/compra/revisao` : lista.status === 'EM_COMPRA' ? `/listas/${lista.id}/compra` : `/listas/${lista.id}`}
-                className="block min-h-touch space-y-gutter rounded-card border border-foreground/10 bg-surface p-page shadow-soft transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                to={
+                  lista.status === 'FINALIZADA'
+                    ? `/listas/${lista.id}/compra/revisao`
+                    : lista.status === 'EM_COMPRA'
+                      ? `/listas/${lista.id}/compra`
+                      : `/listas/${lista.id}`
+                }
+                className={`block min-h-touch space-y-gutter rounded-card border p-page shadow-soft transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${lista.status === 'FINALIZADA'
+                  ? 'border-primary/20 bg-primary/5'
+                  : lista.status === 'EM_COMPRA'
+                    ? 'border-[#f6d0c9] bg-[#fff1ee]'
+                    : 'border-foreground/10 bg-surface'
+                  }`}
               >
                 <div className="flex flex-wrap gap-2">
-                  <span className="rounded-full bg-primary/10 px-gutter py-1 text-label-md font-semibold text-primary">
+                  <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md font-semibold text-foreground-muted">
                     {categoriaCompraLabels[lista.categoria]}
                   </span>
-                  <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md font-semibold text-foreground-muted">
+
+                  <span
+                    className={`rounded-full px-gutter py-1 text-label-md font-semibold ${lista.status === 'FINALIZADA'
+                      ? 'bg-primary/10 text-primary'
+                      : lista.status === 'EM_COMPRA'
+                        ? 'bg-[#ffd8d1] text-[#8a3f34]'
+                        : 'bg-foreground/5 text-foreground-muted'
+                      }`}
+                  >
                     {statusListaCompraLabels[lista.status]}
                   </span>
                 </div>
+
                 <div>
-                  <h2 className="text-headline-md font-semibold">{lista.nome}</h2>
+                  <h2 className="text-headline-md font-semibold">
+                    {lista.nome}
+                  </h2>
+
                   {lista.estabelecimento && (
                     <p className="mt-1 text-body-md text-foreground-muted">
                       {lista.estabelecimento}
                     </p>
                   )}
                 </div>
-                <p className="text-label-lg font-semibold text-primary">{lista.status === 'FINALIZADA' ? 'Ver resumo' : lista.status === 'EM_COMPRA' ? 'Ver compra' : 'Abrir lista'}</p>
+
+                <p className="text-label-lg font-semibold text-primary">
+                  {lista.status === 'FINALIZADA'
+                    ? 'Ver resumo'
+                    : lista.status === 'EM_COMPRA'
+                      ? 'Ver compra'
+                      : 'Abrir lista'}
+                </p>
               </Link>
             </li>
           ))}

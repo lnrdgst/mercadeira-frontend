@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { useSession } from '../../auth/session/sessionContext'
 import { useFamilyContext } from '../session/familyContext'
 
@@ -18,13 +18,41 @@ export function FamiliaSelecionarPage() {
   }
 
   return (
-    <main className="mx-auto max-w-xl space-y-page py-page text-foreground">
-      <header className="space-y-1">
-        <h1 className="text-headline-lg font-bold">Escolha uma família</h1>
-        <p className="text-body-md text-foreground-muted">
-          Selecione a família que deseja usar agora.
-        </p>
-      </header>
+  <main className="mx-auto max-w-xl space-y-page py-page text-foreground">
+    <div className="flex items-center justify-between space-y-1">
+      <Link
+        to={`/inicio`}
+        className="inline-flex min-h-touch items-center gap-2 font-semibold text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      >
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          className="size-5 fill-none stroke-current"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="m15 18-6-6 6-6" />
+        </svg>
+
+        Página inicial
+      </Link>
+
+      <button
+        type="button"
+        onClick={logout}
+        className="min-h-touch rounded-control px-page text-label-lg font-semibold text-foreground-muted transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      >
+        Sair da conta
+      </button>
+    </div>
+
+    <header className="space-y-1">
+      <h1 className="text-headline-lg font-bold">Escolha uma família</h1>
+      <p className="text-body-md text-foreground-muted">
+        Escolha abaixo a família que deseja acompanhar.
+      </p>
+    </header>
 
       <ul className="space-y-gutter">
         {familias.map((familia) => (
@@ -43,13 +71,6 @@ export function FamiliaSelecionarPage() {
         ))}
       </ul>
 
-      <button
-        type="button"
-        onClick={logout}
-        className="min-h-touch w-full rounded-control px-page text-label-lg font-semibold text-foreground-muted transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-      >
-        Sair da conta
-      </button>
     </main>
   )
 }

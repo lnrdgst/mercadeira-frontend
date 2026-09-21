@@ -522,7 +522,7 @@ export function ListaDetalhePage() {
                           onClick={() => setItemParaRemover(item)}
                           className="min-h-touch rounded-control border border-error px-gutter text-label-lg font-semibold text-error"
                         >
-                          Remover
+                          Remover da lista
                         </button>
 
                         <button

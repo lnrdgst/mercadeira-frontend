@@ -63,14 +63,14 @@ export function ListasPage() {
         <div>
           <h1 className="text-headline-lg font-bold">Minhas listas</h1>
           <p className="mt-1 text-body-md text-foreground-muted">
-            Organize as compras da família {familiaSelecionada.nome}.
+            Gerencie e acompanhe as listas de compras da família {familiaSelecionada.nome}.
           </p>
         </div>
         <Link
           to="/listas/nova"
-          className="inline-flex min-h-touch items-center justify-center rounded-control bg-primary px-page text-label-lg font-semibold text-surface transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="flex min-h-touch w-full items-center justify-center rounded-control bg-primary px-page font-semibold text-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
-          Criar nova lista
+          Criar nova lista de compras
         </Link>
       </header>
 
@@ -98,9 +98,9 @@ export function ListasPage() {
           <p className="text-body-md text-foreground-muted">Você ainda não possui listas.</p>
           <Link
             to="/listas/nova"
-            className="inline-flex min-h-touch items-center justify-center rounded-control bg-primary px-page text-label-lg font-semibold text-surface transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="flex min-h-touch w-full items-center justify-center rounded-control bg-primary px-page font-semibold text-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
-            Criar nova lista
+            Criar nova lista de compras
           </Link>
         </div>
       )}

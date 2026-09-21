@@ -70,7 +70,7 @@ export function ListasPage() {
           to="/listas/nova"
           className="flex min-h-touch w-full items-center justify-center rounded-control bg-primary px-page font-semibold text-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
-          Criar nova lista de compras
+          Nova lista de compras
         </Link>
       </header>
 

@@ -11,7 +11,7 @@ import { useFamilyContext } from '../session/familyContext'
 import type { SolicitacaoFamiliaResponse } from '../types/family'
 
 const papelLabel = {
-  ADMINISTRADOR: 'Administrador',
+  ADMINISTRADOR: 'Administrador(a)',
   MEMBRO: 'Membro',
 } as const
 

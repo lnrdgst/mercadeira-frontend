@@ -3,7 +3,7 @@ import { useSession } from '../../auth/session/sessionContext'
 import { useFamilyContext } from '../session/familyContext'
 
 const papelLabel = {
-  ADMINISTRADOR: 'Administrador',
+  ADMINISTRADOR: 'Administrador(a)',
   MEMBRO: 'Membro',
 } as const
 

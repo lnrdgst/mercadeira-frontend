@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router'
 import { useSession } from '../../features/auth/session/sessionContext'
+import mercadeiraLabel from '../../assets/branding/mercadeira/mercadeira-label.png'
 
 const navigationItems = [
   { to: '/inicio', label: 'Início' },
@@ -12,11 +13,17 @@ export function AppShell() {
 
   return (
     <div className="min-h-[100svh] bg-background text-foreground">
-      <header className="mx-auto flex w-full max-w-5xl justify-end px-page pt-gutter">
+      <header className="mx-auto flex w-full max-w-5xl items-center justify-between gap-gutter px-page pt-gutter">
+        <img
+          src={mercadeiraLabel}
+          alt="Mercadeira — Listas que aproximam"
+          className="w-full max-w-[180px] sm:max-w-[220px] lg:ml-25"
+        />
+
         <button
           type="button"
           onClick={logout}
-          className="min-h-touch rounded-control px-gutter text-label-lg font-semibold text-foreground-muted transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="min-h-touch shrink-0 rounded-control px-gutter text-label-lg font-semibold text-foreground-muted transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
           Sair da conta
         </button>
@@ -35,10 +42,9 @@ export function AppShell() {
               <NavLink
                 to={item.to}
                 className={({ isActive }) =>
-                  `flex min-h-touch items-center justify-center rounded-control border-b-2 px-2 text-label-md font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
-                    isActive
-                      ? 'border-primary bg-primary/10 font-semibold text-primary'
-                      : 'border-transparent text-foreground-muted hover:bg-primary/5 hover:text-foreground'
+                  `flex min-h-touch items-center justify-center rounded-control border-b-2 px-2 text-label-md font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${isActive
+                    ? 'border-primary bg-primary/10 font-semibold text-primary'
+                    : 'border-transparent text-foreground-muted hover:bg-primary/5 hover:text-foreground'
                   }`
                 }
               >

@@ -70,9 +70,9 @@ export function ReutilizarListaButton({ compra, familiaId, onAtualizada }: {
     {open && <dialog ref={dialog} aria-labelledby="reutilizar-titulo" aria-describedby="reutilizar-descricao" onCancel={(event) => { event.preventDefault(); if (!busy.current) setOpen(false) }} onClose={() => { if (!busy.current) setOpen(false) }} className="m-auto max-h-[calc(100svh-2rem)] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-card bg-surface p-page text-foreground shadow-soft backdrop:bg-foreground/40">
       <div className="space-y-gutter" aria-busy={enviando}>
         <h2 id="reutilizar-titulo" className="text-headline-md font-semibold">Criar nova lista a partir desta?</h2>
-        <p id="reutilizar-descricao">Uma nova lista em preparação será criada com o mesmo nome, categoria e estabelecimento. Itens no carrinho e pendentes serão copiados com descrição, quantidade, unidade, marca e observações. Você poderá editar tudo antes de iniciar a compra.</p>
+        <p id="reutilizar-descricao">Os dados desta lista de origem serão copiados para uma nova lista editável antes da compra.</p>
         <p>{quantidade ? `${quantidade} item(ns) serão reutilizados. Itens removidos não serão copiados.` : 'Não há itens reutilizáveis. A nova lista será criada vazia.'}</p>
-        <p>Somente você participará inicialmente. A compra anterior permanecerá intacta.</p>
+        <p>Somente você participará inicialmente. A lista de origem não será modificada.</p>
         {erro && <div role="alert" className="rounded-card bg-error/10 p-gutter text-error"><p>{erro}</p><p>Se houve falha de conexão, confira <Link to="/listas" className="underline">Minhas Listas</Link> antes de repetir a criação.</p></div>}
         {!permitido && <p>A reutilização não está mais disponível para esta compra.</p>}
         {precisaAtualizar && <button type="button" disabled={enviando} onClick={async () => { if (busy.current) return; busy.current = true; setEnviando(true); await atualizar(); busy.current = false; if (ativo.current) setEnviando(false) }} className="min-h-touch rounded-control border px-page">Atualizar compra</button>}

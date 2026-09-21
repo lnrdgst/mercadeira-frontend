@@ -11,7 +11,7 @@ import {
   type ListaCompraResumoResponse,
 } from "../../shopping-lists/types/shoppingList";
 
-const papel = { ADMINISTRADOR: "Administrador", MEMBRO: "Membro" } as const;
+const papel = { ADMINISTRADOR: "Administrador(a)", MEMBRO: "Membro" } as const;
 export function InicioPage() {
   const hora = new Date().getHours();
 

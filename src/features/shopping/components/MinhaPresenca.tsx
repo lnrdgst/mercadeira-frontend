@@ -193,6 +193,7 @@ export function MinhaPresenca({
                     </>
                   )}
                 </li>
+
               );
             })}
           </ul>
@@ -231,7 +232,9 @@ export function MinhaPresenca({
                             <span className="text-foreground-muted">
                               solicitou presença no mercado.
                             </span>
+                            <hr style={{ border: '0', borderTop: '1px solid #e0e0e0', margin: '16px 0' }} />
                           </div>
+
 
                           {pedido.acoes.podeDecidirPresenca === true && (
                             <div className="flex flex-wrap gap-2">
@@ -277,6 +280,7 @@ export function MinhaPresenca({
                 Aguardando confirmação do responsável
                 operacional.
               </p>
+              <hr style={{ border: '0', borderTop: '1px solid #e0e0e0', margin: '16px 0' }} />
               {contexto.podeCancelarSolicitacaoPresenca ===
                 true && (
                   <button
@@ -314,6 +318,8 @@ export function MinhaPresenca({
               role="dialog"
               aria-label="Confirmar solicitação de presença"
             >
+
+
               <div className="space-y-2">
                 <h3 className="text-headline-md font-semibold text-primary">
                   Solicitar presença no mercado
@@ -327,6 +333,7 @@ export function MinhaPresenca({
               </div>
 
               <div className="flex flex-wrap gap-2">
+              <hr style={{ border: '0', borderTop: '1px solid #e0e0e0', margin: '16px 0' }} />
                 <button
                   type="button"
                   disabled={ocupada || precisaAtualizar}
@@ -356,6 +363,7 @@ export function MinhaPresenca({
 
           {confirmacao === null && (
             <div className="flex flex-col items-start gap-1">
+              <hr style={{ border: '0', borderTop: '1px solid #e0e0e0', margin: '16px 0' }} />
               {podeSair &&
                 !temSolicitacaoPresencaParaDecidir &&
                 !temSolicitacaoResponsabilidadeParaDecidir && (
@@ -402,6 +410,7 @@ export function MinhaPresenca({
                   <p className="text-foreground-muted">
                     O responsável operacional atual precisará aprovar esta transferência.
                   </p>
+                  <hr style={{ border: '0', borderTop: '1px solid #e0e0e0', margin: '16px 0' }} />
                 </div>
 
                 <div className="flex flex-wrap gap-2">

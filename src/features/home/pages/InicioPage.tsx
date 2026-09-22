@@ -13,7 +13,6 @@ import {
 
 const papel = { ADMINISTRADOR: "Administrador(a)", MEMBRO: "Membro" } as const;
 export function InicioPage() {
-  const hora = new Date().getHours();
 
   function obterPeriodoDoDia() {
   let hora = new Date().getHours();
@@ -117,15 +116,7 @@ export function InicioPage() {
               to="/familia"
               className="text-label-lg font-semibold text-primary"
             >
-              Ver família
-            </Link>
-            </div>
-          <div className="mt-3 flex flex-col items-start gap-1 leading-tight">
-            <Link
-              to="/familia/selecionar"
-              className="text-label-lg font-semibold text-primary"
-            >
-              Trocar família
+              Minha família
             </Link>
             </div>
         </div>

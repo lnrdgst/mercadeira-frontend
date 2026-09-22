@@ -212,7 +212,7 @@ export function FamiliaEntradaPage() {
             onClick={() => setFormMode("create")}
             className="min-h-touch rounded-card bg-primary p-page text-label-lg font-semibold text-surface"
           >
-            Criar uma família
+            Cadastrar uma família
           </button>
           <button
             type="button"
@@ -231,21 +231,28 @@ export function FamiliaEntradaPage() {
           <label className="block font-semibold" htmlFor="nome">
             Nome da família
           </label>
-          <input
-            id="nome"
-            name="nome"
-            required
-            maxLength={120}
-            disabled={isSubmitting}
-            className="min-h-touch w-full rounded-card border border-foreground/20 px-gutter"
-          />
+          <div className="flex min-h-touch w-full items-center rounded-card border border-foreground/20">
+            <span className="pl-gutter font-medium text-foreground-muted">
+              Família
+            </span>
+
+            <input
+              id="nome"
+              name="nome"
+              required
+              maxLength={120}
+              disabled={isSubmitting}
+              placeholder="Silva"
+              className="min-w-0 flex-1 bg-transparent px-2 outline-none"
+            />
+          </div>
           <div className="flex gap-gutter">
             <button
               type="submit"
               disabled={isSubmitting}
               className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60"
             >
-              {isSubmitting ? "Criando..." : "Criar família"}
+              {isSubmitting ? "Criando..." : "Cadastrar família"}
             </button>
             <button
               type="button"

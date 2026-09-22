@@ -1,4 +1,4 @@
-# Mercadeira
+﻿# Mercadeira
 
 Frontend do Mercadeira, uma aplicação colaborativa para organização de compras entre membros de famílias e grupos.
 
@@ -122,7 +122,7 @@ A Compra em andamento é recuperada usando o `familiaId` da família selecionada
 | --- | --- |
 | `/login` | Login |
 | `/cadastro` | Cadastro |
-| `/familia/entrada` | Criar família ou solicitar entrada |
+| `/familia/entrada` | Cadastrar família ou solicitar entrada |
 | `/familia/selecionar` | Selecionar contexto familiar |
 
 Também existe tratamento para rotas inexistentes.
@@ -252,7 +252,7 @@ Sem pendências, o backend pode retornar 204 No Content.
 
 Não há polling automático nem WebSocket nesta fase.
 
-### Criar família
+### Cadastrar família
 
 `POST /api/familias`
 
@@ -266,7 +266,7 @@ Após sucesso:
 
 - a aplicação navega para /inicio.
 
-Criar uma família não substitui vínculos existentes.
+Cadastrar uma família não substitui vínculos existentes.
 
 ### Solicitar entrada
 

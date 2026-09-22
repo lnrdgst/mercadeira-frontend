@@ -11,6 +11,17 @@ function lista(permitido = true): ListaCompraDetalheResponse {
     criador: { nome: 'Outra pessoa', membroFamiliaId: 'outro', usuarioId: 'outro' },
     contextoUsuario: { membroFamiliaId: 'membro-a', papelFamilia: 'MEMBRO', participanteAtivo: false, podeGerenciarParticipantes: false, podeAlterarItens: false, podeEditarDadosBasicos: permitido } }
 }
+
+test('apresenta o status de preparação antes da categoria com destaque neutro', async () => {
+  preparar(async () => Response.json(lista()))
+
+  const status = await screen.findByText('Em preparação')
+  const categoria = screen.getByText('Supermercado')
+  expect(status.compareDocumentPosition(categoria) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0)
+  expect(status).toHaveClass('border', 'border-foreground/20', 'bg-foreground/5', 'text-foreground-muted')
+  expect(categoria).toHaveClass('bg-foreground/5', 'text-foreground-muted')
+})
+
 function preparar(salvar: () => Promise<Response>, inicial = lista(), consultar?: () => Promise<Response>) {
   let consultas = 0
   const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, options) => {

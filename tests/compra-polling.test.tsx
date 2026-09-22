@@ -64,6 +64,16 @@ async function conexao(online: boolean) {
   await act(async () => { fireEvent(window, new Event(online ? 'online' : 'offline')) })
 }
 
+test('mantém o status em andamento antes da categoria com identidade verde', async () => {
+  await preparar()
+
+  const status = screen.getByText('Em andamento')
+  const categoria = screen.getByText('Supermercado')
+  expect(status.compareDocumentPosition(categoria) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0)
+  expect(status).toHaveClass('bg-primary/10', 'text-primary')
+  expect(categoria).toHaveClass('bg-foreground/5', 'text-foreground-muted')
+})
+
 test('modal da Compra carrega sugestões, preenche descrição e unidade e preserva inclusão livre', async () => {
   const sugestoes = [{ descricao: 'Leite', unidadeMedida: 'LITRO' }, { descricao: 'Leite em pó', unidadeMedida: 'PACOTE' }]
   const post = vi.fn(async () => Response.json(compra().itens[0]))

@@ -283,8 +283,8 @@ export function ListaDetalhePage() {
         <>
           <header className="space-y-page rounded-card bg-surface p-page shadow-soft">
             <div className="flex flex-wrap gap-2">
-              <span className="rounded-full bg-primary/10 px-gutter py-1 text-label-md font-semibold text-primary">{categoriaCompraLabels[lista.categoria]}</span>
-              <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md text-foreground-muted">{statusListaCompraLabels[lista.status]}</span>
+              <span className="rounded-full border border-foreground/20 bg-foreground/5 px-gutter py-1 text-label-md font-semibold text-foreground-muted">{statusListaCompraLabels[lista.status]}</span>
+              <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md text-foreground-muted">{categoriaCompraLabels[lista.categoria]}</span>
             </div>
 
             <div className="flex flex-wrap items-start justify-between gap-gutter">

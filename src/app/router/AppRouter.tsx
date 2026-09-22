@@ -6,6 +6,7 @@ import { LoginPage } from '../../features/auth/pages/LoginPage'
 import { FamiliaEntradaPage } from '../../features/family/pages/FamiliaEntradaPage'
 import { FamiliaPage } from '../../features/family/pages/FamiliaPage'
 import { FamiliaSelecionarPage } from '../../features/family/pages/FamiliaSelecionarPage'
+import { BoasVindasPage } from '../../features/family/pages/BoasVindasPage'
 import { InicioPage } from '../../features/home/pages/InicioPage'
 import { CompraAndamentoPage } from '../../features/shopping/pages/CompraAndamentoPage'
 import { CompraRevisaoPage } from '../../features/shopping/pages/CompraRevisaoPage'
@@ -15,6 +16,7 @@ import { NovaListaPage } from '../../features/shopping-lists/pages/NovaListaPage
 import { NotFoundPage } from './NotFoundPage'
 import {
   AuthenticatedRoute,
+  FamilyOnboardingRoute,
   FamilyRequiredRoute,
   FamilySelectionRoute,
   PublicOnlyRoute,
@@ -33,6 +35,10 @@ export function AppRouter() {
 
       <Route element={<AuthenticatedRoute />}>
         <Route path="/familia/entrada" element={<FamiliaEntradaPage />} />
+      </Route>
+
+      <Route element={<FamilyOnboardingRoute />}>
+        <Route path="/boas-vindas" element={<BoasVindasPage />} />
       </Route>
 
       <Route element={<FamilySelectionRoute />}>

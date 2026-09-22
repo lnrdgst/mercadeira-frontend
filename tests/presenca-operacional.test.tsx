@@ -31,6 +31,8 @@ test.each([['NAO_INFORMADA', 'Presença não informada'], ['NAO_PRESENTE', 'Não
   expect(await screen.findByText(label)).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Solicitar presença no mercado' })).toBeEnabled()
   expect(screen.getByRole('button', { name: 'Adicionar novo item à compra' })).toBeEnabled()
+  const secao = screen.getByRole('heading', { name: 'Participantes' }).closest('section')!
+  expect(secao.querySelector('.border-t')).not.toBeNull()
 })
 
 test('ordena visualmente o responsável primeiro, preserva a presença e identifica o usuário atual', async () => {
@@ -39,7 +41,7 @@ test('ordena visualmente o responsável primeiro, preserva a presença e identif
   const participantes = within(secao).getAllByRole('listitem')
   expect(participantes[0]).toHaveTextContent('Bia')
   expect(participantes[0]).toHaveTextContent('Responsável operacional')
-  expect(participantes[0]).toHaveClass('bg-blue-50')
+  expect(participantes[0]).toHaveClass('border', 'border-blue-200', 'bg-blue-50')
   expect(participantes[1]).toHaveTextContent('Ana (você)')
   expect(participantes[1]).toHaveClass('bg-primary/10')
   expect(within(participantes[1]).getByTitle('Ana')).toHaveTextContent('Ana (você)')
@@ -49,6 +51,17 @@ test('participante comum não presente mantém linha cinza', async () => {
   preparar({ inicial: compra('NAO_PRESENTE') })
   const secao = (await screen.findByRole('heading', { name: 'Participantes' })).closest('section')!
   expect(within(secao).getAllByRole('listitem')[1]).toHaveClass('bg-foreground/5')
+})
+
+test('só exibe divisor operacional quando há conteúdo abaixo dos participantes', async () => {
+  const semAcoes = compra('NAO_INFORMADA')
+  semAcoes.contextoUsuario.podeSolicitarPresenca = false
+  semAcoes.contextoUsuario.podeDeclararSaida = false
+  semAcoes.contextoUsuario.podeSolicitarResponsabilidade = false
+  preparar({ inicial: semAcoes })
+  const secao = (await screen.findByRole('heading', { name: 'Participantes' })).closest('section')!
+  expect(secao.querySelector('.border-t')).toBeNull()
+
 })
 
 test('mantém colocar no carrinho condicionado à capability e com identidade dourada', async () => {

@@ -61,7 +61,7 @@ export function RootRedirect() {
   }
 
   if (familias.length === 0) {
-    return <Navigate to="/familia/entrada" replace />
+    return <Navigate to="/boas-vindas" replace />
   }
 
   if (familiaSelecionada) {
@@ -92,6 +92,20 @@ export function AuthenticatedRoute() {
   if (status === 'unauthenticated') return <Navigate to="/login" replace />
 
   return <Outlet />
+}
+
+export function FamilyOnboardingRoute() {
+  const { status } = useSession()
+  const { familias } = useFamilyContext()
+
+  if (status === 'initializing') return <FamilyLoading />
+  if (status === 'unauthenticated') return <Navigate to="/login" replace />
+
+  return (
+    <AuthenticatedFamilyState>
+      {familias.length === 0 ? <Outlet /> : <Navigate to="/" replace />}
+    </AuthenticatedFamilyState>
+  )
 }
 
 export function FamilyRequiredRoute() {

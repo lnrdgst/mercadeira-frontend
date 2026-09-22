@@ -152,6 +152,29 @@ export function MinhaPresenca({
     solicitacaoResponsabilidade?.estado === "PENDENTE";
 
   const semPresentes = responsabilidade?.responsavel == null;
+  const podeExibirAcoesDiretas =
+    (podeSair &&
+      !temSolicitacaoPresencaParaDecidir &&
+      !temSolicitacaoResponsabilidadeParaDecidir) ||
+    podeSolicitarResponsabilidade;
+  const solicitacoesPresencaPendentes =
+    compra.solicitacoesPresencaPendentes ?? [];
+  const solicitacoesResponsabilidadePendentes =
+    compra.solicitacoesResponsabilidadePendentes ?? [];
+  const temSolicitacoesPresencaPendentes =
+    solicitacoesPresencaPendentes.length > 0;
+  const temSolicitacoesResponsabilidadePendentes =
+    solicitacoesResponsabilidadePendentes.length > 0;
+  const temConteudoOperacional =
+    temSolicitacoesPresencaPendentes ||
+    aguardando ||
+    (confirmacao === null && podeSolicitar) ||
+    confirmacao === "solicitar" ||
+    (confirmacao === null && podeExibirAcoesDiretas) ||
+    confirmacao === "sair" ||
+    (!aguardandoResponsabilidade && confirmacao === "responsabilidade") ||
+    aguardandoResponsabilidade ||
+    temSolicitacoesResponsabilidadePendentes;
 
   return (
     <section
@@ -179,12 +202,12 @@ export function MinhaPresenca({
                   <>
                     No mercado
                     <br />
-                    Responsável operacional
+                    Responsável operacional pela compra
                   </>
                 )
                 : presencaLabels[estado] ?? "Presença indisponível";
               const estiloLinha = responsavel
-                ? "bg-blue-50 text-blue-700"
+                ? "border border-blue-400 bg-blue-50 text-blue-700"
                 : estado === "PRESENTE"
                   ? "bg-primary/10 text-primary"
                   : "bg-foreground/5 text-foreground-muted";
@@ -205,9 +228,9 @@ export function MinhaPresenca({
               Esta compra não possui participantes.
             </p>
           )}
-          <div className="flex w-full flex-col items-center gap-2 text-center">
-            {compra.solicitacoesPresencaPendentes &&
-              compra.solicitacoesPresencaPendentes.length > 0 && (
+          {temConteudoOperacional && (
+            <div className="flex w-full flex-col items-center gap-2 text-center">
+            {temSolicitacoesPresencaPendentes && (
                 <section
                   aria-label="Solicitações de presença"
                   className="mt-gutter w-full space-y-gutter border-t border-foreground/10 bg-primary/10 p-page pt-gutter"
@@ -216,7 +239,7 @@ export function MinhaPresenca({
                     Solicitações de presença
                   </h3>
                   <ul className="space-y-2">
-                    {compra.solicitacoesPresencaPendentes.map(
+                    {solicitacoesPresencaPendentes.map(
                       (pedido) => {
                         const solicitante =
                           compra.participantes.find(
@@ -364,7 +387,7 @@ export function MinhaPresenca({
             )}
 
 
-            {confirmacao === null && (
+            {confirmacao === null && podeExibirAcoesDiretas && (
               <div className="mt-gutter flex w-full flex-col items-center gap-1 border-t border-foreground/10 pt-gutter text-center">
                 {podeSair &&
                   !temSolicitacaoPresencaParaDecidir &&
@@ -507,8 +530,7 @@ export function MinhaPresenca({
                   )}
               </div>
             )}
-            {compra.solicitacoesResponsabilidadePendentes &&
-              compra.solicitacoesResponsabilidadePendentes.length > 0 && (
+            {temSolicitacoesResponsabilidadePendentes && (
                 <section
                   aria-label="Solicitações de responsabilidade"
                   className="mt-gutter w-full space-y-gutter border-t border-foreground/10 bg-blue-50 p-page pt-gutter"
@@ -517,7 +539,7 @@ export function MinhaPresenca({
                     Solicitações de responsabilidade
                   </h3>
                   <ul className="space-y-2">
-                    {compra.solicitacoesResponsabilidadePendentes.map(
+                    {solicitacoesResponsabilidadePendentes.map(
                       (pedido) => {
                         const solicitante =
                           compra.participantes.find(
@@ -591,7 +613,8 @@ export function MinhaPresenca({
                   </ul>
                 </section>
               )}
-          </div>
+            </div>
+          )}
         </div>
       )}
 

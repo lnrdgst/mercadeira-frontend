@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react'
 import { Route, Routes } from 'react-router'
 import { expect, test } from 'vitest'
-import { AuthenticatedRoute, FamilyRequiredRoute, FamilySelectionRoute, PublicOnlyRoute, RootRedirect } from '../src/app/router/routeGuards'
+import { AuthenticatedRoute, FamilyOnboardingRoute, FamilyRequiredRoute, FamilySelectionRoute, PublicOnlyRoute, RootRedirect } from '../src/app/router/routeGuards'
 import { familyContextFixture, familyFixture, renderApp, sessionFixture } from './helpers'
 
 const familiaA = familyFixture()
@@ -9,13 +9,14 @@ const familiaB = familyFixture({ id: 'familia-b', nome: 'Família B' })
 
 test.each([
   { caso: 'visitante', session: sessionFixture({ status: 'unauthenticated', auth: null }), family: familyContextFixture(), destino: 'Login destino' },
-  { caso: 'sem família', session: sessionFixture(), family: familyContextFixture({ familias: [], familiaSelecionada: null }), destino: 'Entrada destino' },
+  { caso: 'sem família', session: sessionFixture(), family: familyContextFixture({ familias: [], familiaSelecionada: null }), destino: 'Boas-vindas destino' },
   { caso: 'família selecionada', session: sessionFixture(), family: familyContextFixture(), destino: 'Início destino' },
   { caso: 'múltiplas sem seleção', session: sessionFixture(), family: familyContextFixture({ familias: [familiaA, familiaB], familiaSelecionada: null }), destino: 'Seleção destino' },
 ])('RootRedirect: $caso', async ({ session, family, destino }) => {
   renderApp(<Routes>
     <Route path="/" element={<RootRedirect />} />
     <Route path="/login" element={<h1>Login destino</h1>} />
+    <Route path="/boas-vindas" element={<h1>Boas-vindas destino</h1>} />
     <Route path="/familia/entrada" element={<h1>Entrada destino</h1>} />
     <Route path="/familia/selecionar" element={<h1>Seleção destino</h1>} />
     <Route path="/inicio" element={<h1>Início destino</h1>} />
@@ -55,7 +56,7 @@ test.each([
   expect(await screen.findByRole('heading', { name: destino })).toBeInTheDocument()
 })
 
-test.each([RootRedirect, PublicOnlyRoute, AuthenticatedRoute, FamilyRequiredRoute, FamilySelectionRoute])('%s aguarda inicialização sem exibir conteúdo protegido', (Guard) => {
+test.each([RootRedirect, PublicOnlyRoute, AuthenticatedRoute, FamilyOnboardingRoute, FamilyRequiredRoute, FamilySelectionRoute])('%s aguarda inicialização sem exibir conteúdo protegido', (Guard) => {
   renderApp(<Routes><Route element={<Guard />}><Route path="/" element={<h1>Conteúdo filho</h1>} /></Route></Routes>, {
     session: sessionFixture({ status: 'initializing', auth: null }),
   })

@@ -55,9 +55,11 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
     }).catch((error: ApiRequestError) => {
       if (!ativo) return
       if (error.status === 401) { logout(); return }
-      setResultado({ chave, token, erro: error.status === 404
-        ? 'Esta compra ainda não está disponível.'
-        : error.message || 'Não foi possível carregar a compra.' })
+      setResultado({
+        chave, token, erro: error.status === 404
+          ? 'Esta compra ainda não está disponível.'
+          : error.message || 'Não foi possível carregar a compra.'
+      })
     })
     return () => { ativo = false; controller.abort() }
   }, [token, familiaId, listaId, chave, logout])
@@ -135,9 +137,13 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
       if (atual?.chave !== chave || atual.token !== token || !atual.compra || atual.compra.status === 'FINALIZADA' || atual.compra.id !== compra?.id) return atual
       const itens = atual.compra.itens
       const existe = itens.some((existente) => existente.id === item.id)
-      return { ...atual, compra: { ...atual.compra, itens: adicionar && !existe
-        ? [...itens, item]
-        : itens.map((existente) => existente.id === item.id ? item : existente) } }
+      return {
+        ...atual, compra: {
+          ...atual.compra, itens: adicionar && !existe
+            ? [...itens, item]
+            : itens.map((existente) => existente.id === item.id ? item : existente)
+        }
+      }
     })
   }
 
@@ -205,30 +211,30 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
 
   if (compra?.status === 'FINALIZADA') return <section className="mx-auto max-w-3xl space-y-page">
     <Link
-        to="/listas"
-        className="inline-flex min-h-touch items-center gap-2 font-semibold text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      to="/listas"
+      className="inline-flex min-h-touch items-center gap-2 font-semibold text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+    >
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        className="size-5 fill-none stroke-current"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       >
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 24 24"
-          className="size-5 fill-none stroke-current"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="m15 18-6-6 6-6" />
-        </svg>
+        <path d="m15 18-6-6 6-6" />
+      </svg>
 
-        Voltar para listas
-      </Link>
+      Voltar para listas
+    </Link>
     <h1 className="break-words text-headline-lg font-bold">{compra.nomeLista}</h1>
     <CompraResumo compra={compra} />
     <Link to={`/listas/${listaId}/compra/revisao`} className="inline-flex min-h-touch items-center font-semibold text-primary">Ver resumo</Link>
   </section>
 
   return (
-  <section className="mx-auto max-w-3xl space-y-page">
-    <Link
+    <section className="mx-auto max-w-3xl space-y-page">
+      <Link
         to="/listas"
         className="inline-flex min-h-touch items-center gap-2 font-semibold text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
@@ -246,150 +252,153 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
         Voltar para listas
       </Link>
 
-    {carregando && (
-      <p
-        role="status"
-        className="rounded-card bg-surface p-page text-foreground-muted shadow-soft"
-      >
-        Carregando compra...
-      </p>
-    )}
-
-    {erro && (
-      <div
-        role="alert"
-        className="space-y-gutter rounded-card bg-error/10 p-page text-error"
-      >
-        <h1 className="text-headline-md font-semibold">
-          Compra em andamento
-        </h1>
-
-        <p>{erro}</p>
-
-        <button
-          type="button"
-          onClick={() => setTentativa((valor) => valor + 1)}
-          className="min-h-touch rounded-control border border-current px-page font-semibold"
+      {carregando && (
+        <p
+          role="status"
+          className="rounded-card bg-surface p-page text-foreground-muted shadow-soft"
         >
-          Tentar novamente
-        </button>
-      </div>
-    )}
+          Carregando compra...
+        </p>
+      )}
 
-    {compra && (
-      <>
-        <header className="space-y-gutter rounded-card bg-surface p-page shadow-soft">
-          <div className="flex flex-wrap gap-2">
-            <span className="rounded-full bg-primary/10 px-gutter py-1 text-label-md font-semibold text-primary">
-              Em andamento
-            </span>
-
-            <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md text-foreground-muted">
-              {categoriaCompraLabels[compra.categoria]}
-            </span>
-          </div>
-
-          <h1 className="break-words text-headline-lg font-bold">
-            {compra.nomeLista}
+      {erro && (
+        <div
+          role="alert"
+          className="space-y-gutter rounded-card bg-error/10 p-page text-error"
+        >
+          <h1 className="text-headline-md font-semibold">
+            Compra em andamento
           </h1>
 
-          {compra.estabelecimento && (
-            <p className="break-words text-body-lg font-semibold text-primary">
-              {compra.estabelecimento}
-            </p>
-          )}
+          <p>{erro}</p>
 
-          <p className="text-body-md text-foreground-muted">
-            Iniciada em{' '}
-            <time dateTime={compra.iniciadaEm}>
-              {new Date(compra.iniciadaEm).toLocaleString('pt-BR', {
-                dateStyle: 'short',
-                timeStyle: 'short',
-              })}
-            </time>
-          </p>
-        </header>
-
-        <p className="rounded-card bg-primary/5 p-gutter text-body-md text-foreground-muted">
-          {compra.contextoUsuario.participanteCompra
-            ? 'Você participa desta compra.'
-            : 'Você pode acompanhar esta compra, mas não participa dela.'}
-        </p>
-
-        <MinhaPresenca
-          compra={compra}
-          usuarioId={
-            !usuarioCarregando && !usuarioErro ? usuario?.id : undefined
-          }
-          ocupada={ocupada}
-          onSolicitar={solicitarPresenca}
-          onCancelar={cancelarPresenca}
-          onDecidir={decidirPresenca}
-          onSair={declararSaida}
-          onSolicitarResponsabilidade={solicitarResponsabilidadeOperacional}
-          onCancelarResponsabilidade={cancelarResponsabilidade}
-          onDecidirResponsabilidade={decidirResponsabilidade}
-          onAtualizar={reconciliarCompra}
-        />
-
-        <fieldset
-          disabled={ocupada}
-          className="min-w-0 space-y-gutter"
-          aria-labelledby="compra-itens"
-        >
-          {compra.contextoUsuario.participanteCompra && (
-            <AdicionarItemCompraDialog
-              key={chave}
-              onAdicionar={adicionarItem}
-            />
-          )}
-
-          <div className="flex items-center justify-between gap-gutter">
-            <h2
-              id="compra-itens"
-              className="text-headline-md font-semibold"
-            >
-              Itens da compra
-            </h2>
-
-            <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md">
-              {compra.itens.length}{' '}
-              {compra.itens.length === 1 ? 'item' : 'itens'}
-            </span>
-          </div>
-
-          {compra.itens.length === 0 && (
-            <p className="text-foreground-muted">
-              Esta compra não possui itens.
-            </p>
-          )}
-
-          <ul className="space-y-gutter">
-            {[...compra.itens]
-              .sort((a, b) => a.ordemExibicao - b.ordemExibicao)
-              .map((item) => (
-                <ItemCompraCard
-                  key={`${chave}:${item.id}`}
-                  item={item}
-                  participante={compra.contextoUsuario.participanteCompra}
-                  onColocar={colocarNoCarrinho}
-                  onRestaurar={restaurarNoCarrinho}
-                  onRemover={removerItem}
-                  onReconciliar={reconciliarCompra}
-                />
-              ))}
-          </ul>
-        </fieldset>
-
-        <div className="pt-page">
-          <Link
-            to={`/listas/${listaId}/compra/revisao`}
-            className="flex min-h-touch w-full items-center justify-center rounded-control bg-primary px-page font-semibold text-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          <button
+            type="button"
+            onClick={() => setTentativa((valor) => valor + 1)}
+            className="min-h-touch rounded-control border border-current px-page font-semibold"
           >
-            Revisar compra
-          </Link>
+            Tentar novamente
+          </button>
         </div>
-      </>
-    )}
-  </section>
-)}
+      )}
+
+      {compra && (
+        <>
+          <header className="space-y-gutter rounded-card bg-surface p-page shadow-soft">
+            <div className="flex flex-wrap gap-2">
+              <span className="rounded-full bg-primary/10 px-gutter py-1 text-label-md font-semibold text-primary">
+                Em andamento
+              </span>
+
+              <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md text-foreground-muted">
+                {categoriaCompraLabels[compra.categoria]}
+              </span>
+            </div>
+
+            <h1 className="break-words text-headline-lg font-bold">
+              {compra.nomeLista}
+            </h1>
+
+            {compra.estabelecimento && (
+              <p className="break-words text-body-lg font-semibold text-primary">
+                {compra.estabelecimento}
+              </p>
+            )}
+
+            <p className="text-body-md text-foreground-muted">
+              Iniciada em{' '}
+              <time dateTime={compra.iniciadaEm}>
+                {new Date(compra.iniciadaEm).toLocaleDateString('pt-BR', { dateStyle: 'short' })}
+                {' às '}
+                {new Date(compra.iniciadaEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              </time>
+            </p>
+
+            <p className="rounded-card bg-primary/5 p-gutter text-body-md text-foreground-muted">
+              {compra.contextoUsuario.participanteCompra
+                ? 'Você participa desta compra.'
+                : 'Você pode acompanhar esta compra, mas não participa dela.'}
+            </p>
+
+          </header>
+
+
+
+          <MinhaPresenca
+            compra={compra}
+            usuarioId={
+              !usuarioCarregando && !usuarioErro ? usuario?.id : undefined
+            }
+            ocupada={ocupada}
+            onSolicitar={solicitarPresenca}
+            onCancelar={cancelarPresenca}
+            onDecidir={decidirPresenca}
+            onSair={declararSaida}
+            onSolicitarResponsabilidade={solicitarResponsabilidadeOperacional}
+            onCancelarResponsabilidade={cancelarResponsabilidade}
+            onDecidirResponsabilidade={decidirResponsabilidade}
+            onAtualizar={reconciliarCompra}
+          />
+
+          <fieldset
+            disabled={ocupada}
+            className="min-w-0 space-y-gutter"
+            aria-labelledby="compra-itens"
+          >
+            {compra.contextoUsuario.participanteCompra && (
+              <AdicionarItemCompraDialog
+                key={chave}
+                onAdicionar={adicionarItem}
+              />
+            )}
+
+            <div className="flex items-center justify-between gap-gutter">
+              <h2
+                id="compra-itens"
+                className="text-headline-md font-semibold"
+              >
+                Itens da compra
+              </h2>
+
+              <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md">
+                {compra.itens.length}{' '}
+                {compra.itens.length === 1 ? 'item' : 'itens'}
+              </span>
+            </div>
+
+            {compra.itens.length === 0 && (
+              <p className="text-foreground-muted">
+                Esta compra não possui itens.
+              </p>
+            )}
+
+            <ul className="space-y-gutter">
+              {[...compra.itens]
+                .sort((a, b) => a.ordemExibicao - b.ordemExibicao)
+                .map((item) => (
+                  <ItemCompraCard
+                    key={`${chave}:${item.id}`}
+                    item={item}
+                    participante={compra.contextoUsuario.participanteCompra}
+                    onColocar={colocarNoCarrinho}
+                    onRestaurar={restaurarNoCarrinho}
+                    onRemover={removerItem}
+                    onReconciliar={reconciliarCompra}
+                  />
+                ))}
+            </ul>
+          </fieldset>
+
+          <div className="pt-page">
+            <Link
+              to={`/listas/${listaId}/compra/revisao`}
+              className="flex min-h-touch w-full items-center justify-center rounded-control bg-primary px-page font-semibold text-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              Revisar compra
+            </Link>
+          </div>
+        </>
+      )}
+    </section>
+  )
+}

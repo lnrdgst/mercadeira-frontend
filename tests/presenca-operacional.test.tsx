@@ -119,16 +119,50 @@ test('rejeicao sem capability nao oferece nova solicitacao', async () => {
   expect(screen.queryByRole('button', { name: 'Solicitar presença no mercado' })).not.toBeInTheDocument()
 })
 
-test('saída continua no PUT NAO_PRESENTE e responsabilidade passa por solicitação confirmada', async () => {
+test('primeiro clique para sair apenas pede confirmação e voltar preserva a presença', async () => {
   const presente = compra('PRESENTE')
   const { user, comandos } = preparar({ inicial: presente, comando: async () => Response.json(presente) })
   await user.click(await screen.findByRole('button', { name: 'Não estou no mercado' }))
+  expect(comandos()).toHaveLength(0)
+  const confirmacao = screen.getByRole('dialog', { name: 'Confirmar saída do mercado' })
+  expect(confirmacao).toHaveTextContent('poderá ser necessário solicitar presença novamente')
+  expect(confirmacao).toHaveClass('border-t', 'border-foreground/10')
+  await user.click(screen.getByRole('button', { name: 'Voltar' }))
+  expect(comandos()).toHaveLength(0)
+  expect(screen.getByRole('button', { name: 'Não estou no mercado' })).toBeEnabled()
+})
+
+test('confirma saída uma única vez pelo PUT existente e bloqueia dupla submissão', async () => {
+  const presente = compra('PRESENTE')
+  const pendente = deferred<Response>()
+  const { user, comandos } = preparar({ inicial: presente, comando: () => pendente.promise })
+  await user.click(await screen.findByRole('button', { name: 'Não estou no mercado' }))
+  const confirmar = screen.getByRole('button', { name: 'Confirmar que não estou no mercado' })
+  await user.dblClick(confirmar)
+  expect(comandos()).toHaveLength(1)
   expect(comandos()[0][1]!.method).toBe('PUT')
   expect(JSON.parse(comandos()[0][1]!.body as string)).toEqual({ estado: 'NAO_PRESENTE' })
-  await user.click(screen.getByRole('button', { name: 'Solicitar responsabilidade operacional' }))
+  expect(screen.getByRole('button', { name: 'Voltar' })).toBeDisabled()
+  await act(async () => pendente.resolve(Response.json(presente)))
+})
+
+test('responsável operacional também confirma a saída antes de chamar o backend', async () => {
+  const presente = compra('PRESENTE')
+  presente.responsabilidadeOperacional = { ...presente.responsabilidadeOperacional!, responsavel: { participanteCompraId: 'p-a', membroFamiliaId: 'm-a', usuarioId: 'u-a', nome: 'Ana' } }
+  const { user, comandos } = preparar({ inicial: presente, comando: async () => Response.json(presente) })
+  await user.click(await screen.findByRole('button', { name: 'Não estou no mercado' }))
+  expect(comandos()).toHaveLength(0)
+  await user.click(screen.getByRole('button', { name: 'Confirmar que não estou no mercado' }))
+  expect(comandos()[0][1]!.method).toBe('PUT')
+})
+
+test('responsabilidade continua passando pela confirmação já existente', async () => {
+  const presente = compra('PRESENTE')
+  const { user, comandos } = preparar({ inicial: presente, comando: async () => Response.json(presente) })
+  await user.click(await screen.findByRole('button', { name: 'Solicitar responsabilidade operacional' }))
   await user.click(screen.getByRole('button', { name: 'Confirmar solicitação' }))
-  expect(String(comandos()[1][0])).toMatch(/\/responsabilidade-operacional\/solicitacoes$/)
-  expect(comandos()[1][1]!.body).toBeUndefined()
+  expect(String(comandos()[0][0])).toMatch(/\/responsabilidade-operacional\/solicitacoes$/)
+  expect(comandos()[0][1]!.body).toBeUndefined()
 })
 
 test('erro de comando reconcilia por GET e não faz nova escrita', async () => {

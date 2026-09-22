@@ -3,7 +3,7 @@ import type { ApiRequestError } from "../../../shared/api/apiClient";
 import { useSession } from "../../auth/session/sessionContext";
 import { presencaLabels, type CompraResponse } from "../types/shopping";
 
-type Confirmacao = "solicitar" | "responsabilidade" | null;
+type Confirmacao = "solicitar" | "responsabilidade" | "sair" | null;
 
 function nomeCompacto(nome: string, repetidos: Map<string, number>, indice: number) {
   const partes = nome.trim().split(/\s+/);
@@ -175,7 +175,13 @@ export function MinhaPresenca({
               const responsavel = participante.id === responsavelId;
               const nome = nomeCompacto(participante.nome, primeirosNomes, indice);
               const descricao = responsavel
-                ? "Responsável operacional"
+                ? (
+                  <>
+                    No mercado
+                    <br />
+                    Responsável operacional
+                  </>
+                )
                 : presencaLabels[estado] ?? "Presença indisponível";
               const estiloLinha = responsavel
                 ? "bg-blue-50 text-blue-700"
@@ -199,210 +205,134 @@ export function MinhaPresenca({
               Esta compra não possui participantes.
             </p>
           )}
-          <div className="flex w-full flex-col items-center gap-2 border-t border-primary/10 pt-gutter text-center">
-          {compra.solicitacoesPresencaPendentes &&
-            compra.solicitacoesPresencaPendentes.length > 0 && (
-              <section
-                aria-label="Solicitações de presença"
-                className="space-y-gutter rounded-card bg-primary/10 p-page"
-              >
-                <h3 className="text-headline-md font-semibold">
-                  Solicitações de presença
-                </h3>
-                <ul className="space-y-2">
-                  {compra.solicitacoesPresencaPendentes.map(
-                    (pedido) => {
-                      const solicitante =
-                        compra.participantes.find(
-                          (participante) =>
-                            participante.id ===
-                            pedido.solicitanteParticipanteCompraId,
-                        );
-                      return (
-                        <li
-                          key={pedido.id}
-                          className="flex flex-col items-center gap-3 text-center sm:flex-row sm:flex-wrap sm:justify-center"
-                        >
-                          <div>
-                            <span className="font-semibold">
-                              {solicitante?.nome ?? "Participante"}
-                            </span>{" "}
-                            <span className="text-foreground-muted">
-                              solicitou presença no mercado.
-                            </span>
-                          </div>
-
-
-                          {pedido.acoes.podeDecidirPresenca === true && (
-                            <div className="flex flex-wrap justify-center gap-2">
-                              <button
-                                type="button"
-                                disabled={ocupada || precisaAtualizar}
-                                onClick={() =>
-                                  void executar(
-                                    "Confirmando presença...",
-                                    () => onDecidir(pedido.id, "aprovar"),
-                                  )
-                                }
-                                className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60"
-                              >
-                                Confirmar presença
-                              </button>
-
-                              <button
-                                type="button"
-                                disabled={ocupada || precisaAtualizar}
-                                onClick={() =>
-                                  void executar(
-                                    "Recusando solicitação...",
-                                    () => onDecidir(pedido.id, "rejeitar"),
-                                  )
-                                }
-                                className="min-h-touch rounded-control border border-primary px-page font-semibold text-primary disabled:opacity-60"
-                              >
-                                Recusar
-                              </button>
+          <div className="flex w-full flex-col items-center gap-2 text-center">
+            {compra.solicitacoesPresencaPendentes &&
+              compra.solicitacoesPresencaPendentes.length > 0 && (
+                <section
+                  aria-label="Solicitações de presença"
+                  className="mt-gutter w-full space-y-gutter border-t border-foreground/10 bg-primary/10 p-page pt-gutter"
+                >
+                  <h3 className="text-headline-md font-semibold">
+                    Solicitações de presença
+                  </h3>
+                  <ul className="space-y-2">
+                    {compra.solicitacoesPresencaPendentes.map(
+                      (pedido) => {
+                        const solicitante =
+                          compra.participantes.find(
+                            (participante) =>
+                              participante.id ===
+                              pedido.solicitanteParticipanteCompraId,
+                          );
+                        return (
+                          <li
+                            key={pedido.id}
+                            className="flex flex-col items-center gap-3 text-center sm:flex-row sm:flex-wrap sm:justify-center"
+                          >
+                            <div>
+                              <span className="font-semibold">
+                                {solicitante?.nome ?? "Participante"}
+                              </span>{" "}
+                              <span className="text-foreground-muted">
+                                solicitou presença no mercado.
+                              </span>
                             </div>
-                          )}
-                        </li>
-                      );
-                    },
-                  )}
-                </ul>
-              </section>
-            )}
-          {aguardando && (
-            <div className="space-y-2" role="status">
-              <p className="font-semibold">
-                Aguardando confirmação do responsável
-                operacional.
-              </p>
-              {contexto.podeCancelarSolicitacaoPresenca ===
-                true && (
-                  <button
-                    type="button"
-                    disabled={ocupada || precisaAtualizar}
-                    onClick={() =>
-                      void executar(
-                        "Cancelando solicitação...",
-                        () => onCancelar(solicitacao!.id),
-                      )
-                    }
-                    className="min-h-touch rounded-control border border-primary px-page font-semibold text-primary disabled:opacity-60"
-                  >
-                    Cancelar solicitação
-                  </button>
-                )}
-            </div>
-          )}
-          {!aguardando &&
-            podeSolicitar &&
-            confirmacao !== "solicitar" && (
-              <button
-                type="button"
-                disabled={ocupada || precisaAtualizar}
-                onClick={() => setConfirmacao("solicitar")}
-                className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60"
-              >
-                Solicitar presença no mercado
-              </button>
-            )}
-
-          {confirmacao === "solicitar" && (
-            <div
-              className="space-y-gutter rounded-card bg-primary/5 p-page"
-              role="dialog"
-              aria-label="Confirmar solicitação de presença"
-            >
 
 
-              <div className="space-y-2">
-                <h3 className="text-headline-md font-semibold text-primary">
-                  Solicitar presença no mercado
-                </h3>
+                            {pedido.acoes.podeDecidirPresenca === true && (
+                              <div className="flex flex-wrap justify-center gap-2">
+                                <button
+                                  type="button"
+                                  disabled={ocupada || precisaAtualizar}
+                                  onClick={() =>
+                                    void executar(
+                                      "Confirmando presença...",
+                                      () => onDecidir(pedido.id, "aprovar"),
+                                    )
+                                  }
+                                  className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60"
+                                >
+                                  Confirmar presença
+                                </button>
 
-                <p className="text-foreground-muted">
-                  {semPresentes
-                    ? "Você se tornará o responsável operacional desta compra por não haver presentes no mercado responsáveis por esta lista."
-                    : "O responsável operacional receberá sua solicitação de presença."}
-                </p>
-              </div>
-
-              <div className="flex flex-wrap justify-center gap-2">
-                <button
-                  type="button"
-                  disabled={ocupada || precisaAtualizar}
-                  onClick={() =>
-                    void executar(
-                      "Enviando solicitação...",
-                      onSolicitar,
-                    )
-                  }
-                  className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60"
-                >
-                  Confirmar solicitação
-                </button>
-
-                <button
-                  type="button"
-                  disabled={ocupada}
-                  onClick={() => setConfirmacao(null)}
-                  className="min-h-touch rounded-control border border-primary px-page font-semibold text-primary"
-                >
-                  Voltar
-                </button>
-              </div>
-            </div>
-          )}
-
-
-          {confirmacao === null && (
-            <div className="flex flex-col items-center gap-1 text-center">
-              {podeSair &&
-                !temSolicitacaoPresencaParaDecidir &&
-                !temSolicitacaoResponsabilidadeParaDecidir && (
-                  <button
-                    type="button"
-                    disabled={ocupada || precisaAtualizar}
-                    onClick={() =>
-                      void executar("Declarando saída...", onSair)
-                    }
-                    className="py-1 font-semibold text-accent hover:underline disabled:opacity-60"
-                  >
-                    Não estou no mercado
-                  </button>
-                )}
-
-              {podeSolicitarResponsabilidade && (
-                <button
-                  type="button"
-                  disabled={ocupada || precisaAtualizar}
-                  onClick={() =>
-                    setConfirmacao("responsabilidade")
-                  }
-                  className="py-1 font-semibold text-blue-700 hover:underline disabled:opacity-60"
-                >
-                  Solicitar responsabilidade operacional
-                </button>
+                                <button
+                                  type="button"
+                                  disabled={ocupada || precisaAtualizar}
+                                  onClick={() =>
+                                    void executar(
+                                      "Recusando solicitação...",
+                                      () => onDecidir(pedido.id, "rejeitar"),
+                                    )
+                                  }
+                                  className="min-h-touch rounded-control border border-primary px-page font-semibold text-primary disabled:opacity-60"
+                                >
+                                  Recusar
+                                </button>
+                              </div>
+                            )}
+                          </li>
+                        );
+                      },
+                    )}
+                  </ul>
+                </section>
               )}
-            </div>
-          )}
+            {aguardando && (
+              <div className="mt-gutter flex w-full flex-col items-center gap-2 border-t border-foreground/10 pt-gutter text-center" role="status">
+                <p className="font-semibold">
+                  Aguardando confirmação do responsável
+                  operacional.
+                </p>
+                {contexto.podeCancelarSolicitacaoPresenca ===
+                  true && (
+                    <button
+                      type="button"
+                      disabled={ocupada || precisaAtualizar}
+                      onClick={() =>
+                        void executar(
+                          "Cancelando solicitação...",
+                          () => onCancelar(solicitacao!.id),
+                        )
+                      }
+                      className="min-h-touch rounded-control border border-primary px-page font-semibold text-primary disabled:opacity-60"
+                    >
+                      Cancelar solicitação
+                    </button>
+                  )}
+              </div>
+            )}
+            {!aguardando &&
+              podeSolicitar &&
+              confirmacao === null && (
+                <div className="mt-gutter flex w-full flex-col items-center gap-2 border-t border-foreground/10 pt-gutter text-center">
+                  <button
+                    type="button"
+                    disabled={ocupada || precisaAtualizar}
+                    onClick={() => setConfirmacao("solicitar")}
+                    className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60"
+                  >
+                    Solicitar presença no mercado
+                  </button>
+                </div>
+              )}
 
-
-          {!aguardandoResponsabilidade &&
-            confirmacao === "responsabilidade" && (
+            {confirmacao === "solicitar" && (
               <div
-                className="space-y-gutter rounded-card bg-blue-50 p-page"
+                className="mt-gutter w-full space-y-gutter border-t border-foreground/10 bg-primary/5 p-page pt-gutter"
                 role="dialog"
-                aria-label="Confirmar solicitação de responsabilidade operacional"
+                aria-label="Confirmar solicitação de presença"
               >
+
+
                 <div className="space-y-2">
-                  <h3 className="text-headline-md font-semibold text-blue-700">
-                    Solicitar responsabilidade operacional
+                  <h3 className="text-headline-md font-semibold text-primary">
+                    Solicitar presença no mercado
                   </h3>
 
                   <p className="text-foreground-muted">
-                    O responsável operacional atual precisará aprovar esta transferência.
+                    {semPresentes
+                      ? "Você se tornará o responsável operacional desta compra por não haver presentes no mercado responsáveis por esta lista."
+                      : "O responsável operacional receberá sua solicitação de presença."}
                   </p>
                 </div>
 
@@ -412,11 +342,11 @@ export function MinhaPresenca({
                     disabled={ocupada || precisaAtualizar}
                     onClick={() =>
                       void executar(
-                        "Enviando solicitação de responsabilidade...",
-                        onSolicitarResponsabilidade,
+                        "Enviando solicitação...",
+                        onSolicitar,
                       )
                     }
-                    className="min-h-touch rounded-control bg-blue-700 px-page font-semibold text-white disabled:opacity-60"
+                    className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60"
                   >
                     Confirmar solicitação
                   </button>
@@ -425,7 +355,7 @@ export function MinhaPresenca({
                     type="button"
                     disabled={ocupada}
                     onClick={() => setConfirmacao(null)}
-                    className="min-h-touch rounded-control border border-blue-700 px-page font-semibold text-blue-700"
+                    className="min-h-touch rounded-control border border-primary px-page font-semibold text-primary"
                   >
                     Voltar
                   </button>
@@ -433,117 +363,234 @@ export function MinhaPresenca({
               </div>
             )}
 
-          {solicitacaoResponsabilidade?.estado === "PENDENTE" && (
-            <div role="status" className="space-y-2">
-              <p className="font-semibold">
-                Aguardando decisão sobre sua solicitação de
-                responsabilidade.
-              </p>
-              {contexto.podeCancelarSolicitacaoResponsabilidade ===
-                true && (
+
+            {confirmacao === null && (
+              <div className="mt-gutter flex w-full flex-col items-center gap-1 border-t border-foreground/10 pt-gutter text-center">
+                {podeSair &&
+                  !temSolicitacaoPresencaParaDecidir &&
+                  !temSolicitacaoResponsabilidadeParaDecidir && (
+                    <button
+                      type="button"
+                      disabled={ocupada || precisaAtualizar}
+                      onClick={() =>
+                        setConfirmacao("sair")
+                      }
+                      className="py-1 font-semibold text-accent hover:underline disabled:opacity-60"
+                    >
+                      Não estou no mercado
+                    </button>
+                  )}
+
+                {podeSolicitarResponsabilidade && (
                   <button
                     type="button"
                     disabled={ocupada || precisaAtualizar}
                     onClick={() =>
-                      void executar(
-                        "Cancelando solicitação de responsabilidade...",
-                        () =>
-                          onCancelarResponsabilidade(
-                            solicitacaoResponsabilidade.id,
-                          ),
-                      )
+                      setConfirmacao("responsabilidade")
                     }
-                    className="min-h-touch rounded-control border border-primary px-page font-semibold text-primary disabled:opacity-60"
+                    className="py-1 font-semibold text-blue-700 hover:underline disabled:opacity-60"
                   >
-                    Cancelar solicitação de responsabilidade
+                    Solicitar responsabilidade operacional
                   </button>
                 )}
-            </div>
-          )}
-          {compra.solicitacoesResponsabilidadePendentes &&
-            compra.solicitacoesResponsabilidadePendentes.length > 0 && (
-              <section
-                aria-label="Solicitações de responsabilidade"
-                className="space-y-gutter rounded-card bg-blue-50 p-page"
-              >
-                <h3 className="text-headline-md font-semibold text-blue-700">
-                  Solicitações de responsabilidade
-                </h3>
-                <ul className="space-y-2">
-                  {compra.solicitacoesResponsabilidadePendentes.map(
-                    (pedido) => {
-                      const solicitante =
-                        compra.participantes.find(
-                          (participante) =>
-                            participante.id ===
-                            pedido.solicitanteParticipanteCompraId,
-                        );
-                      return (
-                        <li
-                          key={pedido.id}
-                          className="flex flex-col items-center gap-3 text-center sm:flex-row sm:flex-wrap sm:justify-center"
-                        >
-                          <span className="font-semibold">
-                            {solicitante?.nome ??
-                              "Participante"}
-                          </span>
-                          <span className="text-foreground-muted">
-                            solicitou assumir a
-                            responsabilidade operacional.
-                          </span>
-                          {pedido.acoes
-                            .podeDecidirResponsabilidade ===
-                            true && (
-                              <>
-                                <button
-                                  type="button"
-                                  disabled={
-                                    ocupada ||
-                                    precisaAtualizar
-                                  }
-                                  onClick={() =>
-                                    void executar(
-                                      "Aprovando responsabilidade...",
-                                      () =>
-                                        onDecidirResponsabilidade(
-                                          pedido.id,
-                                          "aprovar",
-                                        ),
-                                    )
-                                  }
-                                  className="min-h-touch rounded-control bg-blue-700 px-page font-semibold text-white disabled:opacity-60"
-                                >
-                                  Aprovar responsabilidade
-                                </button>
-                                <button
-                                  type="button"
-                                  disabled={
-                                    ocupada ||
-                                    precisaAtualizar
-                                  }
-                                  onClick={() =>
-                                    void executar(
-                                      "Rejeitando solicitação...",
-                                      () =>
-                                        onDecidirResponsabilidade(
-                                          pedido.id,
-                                          "rejeitar",
-                                        ),
-                                    )
-                                  }
-                                  className="min-h-touch rounded-control border border-blue-700 px-page font-semibold text-blue-700 disabled:opacity-60"
-                                >
-                                  Rejeitar
-                                </button>
-                              </>
-                            )}
-                        </li>
-                      );
-                    },
-                  )}
-                </ul>
-              </section>
+              </div>
             )}
+
+            {confirmacao === "sair" && (
+              <div
+                className="mt-gutter w-full space-y-gutter border border-foreground/10 border-t bg-foreground/5 p-page pt-gutter"
+                role="dialog"
+                aria-label="Confirmar saída do mercado"
+              >
+                <div className="space-y-2 text-center">
+                  <h3 className="text-headline-md font-semibold">
+                    Confirmar saída do mercado?
+                  </h3>
+                  <p className="text-foreground-muted">
+                    Ao confirmar, você deixará de constar como presente. Para retornar,
+                    poderá ser necessário solicitar presença novamente e aguardar a
+                    aprovação do responsável operacional.
+                  </p>
+                </div>
+                <div className="flex flex-col items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={ocupada || precisaAtualizar}
+                    onClick={() =>
+                      void executar("Declarando saída...", onSair)
+                    }
+                    className="min-h-touch rounded-control border border-foreground/30 bg-foreground/5 px-page font-semibold text-foreground disabled:opacity-60"
+                  >
+                    Confirmar que não estou no mercado
+                  </button>
+                  <button
+                    type="button"
+                    disabled={ocupada || precisaAtualizar}
+                    onClick={() => setConfirmacao(null)}
+                    className="min-h-touch rounded-control border border-foreground/20 px-page font-semibold text-foreground-muted disabled:opacity-60"
+                  >
+                    Voltar
+                  </button>
+                </div>
+              </div>
+            )}
+
+
+            {!aguardandoResponsabilidade &&
+              confirmacao === "responsabilidade" && (
+                <div
+                  className="mt-gutter w-full space-y-gutter border-t border-foreground/10 bg-blue-50 p-page pt-gutter"
+                  role="dialog"
+                  aria-label="Confirmar solicitação de responsabilidade operacional"
+                >
+                  <div className="space-y-2">
+                    <h3 className="text-headline-md font-semibold text-blue-700">
+                      Solicitar responsabilidade operacional
+                    </h3>
+
+                    <p className="text-foreground-muted">
+                      O responsável operacional atual precisará aprovar esta transferência.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap justify-center gap-2">
+                    <button
+                      type="button"
+                      disabled={ocupada || precisaAtualizar}
+                      onClick={() =>
+                        void executar(
+                          "Enviando solicitação de responsabilidade...",
+                          onSolicitarResponsabilidade,
+                        )
+                      }
+                      className="min-h-touch rounded-control bg-blue-700 px-page font-semibold text-white disabled:opacity-60"
+                    >
+                      Confirmar solicitação
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={ocupada}
+                      onClick={() => setConfirmacao(null)}
+                      className="min-h-touch rounded-control border border-blue-700 px-page font-semibold text-blue-700"
+                    >
+                      Voltar
+                    </button>
+                  </div>
+                </div>
+              )}
+
+            {solicitacaoResponsabilidade?.estado === "PENDENTE" && (
+              <div role="status" className="mt-gutter flex w-full flex-col items-center gap-2 border-t border-foreground/10 pt-gutter text-center">
+                <p className="font-semibold">
+                  Aguardando decisão sobre sua solicitação de
+                  responsabilidade.
+                </p>
+                {contexto.podeCancelarSolicitacaoResponsabilidade ===
+                  true && (
+                    <button
+                      type="button"
+                      disabled={ocupada || precisaAtualizar}
+                      onClick={() =>
+                        void executar(
+                          "Cancelando solicitação de responsabilidade...",
+                          () =>
+                            onCancelarResponsabilidade(
+                              solicitacaoResponsabilidade.id,
+                            ),
+                        )
+                      }
+                      className="min-h-touch rounded-control border border-primary px-page font-semibold text-primary disabled:opacity-60"
+                    >
+                      Cancelar solicitação de responsabilidade
+                    </button>
+                  )}
+              </div>
+            )}
+            {compra.solicitacoesResponsabilidadePendentes &&
+              compra.solicitacoesResponsabilidadePendentes.length > 0 && (
+                <section
+                  aria-label="Solicitações de responsabilidade"
+                  className="mt-gutter w-full space-y-gutter border-t border-foreground/10 bg-blue-50 p-page pt-gutter"
+                >
+                  <h3 className="text-headline-md font-semibold text-blue-700">
+                    Solicitações de responsabilidade
+                  </h3>
+                  <ul className="space-y-2">
+                    {compra.solicitacoesResponsabilidadePendentes.map(
+                      (pedido) => {
+                        const solicitante =
+                          compra.participantes.find(
+                            (participante) =>
+                              participante.id ===
+                              pedido.solicitanteParticipanteCompraId,
+                          );
+                        return (
+                          <li
+                            key={pedido.id}
+                            className="flex flex-col items-center gap-3 text-center sm:flex-row sm:flex-wrap sm:justify-center"
+                          >
+                            <span className="font-semibold">
+                              {solicitante?.nome ??
+                                "Participante"}
+                            </span>
+                            <span className="text-foreground-muted">
+                              solicitou assumir a
+                              responsabilidade operacional.
+                            </span>
+                            {pedido.acoes
+                              .podeDecidirResponsabilidade ===
+                              true && (
+                                <>
+                                  <button
+                                    type="button"
+                                    disabled={
+                                      ocupada ||
+                                      precisaAtualizar
+                                    }
+                                    onClick={() =>
+                                      void executar(
+                                        "Aprovando responsabilidade...",
+                                        () =>
+                                          onDecidirResponsabilidade(
+                                            pedido.id,
+                                            "aprovar",
+                                          ),
+                                      )
+                                    }
+                                    className="min-h-touch rounded-control bg-blue-700 px-page font-semibold text-white disabled:opacity-60"
+                                  >
+                                    Aprovar responsabilidade
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={
+                                      ocupada ||
+                                      precisaAtualizar
+                                    }
+                                    onClick={() =>
+                                      void executar(
+                                        "Rejeitando solicitação...",
+                                        () =>
+                                          onDecidirResponsabilidade(
+                                            pedido.id,
+                                            "rejeitar",
+                                          ),
+                                      )
+                                    }
+                                    className="min-h-touch rounded-control border border-blue-700 px-page font-semibold text-blue-700 disabled:opacity-60"
+                                  >
+                                    Rejeitar
+                                  </button>
+                                </>
+                              )}
+                          </li>
+                        );
+                      },
+                    )}
+                  </ul>
+                </section>
+              )}
           </div>
         </div>
       )}
@@ -556,20 +603,20 @@ export function MinhaPresenca({
         </p>
       )}
       {precisaAtualizar && (
-        <div className="flex justify-center">
+        <div className="mt-gutter flex justify-center border-t border-foreground/10 pt-gutter">
           <button
-          type="button"
-          disabled={ocupada}
-          onClick={() =>
-            void executar(
-              "Atualizando compra...",
-              onAtualizar,
-              false,
-            )
-          }
-          className="min-h-touch rounded-control border border-primary px-page font-semibold text-primary disabled:opacity-60"
-        >
-          Atualizar compra
+            type="button"
+            disabled={ocupada}
+            onClick={() =>
+              void executar(
+                "Atualizando compra...",
+                onAtualizar,
+                false,
+              )
+            }
+            className="min-h-touch rounded-control border border-primary px-page font-semibold text-primary disabled:opacity-60"
+          >
+            Atualizar compra
           </button>
         </div>
       )}

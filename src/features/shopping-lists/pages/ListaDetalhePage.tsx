@@ -11,6 +11,14 @@ import { adicionarParticipanteLista, atualizarItemLista, buscarItensLista, busca
 import type { ItemListaCompraResponse, ListaCompraDetalheResponse, MembroFamiliaResponse, ParticipanteListaResponse, SalvarItemListaRequest } from '../types/shoppingList'
 import { categoriaCompraLabels, statusListaCompraLabels, unidadeMedidaLabels } from '../types/shoppingList'
 
+function nomeCompacto(nome: string, repetidos: Map<string, number>, indice: number) {
+  const partes = nome.trim().split(/\s+/)
+  const primeiro = partes[0] || nome
+  if ((repetidos.get(primeiro) || 0) < 2) return primeiro
+  const ultimo = partes.at(-1)
+  return ultimo && ultimo !== primeiro ? `${primeiro} ${ultimo[0]}.` : `${primeiro} ${indice + 1}`
+}
+
 export function ListaDetalhePage() {
   const { listaId } = useParams()
   const { auth, logout } = useSession()
@@ -31,6 +39,7 @@ export function ListaDetalhePage() {
   const [erroItens, setErroItens] = useState<string | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
   const [membroParaAdicionar, setMembroParaAdicionar] = useState('')
+  const [adicionandoParticipante, setAdicionandoParticipante] = useState(false)
   const [operacaoParticipante, setOperacaoParticipante] = useState<string | null>(null)
   const [itemEditando, setItemEditando] = useState<ItemListaCompraResponse | null | 'novo'>(null)
   const [itemParaRemover, setItemParaRemover] = useState<ItemListaCompraResponse | null>(null)
@@ -137,6 +146,12 @@ export function ListaDetalhePage() {
   const podeGerenciar = emPreparacao && lista?.contextoUsuario.podeGerenciarParticipantes === true
   const podeAlterar = emPreparacao && lista?.contextoUsuario.podeAlterarItens === true
   const candidatos = membrosFamiliaId === familiaSelecionada.id ? membros.filter((membro) => !listaParticipantes.some((participante) => participante.membroFamiliaId === membro.membroFamiliaId)) : []
+  const participantesOrdenados = [...listaParticipantes].sort((a, b) => Number(b.membroFamiliaId === lista?.criador.membroFamiliaId) - Number(a.membroFamiliaId === lista?.criador.membroFamiliaId))
+  const primeirosNomes = participantesOrdenados.reduce((nomes, participante) => {
+    const primeiro = participante.nome.trim().split(/\s+/)[0] || participante.nome
+    nomes.set(primeiro, (nomes.get(primeiro) || 0) + 1)
+    return nomes
+  }, new Map<string, number>())
 
   function fecharDialog() {
     setItemEditando(null)
@@ -158,7 +173,7 @@ export function ListaDetalhePage() {
     if (!auth || !lista || !familiaSelecionada || !listaId || !podeGerenciar) return
     geracaoRef.current += 1; leituraPeriodicaRef.current?.abort(); mutacaoRef.current = true
     setOperacaoParticipante(membroFamiliaId); setFeedback(null)
-    try { if (remover) await removerParticipanteLista(auth.token, familiaSelecionada.id, listaId, membroFamiliaId); else await adicionarParticipanteLista(auth.token, familiaSelecionada.id, listaId, membroFamiliaId); setFeedback(remover ? 'Participante removido.' : 'Participante adicionado.'); await Promise.all([carregarDetalhe(), carregarParticipantes()]) }
+    try { if (remover) await removerParticipanteLista(auth.token, familiaSelecionada.id, listaId, membroFamiliaId); else await adicionarParticipanteLista(auth.token, familiaSelecionada.id, listaId, membroFamiliaId); setFeedback(remover ? 'Participante removido.' : 'Participante adicionado.'); await Promise.all([carregarDetalhe(), carregarParticipantes()]); if (!remover) { setMembroParaAdicionar(''); setAdicionandoParticipante(false) } }
     catch (error) { const apiError = error as ApiRequestError; if (apiError.status === 401) logout(); else setFeedback(apiError.message || 'Não foi possível atualizar os participantes.') }
     finally { mutacaoRef.current = false; setOperacaoParticipante(null) }
   }
@@ -266,179 +281,58 @@ export function ListaDetalhePage() {
 
       {lista && (
         <>
-          <header className="space-y-2 rounded-card bg-surface p-page shadow-soft">
+          <header className="space-y-page rounded-card bg-surface p-page shadow-soft">
             <div className="flex flex-wrap gap-2">
-              <span className="rounded-full bg-primary/10 px-gutter py-1 text-label-md font-semibold text-primary">
-                {categoriaCompraLabels[lista.categoria]}
-              </span>
-
-              <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md text-foreground-muted">
-                {statusListaCompraLabels[lista.status]}
-              </span>
+              <span className="rounded-full bg-primary/10 px-gutter py-1 text-label-md font-semibold text-primary">{categoriaCompraLabels[lista.categoria]}</span>
+              <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md text-foreground-muted">{statusListaCompraLabels[lista.status]}</span>
             </div>
 
-            <h1 className="text-headline-lg font-bold">{lista.nome}</h1>
+            <div className="flex flex-wrap items-start justify-between gap-gutter">
+              <div className="min-w-0 space-y-1">
+                <h1 className="break-words text-headline-lg font-bold">{lista.nome}</h1>
+                {lista.estabelecimento && <p className="text-body-md text-foreground-muted">{lista.estabelecimento}</p>}
+                <p className="text-label-lg text-foreground-muted">Criada por {lista.criador.nome}</p>
+              </div>
+              <EditarDadosLista key={chave} familiaId={familiaSelecionada.id} lista={lista} onAtualizada={(atualizada) => { setDetalhe(atualizada); setDetalheKey(chave) }} onMutacao={atualizarEstadoMutacao} />
+            </div>
 
-            {lista.estabelecimento && (
-              <p className="text-body-md text-foreground-muted">
-                {lista.estabelecimento}
-              </p>
-            )}
+            <section aria-labelledby="lista-participantes-titulo" className="rounded-card border border-primary/20 bg-primary/5 p-gutter">
+              <div className="flex flex-wrap items-center justify-between gap-gutter">
+                <h2 id="lista-participantes-titulo" className="text-headline-md font-semibold">Participantes</h2>
+                {podeGerenciar && candidatos.length > 0 && <button type="button" onClick={() => setAdicionandoParticipante(true)} className="min-h-touch rounded-control border border-primary px-gutter font-semibold text-primary">Adicionar</button>}
+              </div>
 
-            <p className="text-label-lg text-foreground-muted">
-              Criada por {lista.criador.nome}
-            </p>
+              {carregandoParticipantes || participantesKey !== chave ? <p className="text-body-md text-foreground-muted">Carregando participantes...</p>
+                : erroParticipantes ? <div className="space-y-gutter rounded-card bg-error/10 p-gutter text-error"><p>{erroParticipantes}</p><button type="button" onClick={() => void carregarParticipantes()} className="min-h-touch rounded-control border border-current px-page font-semibold">Tentar novamente</button></div>
+                  : <ul className="mt-2 space-y-1">
+                    {participantesOrdenados.map((participante, indice) => {
+                      const criador = participante.membroFamiliaId === lista.criador.membroFamiliaId
+                      const nome = nomeCompacto(participante.nome, primeirosNomes, indice)
+                      return <li key={participante.membroFamiliaId} className="flex min-h-touch items-center justify-between gap-gutter rounded-control bg-foreground/5 px-gutter">
+                        <span className="min-w-0 truncate font-semibold" title={participante.nome}>{nome}{criador && ' \u00b7 Criador'}</span>
+                        {podeGerenciar && !criador && <button type="button" disabled={operacaoParticipante === participante.membroFamiliaId} onClick={() => void atualizarParticipante(participante.membroFamiliaId, true)} aria-label={`Remover ${participante.nome} da lista`} title={`Remover ${participante.nome} da lista`} className="flex min-h-touch min-w-touch shrink-0 items-center justify-center rounded-control text-error hover:bg-error/10 disabled:opacity-60">{'\u00d7'}</button>}
+                      </li>
+                    })}
+                  </ul>}
+
+              {!lista.contextoUsuario.participanteAtivo && podeGerenciar && <button type="button" onClick={() => void atualizarParticipante(lista.contextoUsuario.membroFamiliaId)} disabled={operacaoParticipante !== null} className="mt-3 min-h-touch w-full rounded-control border border-primary px-page font-semibold text-primary disabled:opacity-60">Participar desta lista</button>}
+            </section>
           </header>
 
-          <EditarDadosLista
-            key={chave}
-            familiaId={familiaSelecionada.id}
-            lista={lista}
-            onAtualizada={(atualizada) => {
-              setDetalhe(atualizada)
-              setDetalheKey(chave)
-            }}
-            onMutacao={atualizarEstadoMutacao}
-          />
+          {adicionandoParticipante && <div role="dialog" aria-modal="true" aria-labelledby="adicionar-participante-titulo" className="fixed inset-0 z-50 flex items-end bg-foreground/40 p-gutter sm:items-center sm:justify-center" onMouseDown={(event) => { if (event.target === event.currentTarget && operacaoParticipante === null) setAdicionandoParticipante(false) }}>
+            <div className="w-full max-w-md space-y-gutter rounded-card bg-surface p-page shadow-soft">
+              <h2 id="adicionar-participante-titulo" className="text-headline-md font-semibold">Adicionar participante</h2>
+              <label className="block space-y-1"><span>Participante</span><select autoFocus value={membroParaAdicionar} onChange={(event) => setMembroParaAdicionar(event.target.value)} className="min-h-touch w-full rounded-control border border-foreground/20 bg-background px-gutter"><option value="">Selecione uma pessoa</option>{candidatos.map((membro) => <option key={membro.membroFamiliaId} value={membro.membroFamiliaId}>{membro.nome}</option>)}</select></label>
+              <div className="flex flex-wrap gap-gutter"><button type="button" disabled={!membroParaAdicionar || operacaoParticipante !== null} onClick={() => void atualizarParticipante(membroParaAdicionar)} className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60">Adicionar</button><button type="button" disabled={operacaoParticipante !== null} onClick={() => { setMembroParaAdicionar(''); setAdicionandoParticipante(false) }} className="min-h-touch rounded-control border border-foreground/20 px-page font-semibold">Cancelar</button></div>
+            </div>
+          </div>}
 
           {lista.status === 'EM_COMPRA' && (
             <div className="space-y-gutter rounded-card border border-primary/20 bg-primary/5 p-page">
-              <p>
-                A lista saiu do modo de preparação. Acompanhe os participantes e
-                itens registrados na compra.
-              </p>
-
-              <Link
-                to={`/listas/${listaId}/compra`}
-                className="inline-flex min-h-touch items-center rounded-control bg-primary px-page font-semibold text-surface"
-              >
-                Ver compra em andamento
-              </Link>
+              <p>A lista saiu do modo de preparação. Acompanhe os participantes e itens registrados na compra.</p>
+              <Link to={`/listas/${listaId}/compra`} className="inline-flex min-h-touch items-center rounded-control bg-primary px-page font-semibold text-surface">Ver compra em andamento</Link>
             </div>
           )}
-
-          <section className="space-y-gutter">
-            <div>
-              <h2 className="text-headline-md font-semibold">Participantes</h2>
-              <p className="text-body-md text-foreground-muted">
-                Pessoas que participam desta lista.
-              </p>
-            </div>
-
-            {carregandoParticipantes || participantesKey !== chave ? (
-              <p className="text-body-md text-foreground-muted">
-                Carregando participantes...
-              </p>
-            ) : erroParticipantes ? (
-              <div className="space-y-gutter rounded-card bg-error/10 p-page text-error">
-                <p>{erroParticipantes}</p>
-
-                <button
-                  type="button"
-                  onClick={() => void carregarParticipantes()}
-                  className="min-h-touch rounded-control border border-current px-page font-semibold"
-                >
-                  Tentar novamente
-                </button>
-              </div>
-            ) : (
-              <ul className="space-y-2">
-                {listaParticipantes.map((participante) => {
-                  const criador =
-                    participante.membroFamiliaId ===
-                    lista.criador.membroFamiliaId
-
-                  return (
-                    <li
-                      key={participante.membroFamiliaId}
-                      className="flex min-h-touch flex-wrap items-center justify-between gap-gutter rounded-card bg-surface p-gutter shadow-soft"
-                    >
-                      <div>
-                        <p className="font-semibold">{participante.nome}</p>
-                        <p className="text-label-md text-foreground-muted">
-                          {criador ? 'Criador' : participante.papelFamilia}
-                        </p>
-                      </div>
-
-                      {podeGerenciar && !criador && (
-                        <button
-                          type="button"
-                          disabled={
-                            operacaoParticipante === participante.membroFamiliaId
-                          }
-                          onClick={() =>
-                            void atualizarParticipante(
-                              participante.membroFamiliaId,
-                              true,
-                            )
-                          }
-                          className="min-h-touch rounded-control border border-error px-gutter text-label-lg font-semibold text-error disabled:opacity-60"
-                        >
-                          Remover
-                        </button>
-                      )}
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
-
-            {!lista.contextoUsuario.participanteAtivo && podeGerenciar && (
-              <div className="space-y-gutter rounded-card border border-primary/20 bg-primary/5 p-page">
-                <p>Você não participa desta lista.</p>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    void atualizarParticipante(
-                      lista.contextoUsuario.membroFamiliaId,
-                    )
-                  }
-                  disabled={operacaoParticipante !== null}
-                  className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60"
-                >
-                  Participar desta lista
-                </button>
-              </div>
-            )}
-
-            {podeGerenciar && candidatos.length > 0 && (
-              <div className="flex flex-wrap gap-gutter rounded-card bg-surface p-page shadow-soft">
-                <select
-                  value={membroParaAdicionar}
-                  onChange={(event) =>
-                    setMembroParaAdicionar(event.target.value)
-                  }
-                  className="min-h-touch flex-1 rounded-control border border-foreground/20 bg-background px-gutter"
-                >
-                  <option value="">Adicionar participante</option>
-
-                  {candidatos.map((membro) => (
-                    <option
-                      key={membro.membroFamiliaId}
-                      value={membro.membroFamiliaId}
-                    >
-                      {membro.nome}
-                    </option>
-                  ))}
-                </select>
-
-                <button
-                  type="button"
-                  disabled={
-                    !membroParaAdicionar || operacaoParticipante !== null
-                  }
-                  onClick={() => {
-                    void atualizarParticipante(membroParaAdicionar)
-                    setMembroParaAdicionar('')
-                  }}
-                  className="min-h-touch rounded-control border border-primary px-page font-semibold text-primary disabled:opacity-60"
-                >
-                  Adicionar
-                </button>
-              </div>
-            )}
-          </section>
 
           <section className="space-y-gutter">
             <div className="w-full [&>button]:w-full">

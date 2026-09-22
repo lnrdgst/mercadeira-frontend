@@ -76,9 +76,12 @@ export function EditarDadosLista({ familiaId, lista, onAtualizada, onMutacao }: 
     }
   }
 
-  if (!editando) return permitido ? <button ref={acionador} type="button" onClick={() => { setErro(null); setEditando(true) }} className="min-h-touch rounded-control border border-primary px-gutter font-semibold text-primary">Editar dados da lista</button> : null
+  if (!permitido && !editando) return null
   const campo = 'min-h-touch w-full rounded-card border border-foreground/20 bg-background px-gutter text-body-md'
-  return <form aria-labelledby="editar-lista-titulo" onSubmit={(event) => void salvar(event)} className="space-y-gutter" aria-busy={enviando}>
+  return <>
+    <button ref={acionador} type="button" onClick={() => { setErro(null); setEditando(true) }} className="min-h-touch w-full rounded-control border border-primary px-gutter font-semibold text-primary">Editar dados desta lista</button>
+    {editando && <div role="dialog" aria-modal="true" aria-labelledby="editar-lista-titulo" className="fixed inset-0 z-50 flex items-end bg-foreground/40 p-gutter sm:items-center sm:justify-center" onKeyDown={(event) => { if (event.key === 'Escape' && !enviando) { event.preventDefault(); setEditando(false) } }} onMouseDown={(event) => { if (event.target === event.currentTarget && !enviando) setEditando(false) }}>
+    <form aria-labelledby="editar-lista-titulo" onSubmit={(event) => void salvar(event)} className="max-h-[calc(100svh-2rem)] w-full max-w-xl overflow-y-auto rounded-card bg-surface p-page shadow-soft space-y-gutter" aria-busy={enviando}>
     <h2 id="editar-lista-titulo" ref={tituloRef} tabIndex={-1} className="text-headline-md font-semibold">Editar dados da lista</h2>
     {erro && <p role="alert" className="rounded-card bg-error/10 p-gutter text-error">{erro}</p>}
     {!permitido && <p>Os dados desta lista estão disponíveis somente para leitura.</p>}
@@ -96,5 +99,7 @@ export function EditarDadosLista({ familiaId, lista, onAtualizada, onMutacao }: 
     </fieldset>
     {precisaAtualizar && <button type="button" disabled={enviando} onClick={async () => { if (ocupado.current) return; ocupado.current = true; setEnviando(true); await reconciliar(); ocupado.current = false; if (ativo.current) setEnviando(false) }} className="min-h-touch rounded-control border px-page">Atualizar lista</button>}
     <button type="button" disabled={enviando} onClick={() => setEditando(false)} className="min-h-touch rounded-control border border-foreground/20 px-page">Cancelar</button>
-  </form>
+    </form>
+    </div>}
+  </>
 }

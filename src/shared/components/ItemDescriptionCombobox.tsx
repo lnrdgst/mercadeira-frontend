@@ -42,7 +42,7 @@ export function ItemDescriptionCombobox({ value, disabled, onChange, onSelect, l
     input.current?.focus()
   }
 
-  return <div className="relative">
+  return <div className="relative z-10">
     <input ref={input} id="item-descricao" role="combobox" aria-autocomplete="list" aria-expanded={expanded}
       aria-controls={expanded ? id : undefined} aria-activedescendant={expanded && items[active] ? `${id}-${active}` : undefined}
       aria-describedby={`${id}-hint`} autoComplete="off" value={value} required autoFocus disabled={disabled} maxLength={200}
@@ -57,7 +57,7 @@ export function ItemDescriptionCombobox({ value, disabled, onChange, onSelect, l
         } else if (event.key === 'Enter' && expanded && items[active]) { event.preventDefault(); select(items[active]) }
       }} className="min-h-touch w-full rounded-card border border-foreground/20 bg-background px-gutter focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60" />
     <p id={`${id}-hint`} className="text-label-md text-foreground-muted">Escolha uma sugestão ou digite um novo item.</p>
-    {expanded && <div className="mt-1 rounded-card border border-foreground/20 bg-surface p-2">
+    {expanded && <div className="relative z-10 mt-1 rounded-card border border-foreground/20 bg-surface p-2">
       <p className="text-label-md text-foreground-muted">{value.trim() ? 'Sugestões da família' : 'Usados recentemente'}</p>
       <p role="status" className="text-label-md text-foreground-muted">{loading ? 'Buscando sugestões...' : result?.error ? 'Não foi possível carregar sugestões. Você pode continuar digitando.' : items.length === 0 ? 'Nenhuma sugestão. Você pode cadastrar um novo item.' : ''}</p>
       <ul ref={list} id={id} role="listbox" aria-label="Sugestões de itens" className="max-h-56 overflow-y-auto">

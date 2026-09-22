@@ -1,11 +1,14 @@
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import type { ApiRequestError } from '../../../shared/api/apiClient'
 import { ItemFieldsForm } from '../../../shared/components/ItemFieldsForm'
 import { useSession } from '../../auth/session/sessionContext'
+import { useFamilyContext } from '../../family/session/familyContext'
+import { buscarSugestoesItens } from '../../shopping-lists/api/shoppingListsApi'
 import type { AdicionarItemCompraRequest } from '../types/shopping'
 
 export function AdicionarItemCompraDialog({ onAdicionar }: { onAdicionar: (data: AdicionarItemCompraRequest) => Promise<void> }) {
-  const { logout } = useSession()
+  const { auth, logout } = useSession()
+  const { familiaSelecionada } = useFamilyContext()
   const dialogRef = useRef<HTMLDialogElement>(null)
   const openerRef = useRef<HTMLButtonElement>(null)
   const enviandoRef = useRef(false)
@@ -13,6 +16,16 @@ export function AdicionarItemCompraDialog({ onAdicionar }: { onAdicionar: (data:
   const [aberto, setAberto] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
+
+  const carregarSugestoes = useCallback(async (termo: string) => {
+    if (!auth || !familiaSelecionada) return []
+    try {
+      return (await buscarSugestoesItens(auth.token, familiaSelecionada.id, termo)).data || []
+    } catch (error) {
+      if ((error as ApiRequestError).status === 401) logout()
+      throw error
+    }
+  }, [auth, familiaSelecionada, logout])
 
   function fechar() {
     if (enviandoRef.current) return
@@ -51,9 +64,9 @@ export function AdicionarItemCompraDialog({ onAdicionar }: { onAdicionar: (data:
                     <path d="m6 9 6 6 6-6" />
                   </svg>
 </button>
-    <dialog ref={dialogRef} aria-label="Adicionar item à compra" onCancel={(event) => { if (enviandoRef.current) event.preventDefault() }} onClose={() => { setAberto(false); requestAnimationFrame(() => { window.scrollTo({ top: scrollRef.current, behavior: 'auto' }); openerRef.current?.focus({ preventScroll: true }) }) }} className="m-auto max-h-[calc(100svh-2rem)] w-[calc(100%-2rem)] max-w-xl overflow-y-auto rounded-card bg-surface p-page text-foreground shadow-soft backdrop:bg-foreground/40">
-      {erro && <p role="alert" className="mb-gutter rounded-control bg-error/10 p-gutter text-error">{erro}</p>}
-      {aberto && <ItemFieldsForm submitting={enviando} onCancel={fechar} onSubmit={adicionar} />}
+    <dialog ref={dialogRef} aria-label="Adicionar item à compra" onCancel={(event) => { if (enviandoRef.current) event.preventDefault() }} onClose={() => { setAberto(false); requestAnimationFrame(() => { window.scrollTo({ top: scrollRef.current, behavior: 'auto' }); openerRef.current?.focus({ preventScroll: true }) }) }} className="m-auto flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-xl flex-col overflow-hidden rounded-card bg-surface p-0 text-foreground shadow-soft backdrop:bg-foreground/40">
+      {erro && <p role="alert" className="mx-page mt-page rounded-control bg-error/10 p-gutter text-error">{erro}</p>}
+      {aberto && <ItemFieldsForm stickyActions submitting={enviando} loadSuggestions={carregarSugestoes} onCancel={fechar} onSubmit={adicionar} />}
     </dialog>
   </>
 }

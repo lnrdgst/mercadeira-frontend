@@ -1,16 +1,64 @@
 import { act, screen, waitFor, within } from '@testing-library/react'
-import { expect, test, vi } from 'vitest'
+import { afterAll, beforeAll, expect, test, vi } from 'vitest'
+import { Route, Routes } from 'react-router'
 import { ItemForm } from '../src/features/shopping-lists/components/ItemForm'
+import { ListaDetalhePage } from '../src/features/shopping-lists/pages/ListaDetalhePage'
 import { ItemFieldsForm } from '../src/shared/components/ItemFieldsForm'
 import { ItemDescriptionCombobox } from '../src/shared/components/ItemDescriptionCombobox'
 import { deferred, renderApp } from './helpers'
 
 const sugestoes = [{ descricao: 'Arroz', unidadeMedida: 'KG' }, { descricao: 'Arroz integral', unidadeMedida: 'PACOTE' }]
+
+const showModalOriginal = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, 'showModal')
+const closeOriginal = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, 'close')
+beforeAll(() => {
+  Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
+    configurable: true, writable: true, value: function (this: HTMLDialogElement) { this.setAttribute('open', '') },
+  })
+  Object.defineProperty(HTMLDialogElement.prototype, 'close', {
+    configurable: true, writable: true, value: function (this: HTMLDialogElement) { this.removeAttribute('open') },
+  })
+})
+afterAll(() => {
+  for (const [name, descriptor] of [['showModal', showModalOriginal], ['close', closeOriginal]] as const) {
+    if (descriptor) Object.defineProperty(HTMLDialogElement.prototype, name, descriptor)
+    else Reflect.deleteProperty(HTMLDialogElement.prototype, name)
+  }
+})
+
 function preparar(response = async () => Response.json(sugestoes)) {
   const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(response)
   const onSubmit = vi.fn(async () => {})
   return { ...renderApp(<ItemForm submitting={false} onCancel={vi.fn()} onSubmit={onSubmit} />), onSubmit, fetchMock }
 }
+
+test('modal da lista em preparação carrega, exibe e seleciona sugestões acima do rodapé sticky', async () => {
+  const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+    const path = String(input)
+    if (path.includes('/itens/sugestoes?termo=')) return Response.json(sugestoes)
+    if (path.endsWith('/participantes')) return Response.json([])
+    if (path.endsWith('/itens')) return Response.json([])
+    if (path.endsWith('/listas/lista-a')) return Response.json({
+      id: 'lista-a', nome: 'Compras da semana', status: 'EM_PREPARACAO', categoria: 'SUPERMERCADO', estabelecimento: null,
+      criador: { nome: 'Ana', membroFamiliaId: 'membro-a', usuarioId: 'usuario-a' },
+      contextoUsuario: { membroFamiliaId: 'membro-a', papelFamilia: 'MEMBRO', participanteAtivo: true, podeGerenciarParticipantes: false, podeAlterarItens: true },
+    })
+    throw new Error(`Endpoint inesperado: ${path}`)
+  })
+  const { user } = renderApp(<Routes><Route path="/listas/:listaId" element={<ListaDetalhePage />} /></Routes>, { route: '/listas/lista-a' })
+
+  await user.click(await screen.findByRole('button', { name: 'Adicionar item na lista' }))
+  const dialog = screen.getByRole('dialog')
+  const input = within(dialog).getByRole('combobox', { name: 'Descrição' })
+  expect(await within(dialog).findByRole('option', { name: /Arroz integral/ })).toBeVisible()
+  expect(String(fetchMock.mock.calls.find(([url]) => String(url).includes('/itens/sugestoes'))?.[0])).toMatch(/\/familias\/familia-a\/itens\/sugestoes\?termo=$/)
+  const listaSugestoes = within(dialog).getByRole('listbox')
+  expect(listaSugestoes).toHaveClass('max-h-56')
+  expect(listaSugestoes.parentElement).toHaveClass('relative', 'z-10')
+  await user.click(within(dialog).getByRole('option', { name: /Arroz integral/ }))
+  expect(input).toHaveValue('Arroz integral')
+  expect(within(dialog).getByLabelText('Unidade')).toHaveValue('PACOTE')
+})
 
 test('recentes usam endpoint da família e seleção por teclado preenche apenas descrição/unidade', async () => {
   const { user, onSubmit, fetchMock } = preparar()
@@ -25,7 +73,7 @@ test('recentes usam endpoint da família e seleção por teclado preenche apenas
   expect(screen.getByLabelText('Unidade')).toHaveValue('PACOTE')
   expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
   expect(onSubmit).not.toHaveBeenCalled()
-  await user.click(screen.getByRole('button', { name: 'Adicionar item' }))
+  await user.click(screen.getByRole('button', { name: 'Adicionar' }))
   expect(onSubmit).toHaveBeenCalledWith({ descricao: 'Arroz integral', unidadeMedida: 'PACOTE', quantidade: null, marca: null, observacoes: null })
 })
 
@@ -67,7 +115,7 @@ test.each(['vazio', 'erro'])('busca %s permite salvar texto novo livremente', as
   const { user, onSubmit } = preparar(async () => modo === 'vazio' ? Response.json([]) : Response.json({}, { status: 503 }))
   await user.type(screen.getByLabelText('Descrição'), 'Novo produto')
   await screen.findByText(modo === 'vazio' ? 'Nenhuma sugestão. Você pode cadastrar um novo item.' : 'Não foi possível carregar sugestões. Você pode continuar digitando.')
-  await user.click(screen.getByRole('button', { name: 'Adicionar item' }))
+  await user.click(screen.getByRole('button', { name: 'Adicionar' }))
   expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ descricao: 'Novo produto' }))
 })
 

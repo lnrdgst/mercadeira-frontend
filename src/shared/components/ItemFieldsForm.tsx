@@ -15,13 +15,14 @@ interface ItemFieldsFormProps {
   loadSuggestions?: LoadItemSuggestions
   item?: ItemFieldsValues
   submitting: boolean
+  stickyActions?: boolean
   onCancel: () => void
   onSubmit: (data: ItemFieldsValues) => Promise<void>
 }
 
 const unidades = Object.keys(unidadeMedidaLabels) as UnidadeMedida[]
 
-export function ItemFieldsForm({ item, submitting, onCancel, onSubmit, loadSuggestions }: ItemFieldsFormProps) {
+export function ItemFieldsForm({ item, submitting, stickyActions = false, onCancel, onSubmit, loadSuggestions }: ItemFieldsFormProps) {
   const [descricao, setDescricao] = useState(item?.descricao || '')
   const [quantidade, setQuantidade] = useState(item?.quantidade?.toString() || '')
   const [unidadeMedida, setUnidadeMedida] = useState<UnidadeMedida | ''>(item?.unidadeMedida || '')
@@ -47,35 +48,37 @@ export function ItemFieldsForm({ item, submitting, onCancel, onSubmit, loadSugge
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-gutter">
-      <h2 className="text-headline-md font-semibold">{item ? 'Editar item' : 'Adicionar item'}</h2>
-      <div className="space-y-1">
-        <label htmlFor="item-descricao" className="block text-label-lg font-semibold">Descrição</label>
-        {loadSuggestions ? <ItemDescriptionCombobox value={descricao} disabled={submitting} load={loadSuggestions} onChange={setDescricao} onSelect={(item) => { setDescricao(item.descricao); setUnidadeMedida(item.unidadeMedida || '') }} /> : <input id="item-descricao" value={descricao} onChange={(event) => setDescricao(event.target.value)} required autoFocus disabled={submitting} className="min-h-touch w-full rounded-card border border-foreground/20 bg-background px-gutter focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60" />}
-      </div>
-      <div className="grid gap-gutter sm:grid-cols-2">
+    <form onSubmit={handleSubmit} className={stickyActions ? 'flex min-h-0 flex-1 flex-col' : 'space-y-gutter'}>
+      <div className={stickyActions ? 'min-h-0 flex-1 space-y-gutter overflow-y-auto p-page' : 'space-y-gutter'}>
+        <h2 className="text-headline-md font-semibold">{item ? 'Editar item' : 'Adicionar item'}</h2>
         <div className="space-y-1">
-          <label htmlFor="item-quantidade" className="block text-label-lg font-semibold">Quantidade</label>
-          <input id="item-quantidade" value={quantidade} onChange={(event) => setQuantidade(event.target.value)} type="number" step="any" disabled={submitting} className="min-h-touch w-full rounded-card border border-foreground/20 bg-background px-gutter focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60" />
+          <label htmlFor="item-descricao" className="block text-label-lg font-semibold">Descrição</label>
+          {loadSuggestions ? <ItemDescriptionCombobox value={descricao} disabled={submitting} load={loadSuggestions} onChange={setDescricao} onSelect={(item) => { setDescricao(item.descricao); setUnidadeMedida(item.unidadeMedida || '') }} /> : <input id="item-descricao" value={descricao} onChange={(event) => setDescricao(event.target.value)} required autoFocus disabled={submitting} className="min-h-touch w-full rounded-card border border-foreground/20 bg-background px-gutter focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60" />}
+        </div>
+        <div className="grid gap-gutter sm:grid-cols-2">
+          <div className="space-y-1">
+            <label htmlFor="item-quantidade" className="block text-label-lg font-semibold">Quantidade</label>
+            <input id="item-quantidade" value={quantidade} onChange={(event) => setQuantidade(event.target.value)} type="number" step="any" disabled={submitting} className="min-h-touch w-full rounded-card border border-foreground/20 bg-background px-gutter focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60" />
+          </div>
+          <div className="space-y-1">
+            <label htmlFor="item-unidade" className="block text-label-lg font-semibold">Unidade</label>
+            <select id="item-unidade" value={unidadeMedida} onChange={(event) => setUnidadeMedida(event.target.value as UnidadeMedida | '')} disabled={submitting} className="min-h-touch w-full rounded-card border border-foreground/20 bg-background px-gutter focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60">
+              <option value="">Sem unidade</option>
+              {unidades.map((unidade) => <option key={unidade} value={unidade}>{unidadeMedidaLabels[unidade]}</option>)}
+            </select>
+          </div>
         </div>
         <div className="space-y-1">
-          <label htmlFor="item-unidade" className="block text-label-lg font-semibold">Unidade</label>
-          <select id="item-unidade" value={unidadeMedida} onChange={(event) => setUnidadeMedida(event.target.value as UnidadeMedida | '')} disabled={submitting} className="min-h-touch w-full rounded-card border border-foreground/20 bg-background px-gutter focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60">
-            <option value="">Sem unidade</option>
-            {unidades.map((unidade) => <option key={unidade} value={unidade}>{unidadeMedidaLabels[unidade]}</option>)}
-          </select>
+          <label htmlFor="item-marca" className="block text-label-lg font-semibold">Marca</label>
+          <input id="item-marca" value={marca} onChange={(event) => setMarca(event.target.value)} disabled={submitting} className="min-h-touch w-full rounded-card border border-foreground/20 bg-background px-gutter focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60" />
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="item-observacoes" className="block text-label-lg font-semibold">Observações</label>
+          <textarea id="item-observacoes" value={observacoes} onChange={(event) => setObservacoes(event.target.value)} disabled={submitting} rows={3} className="w-full rounded-card border border-foreground/20 bg-background p-gutter focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60" />
         </div>
       </div>
-      <div className="space-y-1">
-        <label htmlFor="item-marca" className="block text-label-lg font-semibold">Marca</label>
-        <input id="item-marca" value={marca} onChange={(event) => setMarca(event.target.value)} disabled={submitting} className="min-h-touch w-full rounded-card border border-foreground/20 bg-background px-gutter focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60" />
-      </div>
-      <div className="space-y-1">
-        <label htmlFor="item-observacoes" className="block text-label-lg font-semibold">Observações</label>
-        <textarea id="item-observacoes" value={observacoes} onChange={(event) => setObservacoes(event.target.value)} disabled={submitting} rows={3} className="w-full rounded-card border border-foreground/20 bg-background p-gutter focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60" />
-      </div>
-      <div className="grid gap-gutter sm:grid-cols-2">
-        <button type="submit" disabled={submitting} className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60">{submitting ? 'Salvando...' : item ? 'Salvar alterações' : 'Adicionar item'}</button>
+      <div className={stickyActions ? 'sticky bottom-0 grid shrink-0 grid-cols-2 gap-gutter border-t border-foreground/10 bg-surface px-page pt-gutter pb-[max(env(safe-area-inset-bottom),1rem)]' : 'grid gap-gutter sm:grid-cols-2'}>
+        <button type="submit" disabled={submitting} className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60">{submitting ? 'Salvando...' : item ? 'Salvar alterações' : 'Adicionar'}</button>
         <button type="button" onClick={onCancel} disabled={submitting} className="min-h-touch rounded-control border border-foreground/20 px-page font-semibold text-foreground">Cancelar</button>
       </div>
     </form>

@@ -16,7 +16,7 @@ type FormMode = "overview" | "create" | "join";
 const mensagemNomeFamiliaInvalido =
   "Ops! Parece que você não digitou um nome válido. Por favor, tente novamente.";
 const mensagemCodigoIngressoInvalido =
-  "Ops! Parece que o código digitado não é válido. Por favor, tente novamente.";
+  "Ops! Parece que o código digitado não é válido. Por favor tente novamente.";
 
 function normalizarNomeFamilia(nome: string) {
   return nome.trim();

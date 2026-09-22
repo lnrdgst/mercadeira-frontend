@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import type { ApiRequestError } from '../../../shared/api/apiClient'
+import { copiarTexto } from '../../../shared/utils/clipboard'
 import { useSession } from '../../auth/session/sessionContext'
 import {
   aprovarSolicitacaoFamilia,
@@ -93,21 +94,20 @@ export function FamiliaPage() {
     (carregandoSolicitacoes || solicitacoesFamiliaId !== familia.id)
 
   async function copiarCodigo(mensagemSucesso = 'Código copiado.') {
-    try {
-      await navigator.clipboard.writeText(familia.codigoIngresso)
+    if (await copiarTexto(familia.codigoIngresso)) {
       setFeedback(mensagemSucesso)
       return true
-    } catch {
-      setFeedback('Não foi possível copiar o código.')
-      return false
     }
+
+    setFeedback('Não foi possível copiar o código.')
+    return false
   }
 
   async function compartilharCodigo() {
     const mensagem = `Entre na família ${familia.nome} no Mercadeira. Código: ${familia.codigoIngresso}`
 
     if (!navigator.share) {
-      await copiarCodigo('Código copiado para compartilhar.')
+      await copiarCodigo('Compartilhamento não disponível. Código copiado.')
       return
     }
 
@@ -115,9 +115,8 @@ export function FamiliaPage() {
       await navigator.share({ title: 'Mercadeira', text: mensagem })
       setFeedback('Código compartilhado.')
     } catch (error) {
-      if ((error as DOMException).name !== 'AbortError') {
-        setFeedback('Não foi possível compartilhar o código.')
-      }
+      if ((error as { name?: string }).name === 'AbortError') return
+      await copiarCodigo('Não foi possível compartilhar. Código copiado.')
     }
   }
 

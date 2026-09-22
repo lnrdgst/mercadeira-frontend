@@ -377,7 +377,7 @@ export function ListaDetalhePage() {
             <dialog
               ref={itemDialogRef}
               onClose={fecharDialog}
-              className="m-auto max-h-[calc(100svh-2rem)] w-[calc(100%-2rem)] max-w-xl overflow-y-auto rounded-card bg-surface p-page text-foreground shadow-soft backdrop:bg-foreground/40"
+              className="m-auto flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-xl flex-col overflow-hidden rounded-card bg-surface p-0 text-foreground shadow-soft backdrop:bg-foreground/40"
             >
               {podeAlterar && itemEditando && (
                 <ItemForm
@@ -385,6 +385,7 @@ export function ListaDetalhePage() {
                     itemEditando === 'novo' ? undefined : itemEditando
                   }
                   submitting={operacaoItem !== null}
+                  stickyActions
                   onCancel={fecharDialog}
                   onSubmit={salvarItem}
                 />

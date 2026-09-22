@@ -9,6 +9,7 @@ import type { ItemListaCompraResponse, SalvarItemListaRequest } from '../types/s
 interface ItemFormProps {
   item?: ItemListaCompraResponse
   submitting: boolean
+  stickyActions?: boolean
   onCancel: () => void
   onSubmit: (data: SalvarItemListaRequest) => Promise<void>
 }

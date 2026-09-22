@@ -34,9 +34,10 @@ beforeEach(() => {
   vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(true)
 })
 
-async function preparar({ inicial = compra(), get = async () => Response.json(compra()), post = async () => Response.json(compra().itens[0]) } = {}) {
+async function preparar({ inicial = compra(), get = async () => Response.json(compra()), post = async () => Response.json(compra().itens[0]), sugestoes = async () => Response.json([]) } = {}) {
   let consultas = 0
-  const http = vi.spyOn(globalThis, 'fetch').mockImplementation(async (_input, options) => {
+  const http = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, options) => {
+    if (String(input).includes('/itens/sugestoes?termo=')) return sugestoes()
     if (options?.method === 'POST' || options?.method === 'PUT') return post()
     return ++consultas === 1 ? Response.json(inicial) : get()
   })
@@ -54,6 +55,30 @@ async function conexao(online: boolean) {
   vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(online)
   await act(async () => { fireEvent(window, new Event(online ? 'online' : 'offline')) })
 }
+
+test('modal da Compra carrega sugestões, preenche descrição e unidade e preserva inclusão livre', async () => {
+  const sugestoes = [{ descricao: 'Leite', unidadeMedida: 'LITRO' }, { descricao: 'Leite em pó', unidadeMedida: 'PACOTE' }]
+  const post = vi.fn(async () => Response.json(compra().itens[0]))
+  const { http } = await preparar({ sugestoes: async () => Response.json(sugestoes), post })
+
+  fireEvent.click(screen.getByRole('button', { name: 'Adicionar novo item à compra' }))
+  const dialog = screen.getByRole('dialog', { name: 'Adicionar item à compra' })
+  await avancar(200)
+  await act(async () => {})
+  const descricao = within(dialog).getByRole('combobox', { name: 'Descrição' })
+  expect(within(dialog).getByRole('option', { name: /Leite em pó/ })).toBeVisible()
+  expect(String(http.mock.calls.find(([url]) => String(url).includes('/itens/sugestoes'))?.[0])).toMatch(/\/familias\/familia-a\/itens\/sugestoes\?termo=$/)
+  const listaSugestoes = within(dialog).getByRole('listbox')
+  expect(listaSugestoes.parentElement).toHaveClass('relative', 'z-10')
+
+  fireEvent.click(within(dialog).getByRole('option', { name: /Leite em pó/ }))
+  expect(descricao).toHaveValue('Leite em pó')
+  expect(within(dialog).getByLabelText('Unidade')).toHaveValue('PACOTE')
+  fireEvent.change(descricao, { target: { value: 'Item livre' } })
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Adicionar' }))
+  expect(post).toHaveBeenCalledOnce()
+  expect(JSON.parse(String(http.mock.calls.find(([, options]) => options?.method === 'POST')?.[1]?.body))).toEqual({ descricao: 'Item livre', quantidade: null, unidadeMedida: 'PACOTE', marca: null, observacoes: null })
+})
 
 test('offline suspende sem apagar dados; online reconcilia imediatamente a Compra completa e retoma um único timer', async () => {
   const nova = compra(); nova.nomeLista = 'Reconectada'

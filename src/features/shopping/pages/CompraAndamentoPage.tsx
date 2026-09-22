@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, Navigate, useParams } from 'react-router'
 import type { ApiRequestError } from '../../../shared/api/apiClient'
 import { useSession } from '../../auth/session/sessionContext'
 import { useAuthenticatedUser } from '../../auth/user/AuthenticatedUserContext'
@@ -8,7 +8,6 @@ import { categoriaCompraLabels } from '../../shopping-lists/types/shoppingList'
 import { adicionarItemCompra, alterarMinhaPresenca, buscarCompra, cancelarSolicitacaoPresenca, cancelarSolicitacaoResponsabilidade, colocarItemNoCarrinho, decidirSolicitacaoPresenca, decidirSolicitacaoResponsabilidade, removerItemCompra, restaurarItemNoCarrinho, solicitarMinhaPresenca, solicitarResponsabilidade } from '../api/shoppingApi'
 import { AdicionarItemCompraDialog } from '../components/AdicionarItemCompraDialog'
 import { ItemCompraCard } from '../components/ItemCompraCard'
-import { CompraResumo } from '../components/CompraResumo'
 import { MinhaPresenca } from '../components/MinhaPresenca'
 import type { AcaoRemocaoItemCompra, AdicionarItemCompraRequest, CompraResponse, ItemCompraResponse } from '../types/shopping'
 
@@ -209,28 +208,7 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
     await executar(async () => atualizarItem(await restaurarItemNoCarrinho(token, familiaId, listaId, itemId)))
   }
 
-  if (compra?.status === 'FINALIZADA') return <section className="mx-auto max-w-3xl space-y-page">
-    <Link
-      to="/listas"
-      className="inline-flex min-h-touch items-center gap-2 font-semibold text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-    >
-      <svg
-        aria-hidden="true"
-        viewBox="0 0 24 24"
-        className="size-5 fill-none stroke-current"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="m15 18-6-6 6-6" />
-      </svg>
-
-      Voltar para listas
-    </Link>
-    <h1 className="break-words text-headline-lg font-bold">{compra.nomeLista}</h1>
-    <CompraResumo compra={compra} />
-    <Link to={`/listas/${listaId}/compra/revisao`} className="inline-flex min-h-touch items-center font-semibold text-primary">Ver resumo</Link>
-  </section>
+  if (compra?.status === 'FINALIZADA') return <Navigate to={`/listas/${listaId}/compra/revisao`} replace />
 
   return (
     <section className="mx-auto max-w-3xl space-y-page">

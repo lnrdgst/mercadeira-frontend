@@ -43,9 +43,9 @@ function preparar({ inicial = compra(), post = async () => Response.json({ id: '
     return ++consultas === 1 ? Response.json(inicial) : get()
   })
   const view = renderApp(<Routes>
-    <Route path="/listas/:listaId/revisao" element={<CompraRevisaoPage />} />
+    <Route path="/listas/:listaId/compra/revisao" element={<CompraRevisaoPage />} />
     <Route path="/listas/nova" element={<h1>Nova preparação</h1>} />
-  </Routes>, { route: '/listas/lista-a/revisao' })
+  </Routes>, { route: '/listas/lista-a/compra/revisao' })
   return { ...view, http, posts: () => http.mock.calls.filter(([, options]) => options?.method === 'POST') }
 }
 
@@ -56,6 +56,8 @@ async function abrir(user: ReturnType<typeof renderApp>['user']) {
 
 test('GET da finalizada oferece ação ao observador pela capability; confirmação explica cópia e cancelar retorna foco', async () => {
   const { user, posts } = preparar()
+  expect(await screen.findByRole('link', { name: 'Voltar para listas' })).toHaveAttribute('href', '/listas')
+  expect(screen.queryByRole('link', { name: 'Voltar à compra' })).not.toBeInTheDocument()
   const dialog = await abrir(user)
   expect(within(dialog).getByText(/3 item\(ns\)/)).toBeInTheDocument()
   expect(within(dialog).getByRole('button', { name: 'Cancelar' })).toHaveFocus()
@@ -63,6 +65,14 @@ test('GET da finalizada oferece ação ao observador pela capability; confirmaç
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Usar esta lista novamente' })).toHaveFocus()
   expect(posts()).toHaveLength(0)
+})
+
+test('revisão em andamento mantém retorno à Compra operacional', async () => {
+  const inicial = compra(false)
+  inicial.status = 'EM_ANDAMENTO'
+  preparar({ inicial })
+  expect(await screen.findByRole('link', { name: 'Voltar à compra' })).toHaveAttribute('href', '/listas/lista-a/compra')
+  expect(screen.queryByRole('link', { name: 'Voltar para listas' })).not.toBeInTheDocument()
 })
 
 test.each([false, true])('não oferece reutilização sem capability ou com compra em andamento (%s)', async (andamento) => {

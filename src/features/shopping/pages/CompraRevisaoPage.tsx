@@ -95,9 +95,9 @@ function RevisaoCompra({ token, familiaId, listaId }: { token: string; familiaId
   }
 
   return <section className="mx-auto max-w-3xl space-y-page">
-    <nav className="flex flex-wrap gap-gutter" aria-label="Navegação da revisão">
+    {compra && <nav className="flex flex-wrap gap-gutter" aria-label="Navegação da revisão">
       <Link
-        to={`/listas/${listaId}/compra`}
+        to={compra?.status === 'FINALIZADA' ? '/listas' : `/listas/${listaId}/compra`}
         className="inline-flex min-h-touch items-center gap-2 font-semibold text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
         <svg
@@ -111,9 +111,9 @@ function RevisaoCompra({ token, familiaId, listaId }: { token: string; familiaId
           <path d="m15 18-6-6 6-6" />
         </svg>
 
-        Voltar à compra
+        {compra?.status === 'FINALIZADA' ? 'Voltar para listas' : 'Voltar à compra'}
       </Link>
-    </nav>
+    </nav>}
     <header className="space-y-1">
       <h1 ref={tituloRef} tabIndex={-1} className="text-headline-lg font-bold">{compra?.status === 'FINALIZADA' ? 'Resumo da compra' : 'Revisão da compra'}</h1>
       {compra && <><p className="break-words text-body-lg font-semibold">{compra.nomeLista}</p>{compra.estabelecimento && <p className="break-words text-foreground-muted">{compra.estabelecimento}</p>}<p className="text-label-lg text-primary">{compra.status === 'FINALIZADA' ? 'Finalizada' : 'Em andamento'}</p></>}

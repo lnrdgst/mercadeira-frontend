@@ -1,6 +1,6 @@
 import { act, fireEvent, screen, within } from '@testing-library/react'
 import { afterAll, beforeAll, beforeEach, expect, test, vi } from 'vitest'
-import { Link, Route, Routes } from 'react-router'
+import { Link, Route, Routes, useLocation, useNavigationType } from 'react-router'
 import { CompraAndamentoPage } from '../src/features/shopping/pages/CompraAndamentoPage'
 import { AuthenticatedUserContext } from '../src/features/auth/user/AuthenticatedUserContext'
 import type { CompraResponse } from '../src/features/shopping/types/shopping'
@@ -43,10 +43,18 @@ async function preparar({ inicial = compra(), get = async () => Response.json(co
   })
   const view = renderApp(<AuthenticatedUserContext value={{ usuario: { id: 'u-a', nome: 'Ana', email: 'a@test.local' }, loading: false, error: false, recarregarUsuario: vi.fn(async () => {}) }}>
     <Link to="/listas/lista-b/compra">Outra compra</Link>
-    <Routes><Route path="/listas/:listaId/compra" element={<CompraAndamentoPage />} /></Routes>
+    <Routes>
+      <Route path="/listas/:listaId/compra" element={<CompraAndamentoPage />} />
+      <Route path="/listas/:listaId/compra/revisao" element={<DestinoRevisao />} />
+    </Routes>
   </AuthenticatedUserContext>, { route: '/listas/lista-a/compra' })
   await act(async () => {})
   return { ...view, http, gets: () => http.mock.calls.filter(([, options]) => options?.method === 'GET') }
+}
+
+function DestinoRevisao() {
+  const location = useLocation()
+  return <p data-testid="destino-revisao">{location.pathname}|{useNavigationType()}</p>
 }
 
 async function avancar(ms = 5_000) { await act(async () => { await vi.advanceTimersByTimeAsync(ms) }) }
@@ -142,7 +150,7 @@ test('online em aba oculta aguarda visibilidade e depois reconhece finalização
   expect(gets()).toHaveLength(1)
   vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible')
   await act(async () => { fireEvent(document, new Event('visibilitychange')) })
-  expect(screen.getByRole('link', { name: 'Ver resumo' })).toBeInTheDocument()
+  expect(screen.getByTestId('destino-revisao')).toHaveTextContent('/listas/lista-a/compra/revisao|REPLACE')
   expect(vi.getTimerCount()).toBe(0)
   await conexao(false); await conexao(true); await avancar(20_000)
   expect(gets()).toHaveLength(2)
@@ -157,6 +165,14 @@ test('online durante escrita respeita prioridade local; próximo ciclo continua 
   await act(async () => pendente.resolve(Response.json(compra().itens[0])))
   await avancar()
   expect(gets()).toHaveLength(2)
+})
+
+test('acesso direto à Compra finalizada redireciona para a revisão com replace', async () => {
+  const finalizada = compra(); finalizada.status = 'FINALIZADA'
+  await preparar({ inicial: finalizada })
+  expect(screen.getByTestId('destino-revisao')).toHaveTextContent('/listas/lista-a/compra/revisao|REPLACE')
+  expect(screen.queryByRole('button', { name: 'Adicionar novo item à compra' })).not.toBeInTheDocument()
+  expect(vi.getTimerCount()).toBe(0)
 })
 
 test('inicialmente offline mantém carregamento existente, mas não inicia polling até online', async () => {
@@ -194,7 +210,7 @@ test.each([false, true])('finalizada interrompe/não inicia consultas (%s)', asy
   const finalizada = compra(); finalizada.status = 'FINALIZADA'
   const { gets } = await preparar({ inicial: inicialmenteFinalizada ? finalizada : compra(), get: async () => Response.json(finalizada) })
   await avancar()
-  expect(screen.getByRole('link', { name: 'Ver resumo' })).toBeInTheDocument()
+  expect(screen.getByTestId('destino-revisao')).toHaveTextContent('/listas/lista-a/compra/revisao|REPLACE')
   expect(screen.queryByRole('button', { name: 'Adicionar novo item à compra' })).not.toBeInTheDocument()
   await avancar(90_000)
   expect(gets()).toHaveLength(inicialmenteFinalizada ? 1 : 2)

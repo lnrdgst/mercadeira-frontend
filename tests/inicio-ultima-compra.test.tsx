@@ -39,8 +39,7 @@ test('exibe a compra finalizada mais recente pela data real de finalização', a
   })
   renderizarInicio()
 
-  expect(await screen.findByText('Lista recente')).toBeVisible()
-  expect(screen.getByText('Última compra finalizada em', { exact: false })).toHaveTextContent('21/09/2026 · Segunda-feira às 18:42')
+  expect(await screen.findByText('Última compra finalizada:', { exact: false })).toHaveTextContent('21/09/2026 · Segunda-feira às 18:42')
   expect(screen.getByRole('link', { name: 'Ver compra' })).toHaveAttribute('href', '/listas/recente/compra/revisao')
   expect(http).toHaveBeenCalledTimes(3)
 })

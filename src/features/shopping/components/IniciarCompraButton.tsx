@@ -4,7 +4,7 @@ import type { ApiRequestError } from '../../../shared/api/apiClient'
 import { useSession } from '../../auth/session/sessionContext'
 import { iniciarCompra } from '../api/shoppingApi'
 
-export function IniciarCompraButton({ familiaId, listaId, disabled = false }: { familiaId: string; listaId: string; disabled?: boolean }) {
+export function IniciarCompraButton({ familiaId, listaId, disabled = false, onMutacao }: { familiaId: string; listaId: string; disabled?: boolean; onMutacao?: (emAndamento: boolean) => void }) {
   const { auth, logout } = useSession()
   const navigate = useNavigate()
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -16,6 +16,7 @@ export function IniciarCompraButton({ familiaId, listaId, disabled = false }: { 
   async function confirmar() {
     if (!auth || enviandoRef.current || disabled) return
     enviandoRef.current = true
+    onMutacao?.(true)
     setEnviando(true)
     setErro(null)
     try {
@@ -27,6 +28,7 @@ export function IniciarCompraButton({ familiaId, listaId, disabled = false }: { 
       else setErro(apiError.message || 'Não foi possível iniciar a compra.')
     } finally {
       enviandoRef.current = false
+      onMutacao?.(false)
       setEnviando(false)
     }
   }

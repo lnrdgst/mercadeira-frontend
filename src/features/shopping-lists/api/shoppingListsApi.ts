@@ -35,9 +35,9 @@ export function criarLista(
   })
 }
 
-export function buscarLista(token: string, familiaId: string, listaId: string) {
+export function buscarLista(token: string, familiaId: string, listaId: string, signal?: AbortSignal) {
   return apiRequest<ListaCompraDetalheResponse>(`${listasPath(familiaId)}/${listaId}`, {
-    token,
+    token, signal,
   })
 }
 
@@ -59,8 +59,8 @@ export function buscarMembrosFamilia(token: string, familiaId: string) {
   return apiRequest<MembroFamiliaResponse[]>(`/familias/${familiaId}/membros`, { token })
 }
 
-export function buscarParticipantesLista(token: string, familiaId: string, listaId: string) {
-  return apiRequest<ParticipanteListaResponse[]>(`${listaPath(familiaId, listaId)}/participantes`, { token })
+export function buscarParticipantesLista(token: string, familiaId: string, listaId: string, signal?: AbortSignal) {
+  return apiRequest<ParticipanteListaResponse[]>(`${listaPath(familiaId, listaId)}/participantes`, { token, signal })
 }
 
 export function adicionarParticipanteLista(
@@ -88,8 +88,8 @@ export function removerParticipanteLista(
   })
 }
 
-export function buscarItensLista(token: string, familiaId: string, listaId: string) {
-  return apiRequest<ItemListaCompraResponse[]>(`${listaPath(familiaId, listaId)}/itens`, { token })
+export function buscarItensLista(token: string, familiaId: string, listaId: string, signal?: AbortSignal) {
+  return apiRequest<ItemListaCompraResponse[]>(`${listaPath(familiaId, listaId)}/itens`, { token, signal })
 }
 
 export function criarItemLista(token: string, familiaId: string, listaId: string, data: SalvarItemListaRequest) {

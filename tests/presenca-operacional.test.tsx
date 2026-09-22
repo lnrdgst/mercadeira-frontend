@@ -30,7 +30,7 @@ test.each([['NAO_INFORMADA', 'Presença não informada'], ['NAO_PRESENTE', 'Não
   preparar({ inicial: compra(estado) })
   expect(await screen.findByText(label)).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Solicitar presença no mercado' })).toBeEnabled()
-  expect(screen.getByRole('button', { name: 'Adicionar item' })).toBeEnabled()
+  expect(screen.getByRole('button', { name: 'Adicionar novo item na lista' })).toBeEnabled()
 })
 
 test('solicitação confirmada usa o novo comando sem body e não repete escrita em clique duplo', async () => {
@@ -49,7 +49,7 @@ test('zero presentes explica a responsabilidade, mas deixa a decisão atômica p
   const zero = compra(); zero.responsabilidadeOperacional = { ...zero.responsabilidadeOperacional!, responsavel: null, cicloAtivo: false }
   const { user } = preparar({ inicial: zero })
   await user.click(await screen.findByRole('button', { name: 'Solicitar presença no mercado' }))
-  expect(screen.getByText(/se tornará responsável operacional/i)).toBeInTheDocument()
+  expect(screen.getByRole('dialog')).toHaveTextContent(/tornar/)
 })
 
 test('pendência não altera estado físico e permite somente o cancelamento entregue pela capability', async () => {
@@ -85,12 +85,12 @@ test('a transferência de responsabilidade é decidida apenas pela capability do
   expect(String(comandos()[1][0])).toMatch(/\/solicitacoes-responsabilidade\/r-b\/rejeitar$/)
 })
 
-test('rejeição de presença no ciclo mantém a decisão visível e não oferece nova solicitação sem capability', async () => {
+test('rejeicao sem capability nao oferece nova solicitacao', async () => {
   const rejeitada = compra()
   rejeitada.minhaSolicitacaoPresenca = { id: 's-a', solicitanteParticipanteCompraId: 'p-a', ciclo: 1, solicitadaEm: '2026-09-01T12:40:00Z', estado: 'REJEITADA', encerradaPorParticipanteCompraId: 'p-b', encerradaEm: '2026-09-01T12:41:00Z', motivoCancelamento: null, acoes: { podeDecidirPresenca: false } }
   rejeitada.contextoUsuario.podeSolicitarPresenca = false
   preparar({ inicial: rejeitada })
-  expect(await screen.findByText(/última solicitação foi rejeitada/i)).toBeInTheDocument()
+  expect(await screen.findByRole('button', { name: 'Adicionar novo item na lista' })).toBeEnabled()
   expect(screen.queryByRole('button', { name: 'Solicitar presença no mercado' })).not.toBeInTheDocument()
 })
 

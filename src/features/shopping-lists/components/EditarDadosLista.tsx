@@ -4,10 +4,11 @@ import { useSession } from '../../auth/session/sessionContext'
 import { atualizarDadosLista, buscarLista } from '../api/shoppingListsApi'
 import { categoriaCompraLabels, type ListaCompraDetalheResponse } from '../types/shoppingList'
 
-export function EditarDadosLista({ familiaId, lista, onAtualizada }: {
+export function EditarDadosLista({ familiaId, lista, onAtualizada, onMutacao }: {
   familiaId: string
   lista: ListaCompraDetalheResponse
   onAtualizada: (lista: ListaCompraDetalheResponse) => void
+  onMutacao?: (emAndamento: boolean) => void
 }) {
   const { auth, logout } = useSession()
   const [editando, setEditando] = useState(false)
@@ -49,7 +50,7 @@ export function EditarDadosLista({ familiaId, lista, onAtualizada }: {
     const data = new FormData(event.currentTarget)
     const nome = String(data.get('nome') || '').trim()
     if (!nome) { setErro('Informe o nome da lista.'); nomeRef.current?.focus(); return }
-    ocupado.current = true; setEnviando(true); setErro(null)
+    ocupado.current = true; onMutacao?.(true); setEnviando(true); setErro(null)
     try {
       const response = await atualizarDadosLista(auth.token, familiaId, lista.id, {
         nome, categoria: String(data.get('categoria')) as ListaCompraDetalheResponse['categoria'],
@@ -70,6 +71,7 @@ export function EditarDadosLista({ familiaId, lista, onAtualizada }: {
       }
     } finally {
       ocupado.current = false
+      onMutacao?.(false)
       if (ativo.current) setEnviando(false)
     }
   }

@@ -40,6 +40,9 @@ export function ListaDetalhePage() {
   const itensTituloRef = useRef<HTMLHeadingElement>(null)
   const dialogOpenerRef = useRef<HTMLElement | null>(null)
   const dialogScrollYRef = useRef(0)
+  const leituraPeriodicaRef = useRef<AbortController | null>(null)
+  const geracaoRef = useRef(0)
+  const mutacaoRef = useRef(false)
   const chave = familiaSelecionada && listaId ? `${familiaSelecionada.id}:${listaId}` : null
 
   const carregarDetalhe = useCallback(async () => {
@@ -73,6 +76,47 @@ export function ListaDetalhePage() {
   useEffect(() => { void Promise.resolve().then(carregarItens) }, [carregarItens])
   useEffect(() => { void Promise.resolve().then(carregarMembros) }, [carregarMembros])
   useEffect(() => {
+    if (!auth || !familiaSelecionada || !listaId || detalhe?.status !== 'EM_PREPARACAO') return
+    let encerrado = false
+    let timer: ReturnType<typeof setInterval> | undefined
+    let ultimaConsulta = 0
+    const reconciliar = async () => {
+      if (encerrado || document.visibilityState !== 'visible' || !navigator.onLine || mutacaoRef.current || leituraPeriodicaRef.current || Date.now() - ultimaConsulta < 1_000) return
+      const controller = new AbortController()
+      const versao = geracaoRef.current
+      leituraPeriodicaRef.current = controller
+      ultimaConsulta = Date.now()
+      try {
+        const [listaAtualizada, participantesAtualizados, itensAtualizados] = await Promise.all([
+          buscarLista(auth.token, familiaSelecionada.id, listaId, controller.signal),
+          buscarParticipantesLista(auth.token, familiaSelecionada.id, listaId, controller.signal),
+          buscarItensLista(auth.token, familiaSelecionada.id, listaId, controller.signal),
+        ])
+        if (encerrado || controller.signal.aborted || versao !== geracaoRef.current) return
+        setDetalhe(listaAtualizada.data); setDetalheKey(chave)
+        setParticipantes(participantesAtualizados.data || []); setParticipantesKey(chave)
+        setItens(itensAtualizados.data || []); setItensKey(chave)
+      } catch (error) {
+        if (!encerrado && !controller.signal.aborted && versao === geracaoRef.current && (error as ApiRequestError).status === 401) { encerrado = true; clearInterval(timer); logout() }
+      } finally { if (leituraPeriodicaRef.current === controller) leituraPeriodicaRef.current = null }
+    }
+    const agendar = () => {
+      clearInterval(timer)
+      if (!encerrado && document.visibilityState === 'visible' && navigator.onLine) timer = setInterval(() => void reconciliar(), 5_000)
+    }
+    const disponibilidade = () => {
+      if (document.visibilityState !== 'visible' || !navigator.onLine) { clearInterval(timer); leituraPeriodicaRef.current?.abort(); leituraPeriodicaRef.current = null; ultimaConsulta = 0 }
+      else { void reconciliar(); agendar() }
+    }
+    const foco = () => void reconciliar()
+    agendar()
+    document.addEventListener('visibilitychange', disponibilidade)
+    window.addEventListener('focus', foco)
+    window.addEventListener('offline', disponibilidade)
+    window.addEventListener('online', disponibilidade)
+    return () => { encerrado = true; clearInterval(timer); leituraPeriodicaRef.current?.abort(); leituraPeriodicaRef.current = null; document.removeEventListener('visibilitychange', disponibilidade); window.removeEventListener('focus', foco); window.removeEventListener('offline', disponibilidade); window.removeEventListener('online', disponibilidade) }
+  }, [auth, familiaSelecionada, listaId, chave, detalhe?.status, logout])
+  useEffect(() => {
     const dialog = itemDialogRef.current
     if (!dialog) return
     if (itemEditando && !dialog.open) {
@@ -102,15 +146,25 @@ export function ListaDetalhePage() {
     })
   }
 
+  function atualizarEstadoMutacao(emAndamento: boolean) {
+    if (emAndamento) {
+      geracaoRef.current += 1
+      leituraPeriodicaRef.current?.abort()
+    }
+    mutacaoRef.current = emAndamento
+  }
+
   async function atualizarParticipante(membroFamiliaId: string, remover = false) {
     if (!auth || !lista || !familiaSelecionada || !listaId || !podeGerenciar) return
+    geracaoRef.current += 1; leituraPeriodicaRef.current?.abort(); mutacaoRef.current = true
     setOperacaoParticipante(membroFamiliaId); setFeedback(null)
     try { if (remover) await removerParticipanteLista(auth.token, familiaSelecionada.id, listaId, membroFamiliaId); else await adicionarParticipanteLista(auth.token, familiaSelecionada.id, listaId, membroFamiliaId); setFeedback(remover ? 'Participante removido.' : 'Participante adicionado.'); await Promise.all([carregarDetalhe(), carregarParticipantes()]) }
     catch (error) { const apiError = error as ApiRequestError; if (apiError.status === 401) logout(); else setFeedback(apiError.message || 'Não foi possível atualizar os participantes.') }
-    finally { setOperacaoParticipante(null) }
+    finally { mutacaoRef.current = false; setOperacaoParticipante(null) }
   }
   async function salvarItem(data: SalvarItemListaRequest) {
     if (!auth || !lista || !familiaSelecionada || !listaId || !podeAlterar) return
+    geracaoRef.current += 1; leituraPeriodicaRef.current?.abort(); mutacaoRef.current = true
     setOperacaoItem(itemEditando === 'novo' ? 'novo' : itemEditando?.id || null); setFeedback(null)
     try {
       if (itemEditando && itemEditando !== 'novo') {
@@ -137,14 +191,15 @@ export function ListaDetalhePage() {
         setFeedback(apiError.message || 'Não foi possível salvar o item.')
       }
     }
-    finally { setOperacaoItem(null) }
+    finally { mutacaoRef.current = false; setOperacaoItem(null) }
   }
   async function removerItem() {
     if (!auth || !itemParaRemover || !familiaSelecionada || !listaId || !podeAlterar) return
+    geracaoRef.current += 1; leituraPeriodicaRef.current?.abort(); mutacaoRef.current = true
     setOperacaoItem(itemParaRemover.id); setFeedback(null)
     try { await removerItemLista(auth.token, familiaSelecionada.id, listaId, itemParaRemover.id); setFeedback('Item removido.'); await carregarItens(); setItemParaRemover(null) }
     catch (error) { const apiError = error as ApiRequestError; if (apiError.status === 401) logout(); else throw error }
-    finally { setOperacaoItem(null) }
+    finally { mutacaoRef.current = false; setOperacaoItem(null) }
   }
   async function moverItem(indice: number, direcao: -1 | 1) {
     if (!auth || !familiaSelecionada || !listaId || reordenando || !podeAlterar) return
@@ -154,10 +209,10 @@ export function ListaDetalhePage() {
     const destino = indice + direcao
     if (destino < 0 || destino >= listaItens.length) return
     const ordem = [...listaItens];;[ordem[indice], ordem[destino]] = [ordem[destino], ordem[indice]]
-    setItens(ordem); setReordenando(true)
+    geracaoRef.current += 1; leituraPeriodicaRef.current?.abort(); mutacaoRef.current = true; setItens(ordem); setReordenando(true)
     try { await reordenarItensLista(auth.token, familiaSelecionada.id, listaId, ordem.map((item) => item.id)) }
     catch (error) { const apiError = error as ApiRequestError; setItens(listaItens); if (apiError.status === 401) logout(); else setFeedback(apiError.message || 'Não foi possível reordenar os itens.') }
-    finally { setReordenando(false); botaoFocado?.focus({ preventScroll: true }) }
+    finally { mutacaoRef.current = false; setReordenando(false); botaoFocado?.focus({ preventScroll: true }) }
   }
 
   return (
@@ -243,6 +298,7 @@ export function ListaDetalhePage() {
               setDetalhe(atualizada)
               setDetalheKey(chave)
             }}
+            onMutacao={atualizarEstadoMutacao}
           />
 
           {lista.status === 'EM_COMPRA' && (
@@ -589,6 +645,7 @@ export function ListaDetalhePage() {
                     key={chave}
                     familiaId={familiaSelecionada.id}
                     listaId={listaId}
+                    onMutacao={atualizarEstadoMutacao}
                     disabled={
                       !itensProntos ||
                       listaItens.length === 0 ||

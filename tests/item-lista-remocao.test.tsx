@@ -54,7 +54,7 @@ function preparar(deletar: () => Promise<Response> = async () => new Response(nu
 
 async function botaoRemover() {
   const item = (await screen.findByRole('heading', { name: 'Arroz' })).closest('li')!
-  return within(item).getByRole('button', { name: 'Remover' })
+  return within(item).getByRole('button', { name: 'Remover da lista' })
 }
 
 test('abre por teclado, identifica item e modal, contém Tab/Shift+Tab e Escape devolve foco ao acionador', async () => {
@@ -163,7 +163,7 @@ test('erro é anunciado dentro do modal e permite repetir por teclado antes de c
 test('consulta sem capability de alteração não oferece remoção nem modal', async () => {
   preparar(undefined, false)
   expect(await screen.findByRole('heading', { name: 'Arroz' })).toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: 'Remover' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Remover da lista' })).not.toBeInTheDocument()
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })
 

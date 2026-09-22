@@ -5,6 +5,16 @@ import { presencaLabels, type CompraResponse } from "../types/shopping";
 
 type Confirmacao = "solicitar" | "responsabilidade" | null;
 
+function nomeCompacto(nome: string, repetidos: Map<string, number>, indice: number) {
+  const partes = nome.trim().split(/\s+/);
+  const primeiro = partes[0] || nome;
+  if ((repetidos.get(primeiro) || 0) < 2) return primeiro;
+  const ultimo = partes.at(-1);
+  return ultimo && ultimo !== primeiro
+    ? `${primeiro} ${ultimo[0].toUpperCase()}.`
+    : `${primeiro} ${indice + 1}`;
+}
+
 export function MinhaPresenca({
   compra,
   usuarioId,
@@ -49,6 +59,15 @@ export function MinhaPresenca({
   const solicitacao = compra.minhaSolicitacaoPresenca;
   const contexto = compra.contextoUsuario;
   const responsabilidade = compra.responsabilidadeOperacional;
+  const responsavelId = responsabilidade?.responsavel?.participanteCompraId;
+  const participantesOrdenados = [...compra.participantes].sort(
+    (a, b) => Number(b.id === responsavelId) - Number(a.id === responsavelId),
+  );
+  const primeirosNomes = participantesOrdenados.reduce((nomes, participante) => {
+    const primeiro = participante.nome.trim().split(/\s+/)[0] || participante.nome;
+    nomes.set(primeiro, (nomes.get(primeiro) || 0) + 1);
+    return nomes;
+  }, new Map<string, number>());
 
   const podeVerParticipantes = true;
 
@@ -138,7 +157,7 @@ export function MinhaPresenca({
     <section
       aria-labelledby="compra-participantes"
       aria-busy={ocupada}
-      className="min-w-0 space-y-gutter"
+      className="min-w-0 space-y-gutter rounded-card border border-primary/20 bg-primary/5 p-gutter"
     >
 
       <h2
@@ -148,52 +167,30 @@ export function MinhaPresenca({
         Participantes
       </h2>
       {podeVerParticipantes && (
-        <div className="space-y-gutter rounded-card bg-surface p-page shadow-soft">
-          <ul className="flex min-w-0 flex-wrap gap-2">
-            {compra.participantes.map((participante) => {
+        <div className="space-y-gutter">
+          <ul className="space-y-1">
+            {participantesOrdenados.map((participante, indice) => {
               const estado = participante.presencaOperacional?.estado;
               const meu = participante.id === proprio?.id;
-
-              const responsavel =
-                responsabilidade?.responsavel?.participanteCompraId ===
-                participante.id;
-
-              const estiloParticipante = responsavel
+              const responsavel = participante.id === responsavelId;
+              const nome = nomeCompacto(participante.nome, primeirosNomes, indice);
+              const descricao = responsavel
+                ? "Responsável operacional"
+                : presencaLabels[estado] ?? "Presença indisponível";
+              const estiloLinha = responsavel
                 ? "bg-blue-50 text-blue-700"
                 : estado === "PRESENTE"
                   ? "bg-primary/10 text-primary"
                   : "bg-foreground/5 text-foreground-muted";
 
-              const estilo = `inline-flex min-w-0 max-w-full flex-wrap items-center gap-x-1 rounded-control px-gutter py-2 text-label-lg break-words [overflow-wrap:anywhere] ${estiloParticipante}`;
-
-              const partesNome = participante.nome.trim().split(/\s+/);
-
-              const nome =
-                partesNome.length > 1
-                  ? `${partesNome[0]} ${partesNome[partesNome.length - 1][0].toUpperCase()}`
-                  : partesNome[0];
-
               return (
-                <li key={participante.id} className={estilo}>
-                  <span className="min-w-0 font-semibold">
+                <li key={participante.id} className={`min-h-touch min-w-0 rounded-control px-gutter py-2 ${estiloLinha}`}>
+                  <span className="block min-w-0 truncate font-semibold" title={participante.nome} aria-label={`${participante.nome}${meu ? ' (você)' : ''}`}>
                     {nome}
                     {meu && " (você)"}
                   </span>
-
-                  <span aria-hidden="true">·</span>
-
-                  <span>
-                    {presencaLabels[estado] ?? "Presença indisponível"}
-                  </span>
-
-                  {responsavel && (
-                    <>
-                      <span aria-hidden="true">·</span>
-                      <span>Responsável operacional</span>
-                    </>
-                  )}
+                  <span className="block text-label-md">{descricao}</span>
                 </li>
-
               );
             })}
           </ul>
@@ -202,6 +199,7 @@ export function MinhaPresenca({
               Esta compra não possui participantes.
             </p>
           )}
+          <div className="flex w-full flex-col items-center gap-2 border-t border-primary/10 pt-gutter text-center">
           {compra.solicitacoesPresencaPendentes &&
             compra.solicitacoesPresencaPendentes.length > 0 && (
               <section
@@ -223,7 +221,7 @@ export function MinhaPresenca({
                       return (
                         <li
                           key={pedido.id}
-                          className="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center"
+                          className="flex flex-col items-center gap-3 text-center sm:flex-row sm:flex-wrap sm:justify-center"
                         >
                           <div>
                             <span className="font-semibold">
@@ -232,12 +230,11 @@ export function MinhaPresenca({
                             <span className="text-foreground-muted">
                               solicitou presença no mercado.
                             </span>
-                            <hr style={{ border: '0', borderTop: '1px solid #e0e0e0', margin: '16px 0' }} />
                           </div>
 
 
                           {pedido.acoes.podeDecidirPresenca === true && (
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-wrap justify-center gap-2">
                               <button
                                 type="button"
                                 disabled={ocupada || precisaAtualizar}
@@ -280,7 +277,6 @@ export function MinhaPresenca({
                 Aguardando confirmação do responsável
                 operacional.
               </p>
-              <hr style={{ border: '0', borderTop: '1px solid #e0e0e0', margin: '16px 0' }} />
               {contexto.podeCancelarSolicitacaoPresenca ===
                 true && (
                   <button
@@ -332,8 +328,7 @@ export function MinhaPresenca({
                 </p>
               </div>
 
-              <div className="flex flex-wrap gap-2">
-              <hr style={{ border: '0', borderTop: '1px solid #e0e0e0', margin: '16px 0' }} />
+              <div className="flex flex-wrap justify-center gap-2">
                 <button
                   type="button"
                   disabled={ocupada || precisaAtualizar}
@@ -362,8 +357,7 @@ export function MinhaPresenca({
 
 
           {confirmacao === null && (
-            <div className="flex flex-col items-start gap-1">
-              <hr style={{ border: '0', borderTop: '1px solid #e0e0e0', margin: '16px 0' }} />
+            <div className="flex flex-col items-center gap-1 text-center">
               {podeSair &&
                 !temSolicitacaoPresencaParaDecidir &&
                 !temSolicitacaoResponsabilidadeParaDecidir && (
@@ -410,10 +404,9 @@ export function MinhaPresenca({
                   <p className="text-foreground-muted">
                     O responsável operacional atual precisará aprovar esta transferência.
                   </p>
-                  <hr style={{ border: '0', borderTop: '1px solid #e0e0e0', margin: '16px 0' }} />
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap justify-center gap-2">
                   <button
                     type="button"
                     disabled={ocupada || precisaAtualizar}
@@ -488,7 +481,7 @@ export function MinhaPresenca({
                       return (
                         <li
                           key={pedido.id}
-                          className="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center"
+                          className="flex flex-col items-center gap-3 text-center sm:flex-row sm:flex-wrap sm:justify-center"
                         >
                           <span className="font-semibold">
                             {solicitante?.nome ??
@@ -551,18 +544,20 @@ export function MinhaPresenca({
                 </ul>
               </section>
             )}
+          </div>
         </div>
       )}
 
 
-      {mensagem && <p role="status">{mensagem}</p>}
+      {mensagem && <p role="status" className="text-center">{mensagem}</p>}
       {erro && (
-        <p role="alert" className="text-error">
+        <p role="alert" className="text-center text-error">
           {erro}
         </p>
       )}
       {precisaAtualizar && (
-        <button
+        <div className="flex justify-center">
+          <button
           type="button"
           disabled={ocupada}
           onClick={() =>
@@ -575,7 +570,8 @@ export function MinhaPresenca({
           className="min-h-touch rounded-control border border-primary px-page font-semibold text-primary disabled:opacity-60"
         >
           Atualizar compra
-        </button>
+          </button>
+        </div>
       )}
     </section>
   );

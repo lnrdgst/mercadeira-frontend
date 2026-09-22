@@ -25,7 +25,7 @@ function preparar(salvar: () => Promise<Response>, inicial = lista(), consultar?
   return { ...view, fetchMock, puts: () => fetchMock.mock.calls.filter(([, options]) => options?.method === 'PUT') }
 }
 async function abrir(user: ReturnType<typeof renderApp>['user']) {
-  await user.click(await screen.findByRole('button', { name: 'Editar dados' }))
+  await user.click(await screen.findByRole('button', { name: 'Editar dados desta lista' }))
 }
 
 test('capability concede ação sem inferir papel, autoria ou participação; salva representação completa e reabre atualizada', async () => {
@@ -57,7 +57,7 @@ test('capability falsa oculta ação mesmo para criador administrador participan
   inicial.contextoUsuario.participanteAtivo = true
   preparar(async () => { throw new Error('Não deveria salvar') }, inicial)
   await screen.findByRole('heading', { name: 'Original' })
-  expect(screen.queryByRole('button', { name: 'Editar dados' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Editar dados desta lista' })).not.toBeInTheDocument()
 })
 
 test('nome vazio mostra mensagem em português, suprime aviso nativo e permite corrigir', async () => {
@@ -87,10 +87,10 @@ test('Cancelar descarta rascunho sem PUT; nome em branco não é enviado', async
   expect(await screen.findByRole('alert')).toHaveTextContent('Informe o nome')
   expect(puts()).toHaveLength(0)
   await user.click(screen.getByRole('button', { name: 'Cancelar' }))
-  expect(screen.getByRole('button', { name: 'Editar dados' })).toHaveFocus()
+  expect(screen.getByRole('button', { name: 'Editar dados desta lista' })).toHaveFocus()
   await abrir(user)
   await user.keyboard('{Escape}')
-  expect(screen.getByRole('button', { name: 'Editar dados' })).toHaveFocus()
+  expect(screen.getByRole('button', { name: 'Editar dados desta lista' })).toHaveFocus()
   await abrir(user)
   expect(screen.getByLabelText('Nome da lista')).toHaveValue('Original')
 })
@@ -122,7 +122,7 @@ test.each([403, 409])('%i reconcilia por GET e impede novos envios quando capabi
   expect(screen.getByRole('button', { name: 'Salvar alterações' })).toBeDisabled()
   expect(puts()).toHaveLength(1)
   await user.click(screen.getByRole('button', { name: 'Cancelar' }))
-  expect(screen.queryByRole('button', { name: 'Editar dados' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Editar dados desta lista' })).not.toBeInTheDocument()
 })
 
 test('falha do GET de reconciliação bloqueia salvar até atualização bem-sucedida', async () => {
@@ -158,7 +158,7 @@ test('resposta pendente não atualiza página após sair do contexto', async () 
 test('GET de lista após F5 mantém dados e capability de somente leitura', async () => {
   preparar(async () => Response.json(lista()), { ...lista(false), nome: 'Persistida', status: 'FINALIZADA' })
   expect(await screen.findByRole('heading', { name: 'Persistida' })).toBeVisible()
-  expect(screen.queryByRole('button', { name: 'Editar dados' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Editar dados desta lista' })).not.toBeInTheDocument()
 })
 
 function erroApi(status: number, mensagem: string) {

@@ -39,7 +39,7 @@ export function AdicionarItemCompraDialog({ onAdicionar }: { onAdicionar: (data:
       scrollRef.current = window.scrollY; setErro(null); setAberto(true); dialogRef.current?.showModal() }} 
       className="mt-gutter flex min-h-touch w-full items-center justify-center gap-2 rounded-control border border-primary bg-transparent px-page font-semibold text-green-700 hover:bg-green-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-500"
 >
-  Adicionar novo item na lista
+  Adicionar novo item à compra
   <svg
                     aria-hidden="true"
                     viewBox="0 0 24 24"

@@ -295,24 +295,26 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
               </span>
             </div>
 
-            <h1 className="break-words text-headline-lg font-bold">
-              {compra.nomeLista}
-            </h1>
+            <div className="space-y-1">
+              <h1 className="break-words text-headline-lg font-bold">
+                {compra.nomeLista}
+              </h1>
 
-            {compra.estabelecimento && (
-              <p className="break-words text-body-lg font-semibold text-primary">
-                {compra.estabelecimento}
+              {compra.estabelecimento && (
+                <p className="break-words text-body-lg font-semibold text-primary">
+                  {compra.estabelecimento}
+                </p>
+              )}
+
+              <p className="text-body-md text-foreground-muted">
+                Iniciada em{' '}
+                <time dateTime={compra.iniciadaEm}>
+                  {new Date(compra.iniciadaEm).toLocaleDateString('pt-BR', { dateStyle: 'short' })}
+                  {' às '}
+                  {new Date(compra.iniciadaEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                </time>
               </p>
-            )}
-
-            <p className="text-body-md text-foreground-muted">
-              Iniciada em{' '}
-              <time dateTime={compra.iniciadaEm}>
-                {new Date(compra.iniciadaEm).toLocaleDateString('pt-BR', { dateStyle: 'short' })}
-                {' às '}
-                {new Date(compra.iniciadaEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-              </time>
-            </p>
+            </div>
 
             <p className="rounded-card bg-primary/5 p-gutter text-body-md text-foreground-muted">
               {compra.contextoUsuario.participanteCompra
@@ -320,25 +322,20 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
                 : 'Você pode acompanhar esta compra, mas não participa dela.'}
             </p>
 
+            <MinhaPresenca
+              compra={compra}
+              usuarioId={!usuarioCarregando && !usuarioErro ? usuario?.id : undefined}
+              ocupada={ocupada}
+              onSolicitar={solicitarPresenca}
+              onCancelar={cancelarPresenca}
+              onDecidir={decidirPresenca}
+              onSair={declararSaida}
+              onSolicitarResponsabilidade={solicitarResponsabilidadeOperacional}
+              onCancelarResponsabilidade={cancelarResponsabilidade}
+              onDecidirResponsabilidade={decidirResponsabilidade}
+              onAtualizar={reconciliarCompra}
+            />
           </header>
-
-
-
-          <MinhaPresenca
-            compra={compra}
-            usuarioId={
-              !usuarioCarregando && !usuarioErro ? usuario?.id : undefined
-            }
-            ocupada={ocupada}
-            onSolicitar={solicitarPresenca}
-            onCancelar={cancelarPresenca}
-            onDecidir={decidirPresenca}
-            onSair={declararSaida}
-            onSolicitarResponsabilidade={solicitarResponsabilidadeOperacional}
-            onCancelarResponsabilidade={cancelarResponsabilidade}
-            onDecidirResponsabilidade={decidirResponsabilidade}
-            onAtualizar={reconciliarCompra}
-          />
 
           <fieldset
             disabled={ocupada}

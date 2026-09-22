@@ -1,4 +1,4 @@
-import { act, screen } from '@testing-library/react'
+import { act, screen, within } from '@testing-library/react'
 import { expect, test, vi } from 'vitest'
 import { Route, Routes } from 'react-router'
 import { CompraAndamentoPage } from '../src/features/shopping/pages/CompraAndamentoPage'
@@ -30,7 +30,32 @@ test.each([['NAO_INFORMADA', 'Presença não informada'], ['NAO_PRESENTE', 'Não
   preparar({ inicial: compra(estado) })
   expect(await screen.findByText(label)).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Solicitar presença no mercado' })).toBeEnabled()
-  expect(screen.getByRole('button', { name: 'Adicionar novo item na lista' })).toBeEnabled()
+  expect(screen.getByRole('button', { name: 'Adicionar novo item à compra' })).toBeEnabled()
+})
+
+test('ordena visualmente o responsável primeiro, preserva a presença e identifica o usuário atual', async () => {
+  preparar({ inicial: compra('PRESENTE') })
+  const secao = (await screen.findByRole('heading', { name: 'Participantes' })).closest('section')!
+  const participantes = within(secao).getAllByRole('listitem')
+  expect(participantes[0]).toHaveTextContent('Bia')
+  expect(participantes[0]).toHaveTextContent('Responsável operacional')
+  expect(participantes[0]).toHaveClass('bg-blue-50')
+  expect(participantes[1]).toHaveTextContent('Ana (você)')
+  expect(participantes[1]).toHaveClass('bg-primary/10')
+  expect(within(participantes[1]).getByTitle('Ana')).toHaveTextContent('Ana (você)')
+})
+
+test('participante comum não presente mantém linha cinza', async () => {
+  preparar({ inicial: compra('NAO_PRESENTE') })
+  const secao = (await screen.findByRole('heading', { name: 'Participantes' })).closest('section')!
+  expect(within(secao).getAllByRole('listitem')[1]).toHaveClass('bg-foreground/5')
+})
+
+test('mantém colocar no carrinho condicionado à capability e com identidade dourada', async () => {
+  const atual = compra()
+  atual.itens[0].acoes.podeColocarNoCarrinho = true
+  preparar({ inicial: atual })
+  expect(await screen.findByRole('button', { name: 'Colocar no carrinho: Arroz' })).toHaveClass('border-amber-600', 'text-amber-700')
 })
 
 test('solicitação confirmada usa o novo comando sem body e não repete escrita em clique duplo', async () => {
@@ -90,7 +115,7 @@ test('rejeicao sem capability nao oferece nova solicitacao', async () => {
   rejeitada.minhaSolicitacaoPresenca = { id: 's-a', solicitanteParticipanteCompraId: 'p-a', ciclo: 1, solicitadaEm: '2026-09-01T12:40:00Z', estado: 'REJEITADA', encerradaPorParticipanteCompraId: 'p-b', encerradaEm: '2026-09-01T12:41:00Z', motivoCancelamento: null, acoes: { podeDecidirPresenca: false } }
   rejeitada.contextoUsuario.podeSolicitarPresenca = false
   preparar({ inicial: rejeitada })
-  expect(await screen.findByRole('button', { name: 'Adicionar novo item na lista' })).toBeEnabled()
+  expect(await screen.findByRole('button', { name: 'Adicionar novo item à compra' })).toBeEnabled()
   expect(screen.queryByRole('button', { name: 'Solicitar presença no mercado' })).not.toBeInTheDocument()
 })
 

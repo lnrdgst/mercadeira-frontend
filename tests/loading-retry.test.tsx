@@ -43,7 +43,7 @@ test('GET de solicitações pendentes aceita 204 e onboarding oferece criar/entr
   })
   expect(await buscarMinhasSolicitacoesPendentes('token-teste')).toEqual({ status: 204, data: null })
   renderApp(<FamiliaEntradaPage />)
-  expect(await screen.findByRole('button', { name: 'Criar uma família' })).toBeInTheDocument()
+  expect(await screen.findByRole('button', { name: 'Cadastrar uma família' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Entrar em uma família' })).toBeInTheDocument()
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   expect(screen.queryByText('Solicitações aguardando aprovação')).not.toBeInTheDocument()

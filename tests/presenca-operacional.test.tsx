@@ -41,7 +41,7 @@ test('ordena visualmente o responsável primeiro, preserva a presença e identif
   const participantes = within(secao).getAllByRole('listitem')
   expect(participantes[0]).toHaveTextContent('Bia')
   expect(participantes[0]).toHaveTextContent('Responsável operacional')
-  expect(participantes[0]).toHaveClass('border', 'border-blue-200', 'bg-blue-50')
+  expect(participantes[0]).toHaveClass('border', 'border-blue-400', 'bg-blue-50')
   expect(participantes[1]).toHaveTextContent('Ana (você)')
   expect(participantes[1]).toHaveClass('bg-primary/10')
   expect(within(participantes[1]).getByTitle('Ana')).toHaveTextContent('Ana (você)')

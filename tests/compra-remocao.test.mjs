@@ -139,10 +139,25 @@ test('restauração preserva 401/403/404/409 sem depender da mensagem', async ()
 test('capability de restauração controla o CTA sem inferir participação ou autoria', () => {
   const aprovada = { ...remocao, decisao: 'APROVADA', decididaPor: autor, decididaEm: '2026-09-10T12:01:00Z' }
   const removido = { ...base, status: 'REMOVIDO', remocao: aprovada }
-  assert.doesNotMatch(render(removido), /Restaurar ao carrinho/)
+  assert.doesNotMatch(render(removido), /Voltar produto ao carrinho/)
   const html = render({ ...removido, acoes: { ...removido.acoes, podeRestaurarNoCarrinho: true } }, false)
-  assert.match(html, /Restaurar ao carrinho/)
+  assert.match(html, /Voltar produto ao carrinho/)
   assert.match(html, /Remoção aprovada por Nome histórico/)
+})
+
+test('apresenta ações e chips conforme o significado operacional do item', () => {
+  const pendente = render({ ...base, status: 'PENDENTE', acoes: { ...base.acoes, podeColocarNoCarrinho: true } })
+  assert.match(pendente, /border-blue text-blue-500[^>]*>Colocar no carrinho/)
+
+  const solicitacao = render({ ...base, acoes: { ...base.acoes, podeSolicitarRemocao: true } })
+  assert.match(solicitacao, /border-amber-600 text-amber-700 hover:bg-amber-50[^>]*>Solicitar remoção/)
+
+  const remocaoPendente = render({ ...base, status: 'REMOCAO_SOLICITADA', remocao })
+  assert.match(remocaoPendente, /bg-warning\/10 text-warning[^>]*>Remoção solicitada/)
+
+  const removido = render({ ...base, status: 'REMOVIDO', remocao: { ...remocao, decisao: 'APROVADA' }, acoes: { ...base.acoes, podeRestaurarNoCarrinho: true } })
+  assert.match(removido, /bg-error\/10 text-error[^>]*>Removido/)
+  assert.match(removido, /border-blue text-blue-500[^>]*>Voltar produto ao carrinho/)
 })
 
 test('response restaurado e GET/F5 exibem estado atual, responsável e auditorias retornadas', () => {

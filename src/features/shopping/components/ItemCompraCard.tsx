@@ -13,7 +13,7 @@ const statusLabels: Record<ItemCompraResponse['status'], string> = {
 
 const acaoLabels = {
   colocar: 'Colocar no carrinho',
-  restaurar: 'Restaurar ao carrinho',
+  restaurar: 'Voltar produto ao carrinho',
   'solicitar-remocao': 'Solicitar remoção',
   'aprovar-remocao': 'Aprovar remoção',
   'rejeitar-remocao': 'Rejeitar remoção',
@@ -94,7 +94,7 @@ export function ItemCompraCard({ item, somenteLeitura, onColocar, onRestaurar, o
         {item.marca && <p className="text-body-md text-foreground-muted">{item.marca}</p>}
         {item.observacoes && <p className="whitespace-pre-wrap text-label-lg text-foreground-muted">{item.observacoes}</p>}
       </div>
-      <span role="status" className={`rounded-full px-gutter py-1 text-label-md font-semibold ${remocaoPendente ? 'bg-warning/10 text-warning' : noCarrinho ? 'bg-primary/10 text-primary' : 'bg-foreground/5 text-foreground-muted'}`}>{statusLabels[item.status]}</span>
+      <span role="status" className={`rounded-full px-gutter py-1 text-label-md font-semibold ${remocaoPendente ? 'bg-warning/10 text-warning' : removido ? 'bg-error/10 text-error' : noCarrinho ? 'bg-primary/10 text-primary' : 'bg-foreground/5 text-foreground-muted'}`}>{statusLabels[item.status]}</span>
     </div>
     {(item.adicionadoPor || item.colocadoNoCarrinhoPor) && <div className="space-y-1 break-words text-label-md text-foreground-muted">
       {item.adicionadoDuranteCompra && item.adicionadoPor && <p>Adicionado por {item.adicionadoPor.nome}<DataAutoria valor={item.adicionadoEm} /></p>}
@@ -109,7 +109,7 @@ export function ItemCompraCard({ item, somenteLeitura, onColocar, onRestaurar, o
     {enviando && <p role="status" className="text-label-lg text-foreground-muted">{enviando === 'atualizar' ? 'Atualizando item...' : `${acaoLabels[enviando]}: processando...`}</p>}
     {precisaAtualizar && <button type="button" disabled={enviando !== null} onClick={() => void executar('atualizar')} className="min-h-touch rounded-control border border-current px-page font-semibold disabled:opacity-60">Atualizar item</button>}
     {acoes.length > 0 && <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-      {acoes.map((acao) => <button key={acao} type="button" disabled={enviando !== null || precisaAtualizar} onClick={() => void executar(acao)} aria-label={`${acaoLabels[acao]}: ${item.descricao}`} className={`min-h-touch rounded-control border px-page font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-60 ${acao === 'aprovar-remocao' ? 'border-error text-error' : acao === 'colocar' ? 'border-amber-600 text-amber-700 hover:bg-amber-50' : 'border-blue text-blue-500'}`}>{acaoLabels[acao]}</button>)}
+      {acoes.map((acao) => <button key={acao} type="button" disabled={enviando !== null || precisaAtualizar} onClick={() => void executar(acao)} aria-label={`${acaoLabels[acao]}: ${item.descricao}`} className={`min-h-touch rounded-control border px-page font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-60 ${acao === 'aprovar-remocao' ? 'border-error text-error' : acao === 'solicitar-remocao' ? 'border-amber-600 text-amber-700 hover:bg-amber-50' : 'border-blue text-blue-500'}`}>{acaoLabels[acao]}</button>)}
     </div>}
   </li>
 }

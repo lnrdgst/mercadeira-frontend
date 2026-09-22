@@ -64,11 +64,11 @@ test('só exibe divisor operacional quando há conteúdo abaixo dos participante
 
 })
 
-test('mantém colocar no carrinho condicionado à capability e com identidade dourada', async () => {
+test('mantém colocar no carrinho condicionado à capability e com identidade azul', async () => {
   const atual = compra()
   atual.itens[0].acoes.podeColocarNoCarrinho = true
   preparar({ inicial: atual })
-  expect(await screen.findByRole('button', { name: 'Colocar no carrinho: Arroz' })).toHaveClass('border-amber-600', 'text-amber-700')
+  expect(await screen.findByRole('button', { name: 'Colocar no carrinho: Arroz' })).toHaveClass('border-blue', 'text-blue-500')
 })
 
 test('solicitação confirmada usa o novo comando sem body e não repete escrita em clique duplo', async () => {

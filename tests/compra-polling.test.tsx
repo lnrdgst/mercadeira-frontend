@@ -378,6 +378,6 @@ test.each(['NO_CARRINHO', 'REMOCAO_SOLICITADA', 'REMOVIDO', 'restauracao'] as co
   await avancar()
   expect(screen.getByText('Colocado no carrinho por Bruno')).toBeInTheDocument()
   if (estado === 'REMOCAO_SOLICITADA') expect(screen.getByRole('button', { name: 'Aprovar remoção: Arroz' })).toBeEnabled()
-  if (estado === 'REMOVIDO') expect(screen.getByRole('button', { name: 'Restaurar ao carrinho: Arroz' })).toBeEnabled()
+  if (estado === 'REMOVIDO') expect(screen.getByRole('button', { name: 'Voltar produto ao carrinho: Arroz' })).toBeEnabled()
   if (estado === 'restauracao') expect(screen.getByText(/Restaurado por Bruno/)).toBeInTheDocument()
 })

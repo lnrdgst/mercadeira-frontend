@@ -209,8 +209,8 @@ export function MinhaPresenca({
               const estiloLinha = responsavel
                 ? "border border-blue-400 bg-blue-50 text-blue-700"
                 : estado === "PRESENTE"
-                  ? "bg-primary/10 text-primary"
-                  : "bg-foreground/5 text-foreground-muted";
+                  ? "border border-primary bg-primary/10 text-primary"
+                  : "bg-foreground/5 border border-foreground/20 text-foreground-muted";
 
               return (
                 <li key={participante.id} className={`min-h-touch min-w-0 rounded-control px-gutter py-2 ${estiloLinha}`}>

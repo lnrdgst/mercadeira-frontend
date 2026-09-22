@@ -21,12 +21,16 @@ function renderizarInicio(familia = familyFixture()) {
   )
 }
 
-function lista(id: string, status: 'FINALIZADA' | 'EM_PREPARACAO' = 'FINALIZADA') {
+function lista(id: string, status: 'FINALIZADA' | 'EM_PREPARACAO' | 'EM_COMPRA' = 'FINALIZADA') {
   return { id, nome: `Lista ${id}`, categoria: 'SUPERMERCADO', estabelecimento: null, status, criadaEm: '2026-09-01T08:00:00Z', atualizadaEm: '2026-09-01T08:00:00Z' }
 }
 
 function compra(id: string, finalizadaEm: string) {
   return { id: `compra-${id}`, listaId: id, nomeLista: `Lista ${id}`, categoria: 'SUPERMERCADO', estabelecimento: null, status: 'FINALIZADA', iniciadaEm: '2026-09-01T09:00:00Z', finalizadaEm, finalizadaPor: null, contextoUsuario: { participanteCompra: true, podeAlterarPresenca: true, podeFinalizarCompra: false, podeReutilizarLista: false }, participantes: [], itens: [] }
+}
+
+function compraEmAndamento(id: string, iniciadaEm: string) {
+  return { id: `compra-${id}`, listaId: id, nomeLista: `Lista ${id}`, categoria: 'SUPERMERCADO', estabelecimento: null, status: 'EM_ANDAMENTO', iniciadaEm, finalizadaEm: null, finalizadaPor: null, contextoUsuario: { participanteCompra: true, podeAlterarPresenca: true, podeFinalizarCompra: false, podeReutilizarLista: false }, participantes: [], itens: [] }
 }
 
 test('exibe a compra finalizada mais recente pela data real de finalização', async () => {
@@ -44,11 +48,44 @@ test('exibe a compra finalizada mais recente pela data real de finalização', a
   expect(http).toHaveBeenCalledTimes(3)
 })
 
+test('exibe somente a Compra em andamento mais recente e a Lista em preparação mais atual', async () => {
+  const http = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+    const path = String(input)
+    if (path.endsWith('/familias/familia-a/listas')) return Response.json([
+      lista('compra-antiga', 'EM_COMPRA'), lista('compra-recente', 'EM_COMPRA'),
+      { ...lista('preparacao-antiga', 'EM_PREPARACAO'), atualizadaEm: '2026-09-20T10:00:00Z' },
+      { ...lista('preparacao-recente', 'EM_PREPARACAO'), atualizadaEm: '2026-09-21T10:00:00Z' },
+    ])
+    if (path.endsWith('/listas/compra-antiga/compra')) return Response.json(compraEmAndamento('compra-antiga', '2026-09-20T12:00:00Z'))
+    if (path.endsWith('/listas/compra-recente/compra')) return Response.json(compraEmAndamento('compra-recente', '2026-09-21T12:00:00Z'))
+    throw new Error(`Endpoint inesperado: ${path}`)
+  })
+  renderizarInicio()
+
+  expect(await screen.findByRole('heading', { name: 'Compra em andamento' })).toBeVisible()
+  expect(screen.getByRole('heading', { name: 'Lista em preparação' })).toBeVisible()
+  expect(screen.getByText('Lista compra-recente')).toBeVisible()
+  expect(screen.queryByText('Lista compra-antiga')).not.toBeInTheDocument()
+  expect(screen.getByText('Lista preparacao-recente')).toBeVisible()
+  expect(screen.queryByText('Lista preparacao-antiga')).not.toBeInTheDocument()
+  expect(screen.getByText('Acompanhar').closest('a')).toHaveAttribute('href', '/listas/compra-recente/compra')
+  expect(screen.getByText('Abrir lista').closest('a')).toHaveAttribute('href', '/listas/preparacao-recente')
+  expect(http).toHaveBeenCalledTimes(3)
+})
+
 test('informa quando a família não tem compras finalizadas', async () => {
   vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json([lista('preparacao', 'EM_PREPARACAO')]))
   renderizarInicio()
   expect(await screen.findByText('Não há compras finalizadas ainda.')).toBeVisible()
   expect(screen.queryByRole('link', { name: 'Ver compra' })).not.toBeInTheDocument()
+})
+
+test('omite as seções de retomada quando não há Compra em andamento nem Lista em preparação', async () => {
+  vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json([]))
+  renderizarInicio()
+  expect(await screen.findByRole('link', { name: 'Minha família' })).toBeVisible()
+  expect(screen.queryByRole('heading', { name: 'Compra em andamento' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: 'Lista em preparação' })).not.toBeInTheDocument()
 })
 
 test('falha do histórico não quebra a Home', async () => {
@@ -58,12 +95,12 @@ test('falha do histórico não quebra a Home', async () => {
     return Response.json({ mensagem: 'Indisponível' }, { status: 503 })
   })
   renderizarInicio()
-  expect(await screen.findByRole('heading', { name: 'Listas em preparação' })).toBeVisible()
+  expect(await screen.findByRole('link', { name: 'Minha família' })).toBeVisible()
   await act(async () => {})
   expect(screen.queryByText('Última compra finalizada')).not.toBeInTheDocument()
 })
 
-test('troca de família descarta a resposta pendente da família anterior', async () => {
+test('troca de família descarta Compra em andamento da resposta pendente da família anterior', async () => {
   const respostaAntiga = deferred<Response>()
   const familiaB = familyFixture({ id: 'familia-b', nome: 'Família B' })
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
@@ -83,6 +120,6 @@ test('troca de família descarta a resposta pendente da família anterior', asyn
     </SessionContext>,
   )
   expect(await screen.findByText('Não há compras finalizadas ainda.')).toBeVisible()
-  await act(async () => respostaAntiga.resolve(Response.json([lista('antiga')])))
+  await act(async () => respostaAntiga.resolve(Response.json([lista('antiga', 'EM_COMPRA')])))
   expect(screen.queryByText('Lista antiga')).not.toBeInTheDocument()
 })

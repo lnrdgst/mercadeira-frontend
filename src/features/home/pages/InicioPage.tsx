@@ -58,6 +58,9 @@ export function InicioPage() {
   const [ultimaCompraFinalizada, setUltimaCompraFinalizada] = useState<CompraResponse | null>(null);
   const [familiaHistoricoId, setFamiliaHistoricoId] = useState<string | null>(null);
   const [erroHistorico, setErroHistorico] = useState(false);
+  const [compraEmAndamento, setCompraEmAndamento] = useState<CompraResponse | null>(null);
+  const [familiaCompraEmAndamentoId, setFamiliaCompraEmAndamentoId] = useState<string | null>(null);
+  const [erroCompraEmAndamento, setErroCompraEmAndamento] = useState(false);
   const geracaoCarregamentoRef = useRef(0);
   const carregar = useCallback(async () => {
     if (!auth || !familiaSelecionada) return;
@@ -66,6 +69,7 @@ export function InicioPage() {
     setLoading(true);
     setError(false);
     setErroHistorico(false);
+    setErroCompraEmAndamento(false);
     try {
       const response = await buscarListas(
         auth.token,
@@ -75,28 +79,41 @@ export function InicioPage() {
       const listasDaFamilia = response.data || [];
       setListas(listasDaFamilia);
       setFamiliaId(familiaIdAtual);
-      const listasFinalizadas = listasDaFamilia.filter((lista) => lista.status === "FINALIZADA");
-      if (listasFinalizadas.length === 0) {
-        setUltimaCompraFinalizada(null);
-        setFamiliaHistoricoId(familiaIdAtual);
-        return;
-      }
-      try {
-        const compras = await Promise.all(listasFinalizadas.map((lista) => buscarCompra(auth.token, familiaIdAtual, lista.id)));
-        if (geracao !== geracaoCarregamentoRef.current) return;
-        const ultima = compras
+      const carregarCompras = async (status: "FINALIZADA" | "EM_COMPRA") => {
+        const listasFiltradas = listasDaFamilia.filter((lista) => lista.status === status);
+        if (listasFiltradas.length === 0) return [];
+        return Promise.all(listasFiltradas.map((lista) => buscarCompra(auth.token, familiaIdAtual, lista.id)));
+      };
+      const [resultadoHistorico, resultadoAndamento] = await Promise.allSettled([
+        carregarCompras("FINALIZADA"),
+        carregarCompras("EM_COMPRA"),
+      ]);
+      if (geracao !== geracaoCarregamentoRef.current) return;
+
+      if (resultadoHistorico.status === "fulfilled") {
+        const ultima = resultadoHistorico.value
           .filter((compra) => compra.status === "FINALIZADA" && compra.finalizadaEm)
           .sort((a, b) => Date.parse(b.finalizadaEm!) - Date.parse(a.finalizadaEm!))[0] || null;
         setUltimaCompraFinalizada(ultima);
         setFamiliaHistoricoId(familiaIdAtual);
-      } catch (err) {
-        if (geracao !== geracaoCarregamentoRef.current) return;
-        if ((err as ApiRequestError).status === 401) logout();
-        else {
-          setUltimaCompraFinalizada(null);
-          setFamiliaHistoricoId(familiaIdAtual);
-          setErroHistorico(true);
-        }
+      } else if ((resultadoHistorico.reason as ApiRequestError).status === 401) logout();
+      else {
+        setUltimaCompraFinalizada(null);
+        setFamiliaHistoricoId(familiaIdAtual);
+        setErroHistorico(true);
+      }
+
+      if (resultadoAndamento.status === "fulfilled") {
+        const maisRecente = resultadoAndamento.value
+          .filter((compra) => compra.status === "EM_ANDAMENTO" && compra.iniciadaEm)
+          .sort((a, b) => Date.parse(b.iniciadaEm) - Date.parse(a.iniciadaEm))[0] || null;
+        setCompraEmAndamento(maisRecente);
+        setFamiliaCompraEmAndamentoId(familiaIdAtual);
+      } else if ((resultadoAndamento.reason as ApiRequestError).status === 401) logout();
+      else {
+        setCompraEmAndamento(null);
+        setFamiliaCompraEmAndamentoId(familiaIdAtual);
+        setErroCompraEmAndamento(true);
       }
     } catch (err) {
       if (geracao !== geracaoCarregamentoRef.current) return;
@@ -113,14 +130,17 @@ export function InicioPage() {
     void Promise.resolve().then(carregar);
   }, [carregar]);
   if (!familiaSelecionada) return null;
-  const emPreparacao =
+  const listaEmPreparacao =
     familiaId === familiaSelecionada.id
       ? listas
         .filter((lista) => lista.status === "EM_PREPARACAO")
         .sort((a, b) => b.atualizadaEm.localeCompare(a.atualizadaEm))
-        .slice(0, 3)
-      : [];
+        .at(0)
+      : undefined;
   const historicoCarregado = familiaHistoricoId === familiaSelecionada.id;
+  const compraEmAndamentoVisivel = familiaCompraEmAndamentoId === familiaSelecionada.id && !erroCompraEmAndamento
+    ? compraEmAndamento
+    : null;
   const formatarFinalizacao = (valor: string) => {
     const data = new Date(valor);
     const dataFormatada = data.toLocaleDateString("pt-BR");
@@ -191,71 +211,39 @@ export function InicioPage() {
 
       <hr style={{ border: '0', borderTop: '1px solid #e0e0e0', margin: '16px 0' }} />
 
-      <section className="space-y-gutter">
-        <div className="flex items-end justify-between">
-          <h2 className="text-headline-md font-semibold">
-            Listas em preparação
-          </h2>
+      {!loading && !error && (compraEmAndamentoVisivel || listaEmPreparacao) && (
+        <section className={`grid gap-page ${compraEmAndamentoVisivel && listaEmPreparacao ? "md:grid-cols-2" : ""}`}>
+          {compraEmAndamentoVisivel && (
+            <section className="space-y-gutter" aria-labelledby="compra-em-andamento">
+              <h2 id="compra-em-andamento" className="text-headline-md font-semibold">Compra em andamento</h2>
+              <Link to={`/listas/${compraEmAndamentoVisivel.listaId}/compra`} className="block space-y-1 rounded-card border border-primary/20 bg-primary/5 p-page shadow-soft">
+                <div className="flex flex-wrap gap-2">
+                  <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md font-semibold text-foreground-muted">{categoriaCompraLabels[compraEmAndamentoVisivel.categoria]}</span>
+                  <span className="rounded-full bg-primary/10 px-gutter py-1 text-label-md font-semibold text-primary">Em andamento</span>
+                </div>
+                <h3 className="font-semibold">{compraEmAndamentoVisivel.nomeLista}</h3>
+                {compraEmAndamentoVisivel.estabelecimento && <p className="text-body-md text-foreground-muted">{compraEmAndamentoVisivel.estabelecimento}</p>}
+                <span className="inline-flex min-h-touch items-center font-semibold text-primary">Acompanhar</span>
+              </Link>
+            </section>
+          )}
 
-        </div>
-        <p>
-          <Link to="/listas" className="font-semibold text-primary">
-            Ver todas
-          </Link>
-
-        </p>
-
-
-        {loading || familiaId !== familiaSelecionada.id ? (
-          <p>Carregando listas...</p>
-        ) : error ? (
-          <div>
-            <p>Não foi possível carregar suas listas.</p>
-            <button type="button" onClick={() => void carregar()}>
-              Tentar novamente
-            </button>
-          </div>
-        ) : emPreparacao.length === 0 ? (
-          <div className="rounded-card bg-surface p-page shadow-soft">
-            <p>Nenhuma lista em preparação.</p>
-            <Link
-              to="/listas/nova"
-              className="font-semibold text-primary"
-            >
-              Criar nova lista
-            </Link>
-          </div>
-        ) : (
-          <ul className="grid gap-gutter sm:grid-cols-3">
-            {emPreparacao.map((lista) => (
-              <li key={lista.id}>
-                <Link
-                  to={`/listas/${lista.id}`}
-                  className="block rounded-card bg-surface p-page shadow-soft"
-                >
-                  <p className="text-label-lg text-primary">
-                    {categoriaCompraLabels[lista.categoria]}
-                  </p>
-                  <h3 className="font-semibold">
-                    {lista.nome}
-                  </h3>
-                  {lista.estabelecimento && (
-                    <p className="text-foreground-muted">
-                      {lista.estabelecimento}
-                    </p>
-                  )}
-                  <p>
-                    {statusListaCompraLabels[lista.status]}
-                  </p>
-                  <span className="font-semibold text-primary">
-                    Abrir lista
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+          {listaEmPreparacao && (
+            <section className={`space-y-gutter ${compraEmAndamentoVisivel ? "border-t border-foreground/10 pt-page md:border-t-0 md:border-l md:pt-0 md:pl-page" : ""}`} aria-labelledby="lista-em-preparacao">
+              <h2 id="lista-em-preparacao" className="text-headline-md font-semibold">Lista em preparação</h2>
+              <Link to={`/listas/${listaEmPreparacao.id}`} className="block space-y-1 rounded-card border border-foreground/10 bg-surface p-page shadow-soft">
+                <div className="flex flex-wrap gap-2">
+                  <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md font-semibold text-foreground-muted">{categoriaCompraLabels[listaEmPreparacao.categoria]}</span>
+                  <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md text-foreground-muted">{statusListaCompraLabels[listaEmPreparacao.status]}</span>
+                </div>
+                <h3 className="font-semibold">{listaEmPreparacao.nome}</h3>
+                {listaEmPreparacao.estabelecimento && <p className="text-body-md text-foreground-muted">{listaEmPreparacao.estabelecimento}</p>}
+                <span className="inline-flex min-h-touch items-center font-semibold text-primary">Abrir lista</span>
+              </Link>
+            </section>
+          )}
+        </section>
+      )}
 
     </section>
   );

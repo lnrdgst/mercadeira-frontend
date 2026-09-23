@@ -722,6 +722,8 @@ O resumo apresenta todos os itens, agrupados em Comprados (`NO_CARRINHO`), Não 
 
 A ação “Finalizar compra” usa exclusivamente `compra.contextoUsuario.podeFinalizarCompra`. Contagens e estados dos itens servem à apresentação; não reconstroem autorização. O backend retorna a capability indisponível quando há remoção aguardando decisão. Pendentes e removidos não bloqueiam a finalização por si só.
 
+Quando `compra.contextoUsuario.podeEncerrarCompraAdministrativamente` for verdadeira, acompanhamento e revisão também oferecem “Encerrar compra” em área administrativa âmbar. Ela é destinada ao administrador ativo da família que não precisa participar, estar presente ou ser responsável operacional; não concede ações operacionais. A confirmação usa código local de quatro dígitos e envia `POST /api/familias/{familiaId}/listas/{listaId}/compra/finalizar-administrativamente` sem body. Em sucesso, a interface vai para Início com replace; em conflito, reconcilia a Compra. Estados dos itens e histórico permanecem preservados. Não há encerramento automático nem regra temporal.
+
 Um dialog confirma que a Compra será encerrada, que pendentes permanecerão não comprados e que os itens não poderão mais ser alterados. Cancelar não envia request. Confirmar executa:
 
 `POST /api/familias/{familiaId}/listas/{listaId}/compra/finalizar`

@@ -7,6 +7,7 @@ import { buscarCompra, finalizarCompra } from '../api/shoppingApi'
 import { CompraResumo } from '../components/CompraResumo'
 import { ReutilizarListaButton } from '../components/ReutilizarListaButton'
 import { ReaproveitarItensForaButton } from '../components/ReaproveitarItensForaButton'
+import { EncerramentoAdministrativoCompra } from '../components/EncerramentoAdministrativoCompra'
 import type { CompraResponse } from '../types/shopping'
 
 export function CompraRevisaoPage() {
@@ -100,6 +101,13 @@ function RevisaoCompra({ token, familiaId, listaId }: { token: string; familiaId
     }
   }
 
+  async function reconciliarEncerramentoAdministrativo() {
+    const atualizada = await buscarCompra(token, familiaId, listaId)
+    if (!ativoRef.current) return
+    setCompra(atualizada)
+    setPrecisaAtualizar(false)
+  }
+
   return <section className="mx-auto max-w-3xl space-y-page">
     {compra && <nav className="flex flex-wrap gap-gutter" aria-label="Navegação da revisão">
       <Link
@@ -131,7 +139,8 @@ function RevisaoCompra({ token, familiaId, listaId }: { token: string; familiaId
       <CompraResumo compra={compra} />
       {!carregando && compra.status === 'FINALIZADA' && <div className="space-y-2"><ReaproveitarItensForaButton compra={compra} familiaId={familiaId} abrirAoFinalizar={mostrarItensFora} onAgoraNao={mostrarItensFora ? () => navigate('/inicio', { replace: true }) : undefined} /><ReutilizarListaButton compra={compra} familiaId={familiaId} onAtualizada={setCompra} /></div>}
       {!carregando && compra.status === 'EM_ANDAMENTO' && compra.contextoUsuario.podeFinalizarCompra === true && <button ref={botaoRef} type="button" disabled={enviando || precisaAtualizar} onClick={() => { setErro(null); dialogRef.current?.showModal() }} className="min-h-touch w-full rounded-control bg-primary px-page font-semibold text-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60">{enviando ? 'Finalizando compra...' : 'Finalizar compra'}</button>}
-      {compra.status === 'EM_ANDAMENTO' && !compra.contextoUsuario.podeFinalizarCompra && <p className="text-body-md text-foreground-muted">{compra.contextoUsuario.precisaEstarPresenteParaFinalizar === true ? 'Você pode revisar a compra, mas precisa estar no mercado para finalizá-la.' : 'A finalização não está disponível para você no estado atual desta compra.'}</p>}
+      {!carregando && <EncerramentoAdministrativoCompra compra={compra} token={token} familiaId={familiaId} listaId={listaId} bloqueada={enviando || precisaAtualizar} compacto onSucesso={() => navigate('/inicio', { replace: true })} onReconciliar={reconciliarEncerramentoAdministrativo} onNaoAutorizado={logout} />}
+      {compra.status === 'EM_ANDAMENTO' && !compra.contextoUsuario.podeFinalizarCompra && compra.contextoUsuario.podeEncerrarCompraAdministrativamente !== true && <p className="text-body-md text-foreground-muted">{compra.contextoUsuario.precisaEstarPresenteParaFinalizar === true ? 'Você pode revisar a compra, mas precisa estar no mercado para finalizá-la.' : 'A finalização não está disponível para você no estado atual desta compra.'}</p>}
     </>}
     <dialog ref={dialogRef} aria-labelledby="finalizar-titulo" aria-describedby="finalizar-descricao" onCancel={(event) => { if (enviandoRef.current) event.preventDefault() }} onClose={() => (botaoRef.current || tituloRef.current)?.focus({ preventScroll: true })} className="m-auto max-h-[calc(100svh-2rem)] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-card bg-surface p-page text-foreground shadow-soft backdrop:bg-foreground/40">
       <div className="space-y-page">

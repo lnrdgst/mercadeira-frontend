@@ -69,6 +69,15 @@ export async function finalizarCompra(token: string, familiaId: string, listaId:
   return response.data
 }
 
+export async function encerrarCompraAdministrativamente(token: string, familiaId: string, listaId: string) {
+  const response = await apiRequest<CompraResponse>(
+    `/familias/${familiaId}/listas/${listaId}/compra/finalizar-administrativamente`,
+    { token, method: 'POST' },
+  )
+  if (response.status !== 200 || !response.data) throw new Error('Não foi possível recuperar a compra encerrada. Atualize a compra para conferir o resultado.')
+  return response.data
+}
+
 export async function removerItemCompra(token: string, familiaId: string, listaId: string, itemCompraId: string, acao: AcaoRemocaoItemCompra) {
   const response = await apiRequest<ItemCompraResponse>(
     `/familias/${familiaId}/listas/${listaId}/compra/itens/${itemCompraId}/${acao}`,

@@ -30,6 +30,7 @@ export interface ContextoUsuarioCompraResponse {
   podeSolicitarResponsabilidade?: boolean
   podeCancelarSolicitacaoResponsabilidade?: boolean
   precisaEstarPresenteParaFinalizar?: boolean
+  podeEncerrarCompraAdministrativamente?: boolean
 }
 
 export interface ReferenciaParticipanteCompra {

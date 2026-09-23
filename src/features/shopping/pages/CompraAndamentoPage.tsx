@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, Navigate, useParams } from 'react-router'
+import { Link, Navigate, useNavigate, useParams } from 'react-router'
 import type { ApiRequestError } from '../../../shared/api/apiClient'
 import { useSession } from '../../auth/session/sessionContext'
 import { useAuthenticatedUser } from '../../auth/user/AuthenticatedUserContext'
@@ -9,6 +9,7 @@ import { adicionarItemCompra, alterarMinhaPresenca, buscarCompra, cancelarSolici
 import { AdicionarItemCompraDialog } from '../components/AdicionarItemCompraDialog'
 import { ItemCompraCard } from '../components/ItemCompraCard'
 import { MinhaPresenca } from '../components/MinhaPresenca'
+import { EncerramentoAdministrativoCompra } from '../components/EncerramentoAdministrativoCompra'
 import type { AcaoRemocaoItemCompra, AdicionarItemCompraRequest, CompraResponse, ItemCompraResponse } from '../types/shopping'
 
 export function CompraAndamentoPage() {
@@ -21,6 +22,7 @@ export function CompraAndamentoPage() {
 
 function AndamentoCompra({ token, familiaId, listaId }: { token: string; familiaId: string; listaId: string }) {
   const { logout } = useSession()
+  const navigate = useNavigate()
   const { usuario, loading: usuarioCarregando, error: usuarioErro } = useAuthenticatedUser()
   const ativo = useRef(true)
   const operacao = useRef(false)
@@ -314,6 +316,8 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
               onAtualizar={reconciliarCompra}
             />
           </header>
+
+          <EncerramentoAdministrativoCompra compra={compra} token={token} familiaId={familiaId} listaId={listaId} bloqueada={ocupada} executar={executar} onSucesso={() => navigate('/inicio', { replace: true })} onReconciliar={reconciliarCompra} onNaoAutorizado={logout} />
 
           <fieldset
             disabled={ocupada}

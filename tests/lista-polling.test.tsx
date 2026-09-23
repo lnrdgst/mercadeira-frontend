@@ -18,7 +18,7 @@ function respostas(estado: EstadoRemoto) {
       id: 'lista-a', nome: estado.nome, status: estado.status || 'EM_PREPARACAO', categoria: 'SUPERMERCADO', estabelecimento: null,
       criadaEm: '2026-09-20T12:00:00Z', atualizadaEm: '2026-09-20T12:00:00Z',
       criador: { nome: 'Ana', membroFamiliaId: 'membro-a', usuarioId: 'usuario-a' },
-      contextoUsuario: { membroFamiliaId: 'membro-a', papelFamilia: 'MEMBRO', participanteAtivo: true, podeGerenciarParticipantes: false, podeAlterarItens: estado.podeAlterarItens ?? true, podeEditarDadosBasicos: true },
+      contextoUsuario: { membroFamiliaId: 'membro-a', papelFamilia: 'MEMBRO', participanteAtivo: true, podeGerenciarParticipantes: false, podeAlterarItens: estado.podeAlterarItens ?? true, podeEditarDadosBasicos: true, podeSairDaLista: false },
     },
     participantes: (estado.participantes || [{ nome: 'Ana' }]).map((participante, indice) => ({ membroFamiliaId: `membro-${indice}`, usuarioId: `usuario-${indice}`, nome: participante.nome, papelFamilia: 'MEMBRO', entrouEm: '2026-09-20T12:00:00Z' })),
     itens: estado.itens || [{ id: 'item-a', descricao: 'Arroz', ordemExibicao: 0 }].map((item) => ({ ...item, quantidade: null, unidadeMedida: null, marca: null, observacoes: null, criadoEm: '2026-09-20T12:00:00Z', atualizadoEm: '2026-09-20T12:00:00Z' })),

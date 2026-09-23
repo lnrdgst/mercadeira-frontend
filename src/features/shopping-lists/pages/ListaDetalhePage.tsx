@@ -40,6 +40,7 @@ export function ListaDetalhePage() {
   const [feedback, setFeedback] = useState<string | null>(null)
   const [membroParaAdicionar, setMembroParaAdicionar] = useState('')
   const [adicionandoParticipante, setAdicionandoParticipante] = useState(false)
+  const [confirmandoSaida, setConfirmandoSaida] = useState(false)
   const [operacaoParticipante, setOperacaoParticipante] = useState<string | null>(null)
   const [itemEditando, setItemEditando] = useState<ItemListaCompraResponse | null | 'novo'>(null)
   const [itemParaRemover, setItemParaRemover] = useState<ItemListaCompraResponse | null>(null)
@@ -145,6 +146,7 @@ export function ListaDetalhePage() {
   const emPreparacao = lista?.status === 'EM_PREPARACAO'
   const podeGerenciar = emPreparacao && lista?.contextoUsuario.podeGerenciarParticipantes === true
   const podeAlterar = emPreparacao && lista?.contextoUsuario.podeAlterarItens === true
+  const podeSairDaLista = emPreparacao && lista?.contextoUsuario.podeSairDaLista === true
   const candidatos = membrosFamiliaId === familiaSelecionada.id ? membros.filter((membro) => !listaParticipantes.some((participante) => participante.membroFamiliaId === membro.membroFamiliaId)) : []
   const participantesOrdenados = [...listaParticipantes].sort((a, b) => Number(b.membroFamiliaId === lista?.criador.membroFamiliaId) - Number(a.membroFamiliaId === lista?.criador.membroFamiliaId))
   const primeirosNomes = participantesOrdenados.reduce((nomes, participante) => {
@@ -175,6 +177,19 @@ export function ListaDetalhePage() {
     setOperacaoParticipante(membroFamiliaId); setFeedback(null)
     try { if (remover) await removerParticipanteLista(auth.token, familiaSelecionada.id, listaId, membroFamiliaId); else await adicionarParticipanteLista(auth.token, familiaSelecionada.id, listaId, membroFamiliaId); setFeedback(remover ? 'Participante removido.' : 'Participante adicionado.'); await Promise.all([carregarDetalhe(), carregarParticipantes()]); if (!remover) { setMembroParaAdicionar(''); setAdicionandoParticipante(false) } }
     catch (error) { const apiError = error as ApiRequestError; if (apiError.status === 401) logout(); else setFeedback(apiError.message || 'Não foi possível atualizar os participantes.') }
+    finally { mutacaoRef.current = false; setOperacaoParticipante(null) }
+  }
+  async function sairDaLista() {
+    if (!auth || !lista || !familiaSelecionada || !listaId || !podeSairDaLista) return
+    const membroFamiliaId = lista.contextoUsuario.membroFamiliaId
+    geracaoRef.current += 1; leituraPeriodicaRef.current?.abort(); mutacaoRef.current = true
+    setOperacaoParticipante(membroFamiliaId); setFeedback(null)
+    try {
+      await removerParticipanteLista(auth.token, familiaSelecionada.id, listaId, membroFamiliaId)
+      setConfirmandoSaida(false); setFeedback('Você saiu da lista.')
+      await Promise.all([carregarDetalhe(), carregarParticipantes()])
+    }
+    catch (error) { const apiError = error as ApiRequestError; if (apiError.status === 401) logout(); else setFeedback(apiError.message || 'Não foi possível sair da lista.') }
     finally { mutacaoRef.current = false; setOperacaoParticipante(null) }
   }
   async function salvarItem(data: SalvarItemListaRequest) {
@@ -307,13 +322,25 @@ export function ListaDetalhePage() {
                   : <ul className="mt-2 space-y-1">
                     {participantesOrdenados.map((participante, indice) => {
                       const criador = participante.membroFamiliaId === lista.criador.membroFamiliaId
+                      const proprio = participante.membroFamiliaId === lista.contextoUsuario.membroFamiliaId
                       const nome = nomeCompacto(participante.nome, primeirosNomes, indice)
                       return <li key={participante.membroFamiliaId} className="flex min-h-touch items-center justify-between gap-gutter rounded-control bg-foreground/5 px-gutter">
-                        <span className="min-w-0 truncate font-semibold" title={participante.nome}>{nome}{criador && ' \u00b7 Criador'}</span>
-                        {podeGerenciar && !criador && <button type="button" disabled={operacaoParticipante === participante.membroFamiliaId} onClick={() => void atualizarParticipante(participante.membroFamiliaId, true)} aria-label={`Remover ${participante.nome} da lista`} title={`Remover ${participante.nome} da lista`} className="flex min-h-touch min-w-touch shrink-0 items-center justify-center rounded-control text-error hover:bg-error/10 disabled:opacity-60">{'\u00d7'}</button>}
+                        <span className="min-w-0 truncate font-semibold" title={participante.nome}>{nome}{criador ? ' \u00b7 Criador' : proprio ? ' (você)' : ''}</span>
+                        {proprio && !criador && podeSairDaLista
+                          ? <button type="button" disabled={operacaoParticipante !== null} onClick={() => setConfirmandoSaida(true)} aria-label={`Sair da lista como ${participante.nome}`} title="Sair da lista" className="flex min-h-touch min-w-touch shrink-0 items-center justify-center rounded-control text-error hover:bg-error/10 disabled:opacity-60">{'×'}</button>
+                          : podeGerenciar && !criador && <button type="button" disabled={operacaoParticipante === participante.membroFamiliaId} onClick={() => void atualizarParticipante(participante.membroFamiliaId, true)} aria-label={`Remover ${participante.nome} da lista`} title={`Remover ${participante.nome} da lista`} className="flex min-h-touch min-w-touch shrink-0 items-center justify-center rounded-control text-error hover:bg-error/10 disabled:opacity-60">{'\u00d7'}</button>}
                       </li>
                     })}
                   </ul>}
+
+              {confirmandoSaida && <div role="dialog" aria-modal="true" aria-labelledby="sair-lista-titulo" className="mt-gutter space-y-gutter rounded-card border border-foreground/10 bg-foreground/5 p-gutter">
+                <h3 id="sair-lista-titulo" className="text-body-lg font-semibold">Sair desta lista?</h3>
+                <p className="text-body-md text-foreground-muted">Você deixará de participar desta lista. Para voltar depois, um responsável pela lista precisará adicioná-lo novamente.</p>
+                <div className="flex flex-wrap gap-gutter">
+                  <button type="button" disabled={operacaoParticipante !== null} onClick={() => void sairDaLista()} className="min-h-touch rounded-control border border-amber-600 bg-amber-50 px-page font-semibold text-amber-700 disabled:opacity-60">Confirmar saída</button>
+                  <button type="button" disabled={operacaoParticipante !== null} onClick={() => setConfirmandoSaida(false)} className="min-h-touch rounded-control border border-foreground/20 px-page font-semibold disabled:opacity-60">Voltar</button>
+                </div>
+              </div>}
 
               {!lista.contextoUsuario.participanteAtivo && podeGerenciar && <button type="button" onClick={() => void atualizarParticipante(lista.contextoUsuario.membroFamiliaId)} disabled={operacaoParticipante !== null} className="mt-3 min-h-touch w-full rounded-control border border-primary px-page font-semibold text-primary disabled:opacity-60">Participar desta lista</button>}
             </section>

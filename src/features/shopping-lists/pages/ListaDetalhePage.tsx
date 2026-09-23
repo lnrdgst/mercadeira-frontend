@@ -423,8 +423,9 @@ export function ListaDetalhePage() {
                 <button
                   type="button"
                   onClick={() => setItemEditando('novo')}
-                  className="mt-gutter flex min-h-touch w-full items-center justify-center gap-2 rounded-control border border-primary bg-transparent px-page font-semibold text-green-700 hover:bg-green-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-500"
-                >
+
+                  className="mt-gutter flex min-h-touch w-full items-center justify-center gap-2 rounded-control border-2 border-primary bg-surface px-page font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+
                   Adicionar item na lista
 
                   <svg

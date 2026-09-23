@@ -438,12 +438,6 @@ export function FamiliaPage() {
         </section>
       )}
 
-      {!isAdministrador && (
-        <p className="rounded-card bg-surface p-page text-body-md text-foreground-muted shadow-soft">
-          Você participa desta família como membro.
-        </p>
-      )}
-
       <section className="space-y-gutter border-t border-foreground/10 pt-page">
         <button
           type="button"

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
 import type { ApiRequestError } from '../../../shared/api/apiClient'
 import { useSession } from '../../auth/session/sessionContext'
 import { useFamilyContext } from '../../family/session/familyContext'
@@ -7,9 +7,10 @@ import { IniciarCompraButton } from '../../shopping/components/IniciarCompraButt
 import { EditarDadosLista } from '../components/EditarDadosLista'
 import { ItemForm } from '../components/ItemForm'
 import { ConfirmarRemocaoItemDialog } from '../components/ConfirmarRemocaoItemDialog'
-import { adicionarParticipanteLista, atualizarItemLista, buscarItensLista, buscarLista, buscarMembrosFamilia, buscarParticipantesLista, criarItemLista, reordenarItensLista, removerItemLista, removerParticipanteLista } from '../api/shoppingListsApi'
+import { adicionarParticipanteLista, atualizarItemLista, buscarItensLista, buscarLista, buscarMembrosFamilia, buscarParticipantesLista, criarItemLista, excluirLista, reordenarItensLista, removerItemLista, removerParticipanteLista } from '../api/shoppingListsApi'
 import type { ItemListaCompraResponse, ListaCompraDetalheResponse, MembroFamiliaResponse, ParticipanteListaResponse, SalvarItemListaRequest } from '../types/shoppingList'
 import { categoriaCompraLabels, statusListaCompraLabels, unidadeMedidaLabels } from '../types/shoppingList'
+import { ConfirmacaoSensivelDialog } from '../../family/components/ConfirmacaoSensivelDialog'
 
 function nomeCompacto(nome: string, repetidos: Map<string, number>, indice: number) {
   const partes = nome.trim().split(/\s+/)
@@ -21,6 +22,7 @@ function nomeCompacto(nome: string, repetidos: Map<string, number>, indice: numb
 
 export function ListaDetalhePage() {
   const { listaId } = useParams()
+  const navigate = useNavigate()
   const { auth, logout } = useSession()
   const { familiaSelecionada } = useFamilyContext()
   const [detalhe, setDetalhe] = useState<ListaCompraDetalheResponse | null>(null)
@@ -41,6 +43,9 @@ export function ListaDetalhePage() {
   const [membroParaAdicionar, setMembroParaAdicionar] = useState('')
   const [adicionandoParticipante, setAdicionandoParticipante] = useState(false)
   const [confirmandoSaida, setConfirmandoSaida] = useState(false)
+  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false)
+  const [excluindoLista, setExcluindoLista] = useState(false)
+  const [erroExclusao, setErroExclusao] = useState<string | null>(null)
   const [operacaoParticipante, setOperacaoParticipante] = useState<string | null>(null)
   const [itemEditando, setItemEditando] = useState<ItemListaCompraResponse | null | 'novo'>(null)
   const [itemParaRemover, setItemParaRemover] = useState<ItemListaCompraResponse | null>(null)
@@ -147,6 +152,7 @@ export function ListaDetalhePage() {
   const podeGerenciar = emPreparacao && lista?.contextoUsuario.podeGerenciarParticipantes === true
   const podeAlterar = emPreparacao && lista?.contextoUsuario.podeAlterarItens === true
   const podeSairDaLista = emPreparacao && lista?.contextoUsuario.podeSairDaLista === true
+  const podeExcluirLista = lista?.contextoUsuario.podeExcluirLista === true
   const candidatos = membrosFamiliaId === familiaSelecionada.id ? membros.filter((membro) => !listaParticipantes.some((participante) => participante.membroFamiliaId === membro.membroFamiliaId)) : []
   const participantesOrdenados = [...listaParticipantes].sort((a, b) => Number(b.membroFamiliaId === lista?.criador.membroFamiliaId) - Number(a.membroFamiliaId === lista?.criador.membroFamiliaId))
   const primeirosNomes = participantesOrdenados.reduce((nomes, participante) => {
@@ -191,6 +197,25 @@ export function ListaDetalhePage() {
     }
     catch (error) { const apiError = error as ApiRequestError; if (apiError.status === 401) logout(); else setFeedback(apiError.message || 'Não foi possível sair da lista.') }
     finally { mutacaoRef.current = false; setOperacaoParticipante(null) }
+  }
+  async function excluirListaAtual() {
+    if (!auth || !lista || !familiaSelecionada || !listaId || !podeExcluirLista) return
+    atualizarEstadoMutacao(true)
+    setExcluindoLista(true); setErroExclusao(null)
+    try {
+      await excluirLista(auth.token, familiaSelecionada.id, listaId)
+      setConfirmandoExclusao(false)
+      navigate('/listas', { replace: true })
+    }
+    catch (error) {
+      const apiError = error as ApiRequestError
+      if (apiError.status === 401) logout()
+      else setErroExclusao(apiError.message || 'Não foi possível excluir a lista.')
+    }
+    finally {
+      mutacaoRef.current = false
+      setExcluindoLista(false)
+    }
   }
   async function salvarItem(data: SalvarItemListaRequest) {
     if (!auth || !lista || !familiaSelecionada || !listaId || !podeAlterar) return
@@ -308,7 +333,10 @@ export function ListaDetalhePage() {
                 {lista.estabelecimento && <p className="text-body-md text-foreground-muted">{lista.estabelecimento}</p>}
                 <p className="text-label-lg text-foreground-muted">Criada por {lista.criador.nome}</p>
               </div>
-              <EditarDadosLista key={chave} familiaId={familiaSelecionada.id} lista={lista} onAtualizada={(atualizada) => { setDetalhe(atualizada); setDetalheKey(chave) }} onMutacao={atualizarEstadoMutacao} />
+              <div className="flex flex-wrap items-center gap-gutter">
+                <EditarDadosLista key={chave} familiaId={familiaSelecionada.id} lista={lista} onAtualizada={(atualizada) => { setDetalhe(atualizada); setDetalheKey(chave) }} onMutacao={atualizarEstadoMutacao} />
+                {podeExcluirLista && <button type="button" onClick={() => { setErroExclusao(null); setConfirmandoExclusao(true) }} className="min-h-touch rounded-control border border-error px-page font-semibold text-error hover:bg-error/10">Excluir lista</button>}
+              </div>
             </div>
 
             <section aria-labelledby="lista-participantes-titulo" className="rounded-card border border-primary/20 bg-primary/5 p-gutter">
@@ -345,6 +373,18 @@ export function ListaDetalhePage() {
               {!lista.contextoUsuario.participanteAtivo && podeGerenciar && <button type="button" onClick={() => void atualizarParticipante(lista.contextoUsuario.membroFamiliaId)} disabled={operacaoParticipante !== null} className="mt-3 min-h-touch w-full rounded-control border border-primary px-page font-semibold text-primary disabled:opacity-60">Participar desta lista</button>}
             </section>
           </header>
+
+          {confirmandoExclusao && <ConfirmacaoSensivelDialog
+            titulo="Excluir esta lista?"
+            descricao="Esta ação excluirá definitivamente a lista em preparação, seus itens e participantes. Ela não poderá ser desfeita."
+            rotuloConfirmar="Excluir lista"
+            rotuloProcessando="Excluindo lista..."
+            corSemantica="error"
+            enviando={excluindoLista}
+            erro={erroExclusao}
+            onConfirmar={() => void excluirListaAtual()}
+            onCancelar={() => { if (!excluindoLista) { setConfirmandoExclusao(false); setErroExclusao(null) } }}
+          />}
 
           {adicionandoParticipante && <div role="dialog" aria-modal="true" aria-labelledby="adicionar-participante-titulo" className="fixed inset-0 z-50 flex items-end bg-foreground/40 p-gutter sm:items-center sm:justify-center" onMouseDown={(event) => { if (event.target === event.currentTarget && operacaoParticipante === null) setAdicionandoParticipante(false) }}>
             <div className="w-full max-w-md space-y-gutter rounded-card bg-surface p-page shadow-soft">

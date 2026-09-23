@@ -9,7 +9,7 @@ import { deferred, renderApp } from './helpers'
 function lista(permitido = true): ListaCompraDetalheResponse {
   return { id: 'lista-a', nome: 'Original', categoria: 'SUPERMERCADO', estabelecimento: 'Mercado', status: 'EM_PREPARACAO', criadaEm: '2026-09-13T12:00:00Z', atualizadaEm: '2026-09-13T12:00:00Z',
     criador: { nome: 'Outra pessoa', membroFamiliaId: 'outro', usuarioId: 'outro' },
-    contextoUsuario: { membroFamiliaId: 'membro-a', papelFamilia: 'MEMBRO', participanteAtivo: false, podeGerenciarParticipantes: false, podeAlterarItens: false, podeEditarDadosBasicos: permitido, podeSairDaLista: false } }
+    contextoUsuario: { membroFamiliaId: 'membro-a', papelFamilia: 'MEMBRO', participanteAtivo: false, podeGerenciarParticipantes: false, podeAlterarItens: false, podeEditarDadosBasicos: permitido, podeSairDaLista: false, podeExcluirLista: false } }
 }
 
 test('apresenta o status de preparação antes da categoria com destaque neutro', async () => {

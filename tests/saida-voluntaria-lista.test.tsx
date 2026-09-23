@@ -41,6 +41,7 @@ function preparar({
         podeAlterarItens: !saiu,
         podeEditarDadosBasicos: false,
         podeSairDaLista: membroAtual === 'membro-b' && !saiu && podeSairDaLista,
+        podeExcluirLista: false,
       },
     })
     throw new Error(`Endpoint inesperado: ${path}`)

@@ -33,7 +33,7 @@ function preparar(participanteAtivo = true) {
       id: 'lista-a', nome: 'Compras da semana', categoria: 'SUPERMERCADO', estabelecimento: null, status: 'EM_PREPARACAO',
       criadaEm: '2026-09-20T12:00:00Z', atualizadaEm: '2026-09-20T12:00:00Z',
       criador: { membroFamiliaId: 'membro-a', usuarioId: 'usuario-a', nome: 'Ana Souza' },
-      contextoUsuario: { membroFamiliaId: 'membro-c', papelFamilia: 'MEMBRO', participanteAtivo, podeGerenciarParticipantes: true, podeAlterarItens: false, podeEditarDadosBasicos: false, podeSairDaLista: false },
+      contextoUsuario: { membroFamiliaId: 'membro-c', papelFamilia: 'MEMBRO', participanteAtivo, podeGerenciarParticipantes: true, podeAlterarItens: false, podeEditarDadosBasicos: false, podeSairDaLista: false, podeExcluirLista: false },
     })
     throw new Error(`Endpoint inesperado: ${path}`)
   })

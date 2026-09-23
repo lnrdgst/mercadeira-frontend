@@ -439,9 +439,17 @@ A interface utiliza diretamente:
 
 - podeEditarDadosBasicos.
 
+- podeExcluirLista.
+
 As mutações continuam sendo revalidadas pelo backend.
 
 Um ADMINISTRADOR da família que não participa da lista pode gerenciar participantes, mas não pode alterar itens somente por ser administrador.
+
+### Exclusão de lista nunca utilizada
+
+Quando `contextoUsuario.podeExcluirLista` é verdadeiro, a tela de detalhe oferece a exclusão definitiva da lista em preparação. A confirmação exige um código numérico local de quatro dígitos para reduzir ações acidentais; o código não é enviado à API nem substitui a autorização do backend.
+
+`DELETE /api/familias/{familiaId}/listas/{listaId}` só é acionado após a confirmação. Em sucesso, a interface substitui a rota por `/listas`; em falha, preserva o diálogo e apresenta o erro retornado pelo backend.
 
 ### Edição dos dados básicos
 

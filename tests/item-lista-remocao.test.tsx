@@ -44,7 +44,7 @@ function preparar(deletar: () => Promise<Response> = async () => new Response(nu
     if (path.endsWith('/listas/lista-a')) return Response.json({
       id: 'lista-a', nome: 'Compras da semana', status: 'EM_PREPARACAO', categoria: 'SUPERMERCADO', estabelecimento: null,
       criador: { nome: 'Ana', membroFamiliaId: 'membro-a', usuarioId: 'usuario-a' },
-      contextoUsuario: { membroFamiliaId: 'membro-a', papelFamilia: 'MEMBRO', participanteAtivo: podeAlterar, podeGerenciarParticipantes: false, podeAlterarItens: podeAlterar },
+      contextoUsuario: { membroFamiliaId: 'membro-a', papelFamilia: 'MEMBRO', participanteAtivo: podeAlterar, podeGerenciarParticipantes: false, podeAlterarItens: podeAlterar, podeEditarDadosBasicos: false, podeSairDaLista: false, podeExcluirLista: false },
     })
     throw new Error(`Endpoint inesperado: ${path}`)
   })

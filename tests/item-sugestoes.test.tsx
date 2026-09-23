@@ -41,7 +41,7 @@ test('modal da lista em preparação carrega, exibe e seleciona sugestões acima
     if (path.endsWith('/listas/lista-a')) return Response.json({
       id: 'lista-a', nome: 'Compras da semana', status: 'EM_PREPARACAO', categoria: 'SUPERMERCADO', estabelecimento: null,
       criador: { nome: 'Ana', membroFamiliaId: 'membro-a', usuarioId: 'usuario-a' },
-      contextoUsuario: { membroFamiliaId: 'membro-a', papelFamilia: 'MEMBRO', participanteAtivo: true, podeGerenciarParticipantes: false, podeAlterarItens: true },
+      contextoUsuario: { membroFamiliaId: 'membro-a', papelFamilia: 'MEMBRO', participanteAtivo: true, podeGerenciarParticipantes: false, podeAlterarItens: true, podeEditarDadosBasicos: false, podeSairDaLista: false, podeExcluirLista: false },
     })
     throw new Error(`Endpoint inesperado: ${path}`)
   })

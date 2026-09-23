@@ -55,6 +55,10 @@ export function atualizarDadosLista(token: string, familiaId: string, listaId: s
   return apiRequest<ListaCompraDetalheResponse>(listaPath(familiaId, listaId), { method: 'PUT', body: data, token })
 }
 
+export function excluirLista(token: string, familiaId: string, listaId: string) {
+  return apiRequest<void>(listaPath(familiaId, listaId), { method: 'DELETE', token })
+}
+
 export function buscarMembrosFamilia(token: string, familiaId: string) {
   return apiRequest<MembroFamiliaResponse[]>(`/familias/${familiaId}/membros`, { token })
 }

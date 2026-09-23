@@ -1,15 +1,16 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import type { ApiRequestError } from '../../../shared/api/apiClient'
 import { copiarTexto } from '../../../shared/utils/clipboard'
 import { useSession } from '../../auth/session/sessionContext'
 import {
   aprovarSolicitacaoFamilia,
+  buscarMembrosFamilia,
   buscarSolicitacoesFamilia,
   rejeitarSolicitacaoFamilia,
 } from '../api/familyApi'
 import { useFamilyContext } from '../session/familyContext'
-import type { SolicitacaoFamiliaResponse } from '../types/family'
+import type { MembroFamiliaResponse, SolicitacaoFamiliaResponse } from '../types/family'
 
 const papelLabel = {
   ADMINISTRADOR: 'Administrador(a)',
@@ -39,9 +40,15 @@ export function FamiliaPage() {
   const [erroSolicitacoes, setErroSolicitacoes] = useState<string | null>(null)
   const [solicitacaoEmProcessamentoId, setSolicitacaoEmProcessamentoId] = useState<string | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
+  const [integrantes, setIntegrantes] = useState<MembroFamiliaResponse[]>([])
+  const [integrantesFamiliaId, setIntegrantesFamiliaId] = useState<string | null>(null)
+  const [carregandoIntegrantes, setCarregandoIntegrantes] = useState(false)
+  const [erroIntegrantes, setErroIntegrantes] = useState<string | null>(null)
+  const [revisaoIntegrantes, setRevisaoIntegrantes] = useState(0)
+  const geracaoIntegrantes = useRef(0)
 
   const carregarSolicitacoes = useCallback(async (mostrarCarregamento = true) => {
-    if (!auth || !familiaSelecionada || familiaSelecionada.papel !== 'ADMINISTRADOR') {
+    if (!auth || !familiaSelecionada || familiaSelecionada.contextoUsuario?.podeGerenciarIntegrantes !== true) {
       return
     }
 
@@ -74,24 +81,68 @@ export function FamiliaPage() {
   }, [auth, familiaSelecionada, logout])
 
   useEffect(() => {
-    if (familiaSelecionada?.papel !== 'ADMINISTRADOR') {
+    if (familiaSelecionada?.contextoUsuario?.podeGerenciarIntegrantes !== true) {
       return
     }
 
     void Promise.resolve().then(() => carregarSolicitacoes())
-  }, [carregarSolicitacoes, familiaSelecionada?.papel])
+  }, [carregarSolicitacoes, familiaSelecionada?.contextoUsuario?.podeGerenciarIntegrantes])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    const geracao = ++geracaoIntegrantes.current
+    const familiaId = familiaSelecionada?.id
+
+    if (!auth || !familiaId) {
+      return () => controller.abort()
+    }
+
+    void Promise.resolve().then(async () => {
+      if (controller.signal.aborted) return
+      setCarregandoIntegrantes(true)
+      setErroIntegrantes(null)
+
+      try {
+        const response = await buscarMembrosFamilia(auth.token, familiaId, controller.signal)
+        if (controller.signal.aborted || geracao !== geracaoIntegrantes.current) return
+        setIntegrantes(response.data || [])
+        setIntegrantesFamiliaId(familiaId)
+      } catch (error) {
+        if (controller.signal.aborted || geracao !== geracaoIntegrantes.current) return
+        const apiError = error as ApiRequestError
+        if (apiError.status === 401) {
+          logout()
+          return
+        }
+        setErroIntegrantes(apiError.message || 'N\u00e3o foi poss\u00edvel carregar os integrantes.')
+        setIntegrantesFamiliaId(familiaId)
+      } finally {
+        if (!controller.signal.aborted && geracao === geracaoIntegrantes.current) {
+          setCarregandoIntegrantes(false)
+        }
+      }
+    })
+
+    return () => controller.abort()
+  }, [auth, familiaSelecionada?.id, logout, revisaoIntegrantes])
 
   if (!familiaSelecionada) {
     return null
   }
 
   const familia = familiaSelecionada
-  const isAdministrador = familia.papel === 'ADMINISTRADOR'
+  const isAdministrador = familia.contextoUsuario?.podeGerenciarIntegrantes === true
   const solicitacoesVisiveis =
     solicitacoesFamiliaId === familia.id ? solicitacoes : []
   const mostrandoCarregamento =
     isAdministrador &&
     (carregandoSolicitacoes || solicitacoesFamiliaId !== familia.id)
+  const integrantesVisiveis = integrantesFamiliaId === familia.id ? integrantes : []
+  const erroIntegrantesVisivel = integrantesFamiliaId === familia.id ? erroIntegrantes : null
+  const integrantesOrdenados = [...integrantesVisiveis].sort((primeiro, segundo) => {
+    if (primeiro.papel !== segundo.papel) return primeiro.papel === 'ADMINISTRADOR' ? -1 : 1
+    return primeiro.nome.localeCompare(segundo.nome, 'pt-BR') || primeiro.membroFamiliaId.localeCompare(segundo.membroFamiliaId)
+  })
 
   async function copiarCodigo(mensagemSucesso = 'Código copiado.') {
     if (await copiarTexto(familia.codigoIngresso)) {
@@ -200,6 +251,52 @@ export function FamiliaPage() {
             Compartilhar
           </button>
         </div>
+      </section>
+
+      <section aria-labelledby="integrantes-titulo" className="space-y-gutter border-t border-foreground/10 pt-page">
+        <div>
+          <h2 id="integrantes-titulo" className="text-headline-md font-semibold">Integrantes</h2>
+          <p className="mt-1 text-body-md text-foreground-muted">{'Pessoas que participam desta fam\u00edlia.'}</p>
+        </div>
+
+        {carregandoIntegrantes && integrantesFamiliaId !== familia.id && (
+          <p className="rounded-card bg-surface p-page text-body-md text-foreground-muted shadow-soft">Carregando integrantes...</p>
+        )}
+
+        {!carregandoIntegrantes && erroIntegrantesVisivel && (
+          <div className="space-y-gutter rounded-card bg-error/10 p-page text-error">
+            <p>{erroIntegrantesVisivel}</p>
+            <button
+              type="button"
+              onClick={() => setRevisaoIntegrantes((revisao) => revisao + 1)}
+              className="min-h-touch rounded-control border border-current px-page font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        )}
+
+        {!carregandoIntegrantes && !erroIntegrantesVisivel && integrantesOrdenados.length === 0 && (
+          <p className="rounded-card bg-surface p-page text-body-md text-foreground-muted shadow-soft">Nenhum integrante encontrado.</p>
+        )}
+
+        {!carregandoIntegrantes && !erroIntegrantesVisivel && integrantesOrdenados.length > 0 && (
+          <ul className="space-y-2">
+            {integrantesOrdenados.map((integrante) => (
+              <li key={integrante.membroFamiliaId} className="flex items-center justify-between gap-gutter rounded-card border border-foreground/10 bg-surface px-page py-gutter">
+                <div className="min-w-0">
+                  <p className="truncate font-semibold">{integrante.nome}{integrante.usuarioAtual ? ' (voc\u00ea)' : ''}</p>
+                  <p className="truncate text-body-md text-foreground-muted">{integrante.email}</p>
+                </div>
+                <span className={integrante.papel === 'ADMINISTRADOR'
+                  ? 'shrink-0 rounded-full bg-primary/10 px-gutter py-1 text-label-md font-semibold text-primary'
+                  : 'shrink-0 rounded-full bg-foreground/5 px-gutter py-1 text-label-md text-foreground-muted'}>
+                  {papelLabel[integrante.papel]}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       {isAdministrador && (

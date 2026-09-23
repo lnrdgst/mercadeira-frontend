@@ -2,6 +2,7 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import type {
   CriarFamiliaRequest,
   FamiliaResponse,
+  MembroFamiliaResponse,
   MinhaSolicitacaoPendenteResponse,
   SolicitacaoFamiliaResponse,
   SolicitacaoCriadaResponse,
@@ -10,6 +11,10 @@ import type {
 
 export function buscarFamilias(token: string) {
   return apiRequest<FamiliaResponse[]>('/familias', { token })
+}
+
+export function buscarMembrosFamilia(token: string, familiaId: string, signal?: AbortSignal) {
+  return apiRequest<MembroFamiliaResponse[]>(`/familias/${familiaId}/membros`, { token, signal })
 }
 
 export function buscarMinhasSolicitacoesPendentes(token: string) {

@@ -10,6 +10,20 @@ export interface FamiliaResponse {
   codigoIngresso: string
   status: FamiliaStatus
   papel: PapelFamilia
+  contextoUsuario?: ContextoUsuarioFamiliaResponse
+}
+
+export interface ContextoUsuarioFamiliaResponse {
+  podeGerenciarIntegrantes: boolean
+}
+
+export interface MembroFamiliaResponse {
+  membroFamiliaId: UUID
+  usuarioId: UUID
+  nome: string
+  email: string
+  papel: PapelFamilia
+  usuarioAtual: boolean
 }
 
 export type StatusSolicitacaoFamilia =

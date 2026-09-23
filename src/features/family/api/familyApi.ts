@@ -17,6 +17,10 @@ export function buscarMembrosFamilia(token: string, familiaId: string, signal?: 
   return apiRequest<MembroFamiliaResponse[]>(`/familias/${familiaId}/membros`, { token, signal })
 }
 
+export function transferirAdministracaoFamilia(token: string, familiaId: string, membroId: string) {
+  return apiRequest<void>(`/familias/${familiaId}/membros/${membroId}/transferir-administracao`, { method: 'POST', token })
+}
+
 export function buscarMinhasSolicitacoesPendentes(token: string) {
   return apiRequest<MinhaSolicitacaoPendenteResponse[]>(
     '/familias/solicitacoes/minhas-pendentes',

@@ -320,9 +320,9 @@ Os membros ativos podem ser consultados por:
 
 `GET /api/familias/{familiaId}/membros`
 
-Esse contrato já é utilizado no fluxo de participantes das listas.
+Esse contrato já é utilizado no fluxo de participantes das listas e na Guia Família, que exibe integrantes ativos e identifica o usuário atual.
 
-A Guia Família ainda não possui uma área completa de gestão de membros.
+Quando o backend disponibiliza `acoes.podeTransferirAdministracao`, o administrador atual pode transferir a administração para outro membro ativo. A interface exige confirmar um código numérico local de quatro dígitos para evitar ações acidentais; o código não é enviado à API e não substitui a autorização do backend.
 
 ## Dashboard
 

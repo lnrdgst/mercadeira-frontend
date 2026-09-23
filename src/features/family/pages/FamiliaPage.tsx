@@ -8,7 +8,9 @@ import {
   buscarMembrosFamilia,
   buscarSolicitacoesFamilia,
   rejeitarSolicitacaoFamilia,
+  transferirAdministracaoFamilia,
 } from '../api/familyApi'
+import { TransferirAdministracaoDialog } from '../components/TransferirAdministracaoDialog'
 import { useFamilyContext } from '../session/familyContext'
 import type { MembroFamiliaResponse, SolicitacaoFamiliaResponse } from '../types/family'
 
@@ -32,7 +34,7 @@ function formatarData(data: string) {
 
 export function FamiliaPage() {
   const { auth, logout } = useSession()
-  const { familiaSelecionada } = useFamilyContext()
+  const { familiaSelecionada, recarregarFamilias } = useFamilyContext()
   const navigate = useNavigate()
   const [solicitacoes, setSolicitacoes] = useState<SolicitacaoFamiliaResponse[]>([])
   const [solicitacoesFamiliaId, setSolicitacoesFamiliaId] = useState<string | null>(null)
@@ -46,6 +48,9 @@ export function FamiliaPage() {
   const [erroIntegrantes, setErroIntegrantes] = useState<string | null>(null)
   const [revisaoIntegrantes, setRevisaoIntegrantes] = useState(0)
   const geracaoIntegrantes = useRef(0)
+  const [integranteParaTransferir, setIntegranteParaTransferir] = useState<MembroFamiliaResponse | null>(null)
+  const [transferindoAdministracao, setTransferindoAdministracao] = useState(false)
+  const [erroTransferenciaAdministracao, setErroTransferenciaAdministracao] = useState<string | null>(null)
 
   const carregarSolicitacoes = useCallback(async (mostrarCarregamento = true) => {
     if (!auth || !familiaSelecionada || familiaSelecionada.contextoUsuario?.podeGerenciarIntegrantes !== true) {
@@ -205,6 +210,28 @@ export function FamiliaPage() {
     }
   }
 
+  async function transferirAdministracao() {
+    if (!auth || !integranteParaTransferir) return
+    setTransferindoAdministracao(true)
+    setErroTransferenciaAdministracao(null)
+    try {
+      await transferirAdministracaoFamilia(auth.token, familia.id, integranteParaTransferir.membroFamiliaId)
+      await recarregarFamilias(familia.id)
+      setIntegranteParaTransferir(null)
+      setRevisaoIntegrantes((revisao) => revisao + 1)
+      setFeedback('Administração transferida.')
+    } catch (error) {
+      const apiError = error as ApiRequestError
+      if (apiError.status === 401) {
+        logout()
+        return
+      }
+      setErroTransferenciaAdministracao(apiError.message || 'Não foi possível transferir a administração desta família.')
+    } finally {
+      setTransferindoAdministracao(false)
+    }
+  }
+
   return (
     <section className="mx-auto max-w-2xl space-y-page py-page">
       <header className="space-y-2">
@@ -288,16 +315,29 @@ export function FamiliaPage() {
                   <p className="truncate font-semibold">{integrante.nome}{integrante.usuarioAtual ? ' (voc\u00ea)' : ''}</p>
                   <p className="truncate text-body-md text-foreground-muted">{integrante.email}</p>
                 </div>
-                <span className={integrante.papel === 'ADMINISTRADOR'
-                  ? 'shrink-0 rounded-full bg-primary/10 px-gutter py-1 text-label-md font-semibold text-primary'
-                  : 'shrink-0 rounded-full bg-foreground/5 px-gutter py-1 text-label-md text-foreground-muted'}>
-                  {papelLabel[integrante.papel]}
-                </span>
+                <div className="flex shrink-0 flex-col items-end gap-2">
+                  <span className={integrante.papel === 'ADMINISTRADOR'
+                    ? 'rounded-full bg-primary/10 px-gutter py-1 text-label-md font-semibold text-primary'
+                    : 'rounded-full bg-foreground/5 px-gutter py-1 text-label-md text-foreground-muted'}>
+                    {papelLabel[integrante.papel]}
+                  </span>
+                  {integrante.acoes?.podeTransferirAdministracao === true && (
+                    <button type="button" onClick={() => { setErroTransferenciaAdministracao(null); setIntegranteParaTransferir(integrante) }} className="min-h-touch rounded-control border border-primary px-gutter text-label-md font-semibold text-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                      Transferir administração
+                    </button>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
         )}
       </section>
+
+      {integranteParaTransferir && (
+        <TransferirAdministracaoDialog integrante={integranteParaTransferir} enviando={transferindoAdministracao} erro={erroTransferenciaAdministracao}
+          onConfirmar={() => void transferirAdministracao()}
+          onCancelar={() => { if (!transferindoAdministracao) setIntegranteParaTransferir(null) }} />
+      )}
 
       {isAdministrador && (
         <section className="space-y-gutter">

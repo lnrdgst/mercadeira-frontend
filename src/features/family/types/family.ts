@@ -24,6 +24,7 @@ export interface MembroFamiliaResponse {
   email: string
   papel: PapelFamilia
   usuarioAtual: boolean
+  acoes?: { podeTransferirAdministracao: boolean }
 }
 
 export type StatusSolicitacaoFamilia =

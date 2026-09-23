@@ -47,6 +47,14 @@ export async function reutilizarLista(token: string, familiaId: string, listaId:
   return response.data
 }
 
+export async function reaproveitarItensForaCompra(token: string, familiaId: string, listaId: string, itemIds: string[]) {
+  const response = await apiRequest<ListaCompraResumoResponse>(`${listasPath(familiaId)}/${listaId}/reaproveitar-itens-fora`, {
+    token, method: 'POST', body: { itemIds },
+  })
+  if (!response.data) throw new Error('Não foi possível criar a nova lista. Confira Minhas Listas antes de tentar novamente.')
+  return response.data
+}
+
 function listaPath(familiaId: string, listaId: string) {
   return `${listasPath(familiaId)}/${listaId}`
 }

@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
 import type { ApiRequestError } from '../../../shared/api/apiClient'
 import { useSession } from '../../auth/session/sessionContext'
 import { useFamilyContext } from '../../family/session/familyContext'
 import { buscarCompra, finalizarCompra } from '../api/shoppingApi'
 import { CompraResumo } from '../components/CompraResumo'
 import { ReutilizarListaButton } from '../components/ReutilizarListaButton'
+import { ReaproveitarItensForaButton } from '../components/ReaproveitarItensForaButton'
 import type { CompraResponse } from '../types/shopping'
 
 export function CompraRevisaoPage() {
@@ -18,12 +19,14 @@ export function CompraRevisaoPage() {
 
 function RevisaoCompra({ token, familiaId, listaId }: { token: string; familiaId: string; listaId: string }) {
   const { logout } = useSession()
+  const navigate = useNavigate()
   const [compra, setCompra] = useState<CompraResponse | null>(null)
   const [erro, setErro] = useState<string | null>(null)
   const [carregando, setCarregando] = useState(true)
   const [enviando, setEnviando] = useState(false)
   const [precisaAtualizar, setPrecisaAtualizar] = useState(false)
   const [tentativa, setTentativa] = useState(0)
+  const [mostrarItensFora, setMostrarItensFora] = useState(false)
   const enviandoRef = useRef(false)
   const dialogRef = useRef<HTMLDialogElement>(null)
   const botaoRef = useRef<HTMLButtonElement>(null)
@@ -66,6 +69,9 @@ function RevisaoCompra({ token, familiaId, listaId }: { token: string; familiaId
       if (!ativoRef.current) return
       setCompra(response)
       dialogRef.current?.close()
+      const temItensFora = response.itens.some((item) => item.status === 'PENDENTE' || item.status === 'REMOVIDO')
+      if (response.contextoUsuario.podeCriarListaComItensQueFicaramDeFora === true && temItensFora) setMostrarItensFora(true)
+      else navigate('/inicio', { replace: true })
       tituloRef.current?.focus({ preventScroll: true })
     } catch (error) {
       if (!ativoRef.current) return
@@ -123,7 +129,7 @@ function RevisaoCompra({ token, familiaId, listaId }: { token: string; familiaId
     {!carregando && (!compra || precisaAtualizar) && <button type="button" disabled={enviando} onClick={atualizar} className="min-h-touch rounded-control border border-primary px-page font-semibold text-primary disabled:opacity-60">Atualizar compra</button>}
     {compra && <>
       <CompraResumo compra={compra} />
-      {!carregando && compra.status === 'FINALIZADA' && <ReutilizarListaButton compra={compra} familiaId={familiaId} onAtualizada={setCompra} />}
+      {!carregando && compra.status === 'FINALIZADA' && <div className="space-y-2"><ReaproveitarItensForaButton compra={compra} familiaId={familiaId} abrirAoFinalizar={mostrarItensFora} onAgoraNao={mostrarItensFora ? () => navigate('/inicio', { replace: true }) : undefined} /><ReutilizarListaButton compra={compra} familiaId={familiaId} onAtualizada={setCompra} /></div>}
       {!carregando && compra.status === 'EM_ANDAMENTO' && compra.contextoUsuario.podeFinalizarCompra === true && <button ref={botaoRef} type="button" disabled={enviando || precisaAtualizar} onClick={() => { setErro(null); dialogRef.current?.showModal() }} className="min-h-touch w-full rounded-control bg-primary px-page font-semibold text-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60">{enviando ? 'Finalizando compra...' : 'Finalizar compra'}</button>}
       {compra.status === 'EM_ANDAMENTO' && !compra.contextoUsuario.podeFinalizarCompra && <p className="text-body-md text-foreground-muted">{compra.contextoUsuario.precisaEstarPresenteParaFinalizar === true ? 'Você pode revisar a compra, mas precisa estar no mercado para finalizá-la.' : 'A finalização não está disponível para você no estado atual desta compra.'}</p>}
     </>}

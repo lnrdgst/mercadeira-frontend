@@ -742,6 +742,10 @@ No resumo acessível por Minhas Listas, “Usar esta lista novamente” depende 
 
 A confirmação usa dialog nativo, foco inicial em Cancelar e retorno ao acionador. Durante envio, confirmação e cancelamento ficam bloqueados. `401` encerra sessão; `403/409` reconciliam a Compra via GET e respeitam a capability atual. Falha na reconciliação exige atualizar antes de repetir. A criação não é idempotente: não há retry automático e, diante de falha de conexão, a interface orienta conferir Minhas Listas antes de tentar novamente. Contrato backend: `docs/contrato-reutilizacao-lista.md`.
 
+### Itens que ficaram de fora
+
+Depois de finalizar, se o backend retornar `contextoUsuario.podeCriarListaComItensQueFicaramDeFora`, a revisão abre a seleção de itens `PENDENTE` e `REMOVIDO`, marcados inicialmente. O usuário pode desmarcá-los e criar uma nova lista em preparação; itens `NO_CARRINHO` e `REMOCAO_SOLICITADA` não aparecem. “Agora não” retorna ao Início. Em resumos finalizados já existentes, a mesma ação permanece disponível ao lado de “Usar esta lista novamente”. A chamada `POST /api/familias/{familiaId}/listas/{listaId}/reaproveitar-itens-fora` envia somente os IDs escolhidos; o backend revalida a capability e todos os estados. Erro de criação não desfaz a finalização e mantém somente as ações para tentar novamente ou voltar ao Início.
+
 Relatório e limites da validação: [Marco Compra 3](docs/marco-compra-3.md). Suíte local: `npm test`.
 
 ### Testes automatizados do frontend

@@ -23,6 +23,7 @@ export interface ContextoUsuarioCompraResponse {
   podeAlterarPresenca: boolean
   podeFinalizarCompra: boolean
   podeReutilizarLista: boolean
+  podeCriarListaComItensQueFicaramDeFora?: boolean
   podeSolicitarPresenca?: boolean
   podeCancelarSolicitacaoPresenca?: boolean
   podeDeclararSaida?: boolean

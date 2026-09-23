@@ -8,9 +8,10 @@ import {
   buscarMembrosFamilia,
   buscarSolicitacoesFamilia,
   rejeitarSolicitacaoFamilia,
+  removerIntegranteFamilia,
   transferirAdministracaoFamilia,
 } from '../api/familyApi'
-import { TransferirAdministracaoDialog } from '../components/TransferirAdministracaoDialog'
+import { ConfirmacaoSensivelDialog } from '../components/ConfirmacaoSensivelDialog'
 import { useFamilyContext } from '../session/familyContext'
 import type { MembroFamiliaResponse, SolicitacaoFamiliaResponse } from '../types/family'
 
@@ -48,9 +49,9 @@ export function FamiliaPage() {
   const [erroIntegrantes, setErroIntegrantes] = useState<string | null>(null)
   const [revisaoIntegrantes, setRevisaoIntegrantes] = useState(0)
   const geracaoIntegrantes = useRef(0)
-  const [integranteParaTransferir, setIntegranteParaTransferir] = useState<MembroFamiliaResponse | null>(null)
-  const [transferindoAdministracao, setTransferindoAdministracao] = useState(false)
-  const [erroTransferenciaAdministracao, setErroTransferenciaAdministracao] = useState<string | null>(null)
+  const [confirmacaoSensivel, setConfirmacaoSensivel] = useState<{ tipo: 'transferir' | 'remover'; integrante: MembroFamiliaResponse } | null>(null)
+  const [processandoConfirmacaoSensivel, setProcessandoConfirmacaoSensivel] = useState(false)
+  const [erroConfirmacaoSensivel, setErroConfirmacaoSensivel] = useState<string | null>(null)
 
   const carregarSolicitacoes = useCallback(async (mostrarCarregamento = true) => {
     if (!auth || !familiaSelecionada || familiaSelecionada.contextoUsuario?.podeGerenciarIntegrantes !== true) {
@@ -210,25 +211,32 @@ export function FamiliaPage() {
     }
   }
 
-  async function transferirAdministracao() {
-    if (!auth || !integranteParaTransferir) return
-    setTransferindoAdministracao(true)
-    setErroTransferenciaAdministracao(null)
+  async function confirmarAcaoSensivel() {
+    if (!auth || !confirmacaoSensivel) return
+    setProcessandoConfirmacaoSensivel(true)
+    setErroConfirmacaoSensivel(null)
     try {
-      await transferirAdministracaoFamilia(auth.token, familia.id, integranteParaTransferir.membroFamiliaId)
+      if (confirmacaoSensivel.tipo === 'transferir') {
+        await transferirAdministracaoFamilia(auth.token, familia.id, confirmacaoSensivel.integrante.membroFamiliaId)
+      } else {
+        await removerIntegranteFamilia(auth.token, familia.id, confirmacaoSensivel.integrante.membroFamiliaId)
+      }
       await recarregarFamilias(familia.id)
-      setIntegranteParaTransferir(null)
+      const acaoConcluida = confirmacaoSensivel.tipo
+      setConfirmacaoSensivel(null)
       setRevisaoIntegrantes((revisao) => revisao + 1)
-      setFeedback('Administração transferida.')
+      setFeedback(acaoConcluida === 'transferir' ? 'Administração transferida.' : 'Integrante removido da família.')
     } catch (error) {
       const apiError = error as ApiRequestError
       if (apiError.status === 401) {
         logout()
         return
       }
-      setErroTransferenciaAdministracao(apiError.message || 'Não foi possível transferir a administração desta família.')
+      setErroConfirmacaoSensivel(apiError.message || (confirmacaoSensivel.tipo === 'transferir'
+        ? 'Não foi possível transferir a administração desta família.'
+        : 'Não foi possível remover este integrante da família.'))
     } finally {
-      setTransferindoAdministracao(false)
+      setProcessandoConfirmacaoSensivel(false)
     }
   }
 
@@ -322,8 +330,13 @@ export function FamiliaPage() {
                     {papelLabel[integrante.papel]}
                   </span>
                   {integrante.acoes?.podeTransferirAdministracao === true && (
-                    <button type="button" onClick={() => { setErroTransferenciaAdministracao(null); setIntegranteParaTransferir(integrante) }} className="min-h-touch rounded-control border border-primary px-gutter text-label-md font-semibold text-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                    <button type="button" onClick={() => { setErroConfirmacaoSensivel(null); setConfirmacaoSensivel({ tipo: 'transferir', integrante }) }} className="min-h-touch rounded-control border border-primary px-gutter text-label-md font-semibold text-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
                       Transferir administração
+                    </button>
+                  )}
+                  {integrante.acoes?.podeRemoverIntegrante === true && (
+                    <button type="button" onClick={() => { setErroConfirmacaoSensivel(null); setConfirmacaoSensivel({ tipo: 'remover', integrante }) }} className="min-h-touch rounded-control border border-error px-gutter text-label-md font-semibold text-error hover:bg-error/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                      Remover integrante
                     </button>
                   )}
                 </div>
@@ -333,10 +346,19 @@ export function FamiliaPage() {
         )}
       </section>
 
-      {integranteParaTransferir && (
-        <TransferirAdministracaoDialog integrante={integranteParaTransferir} enviando={transferindoAdministracao} erro={erroTransferenciaAdministracao}
-          onConfirmar={() => void transferirAdministracao()}
-          onCancelar={() => { if (!transferindoAdministracao) setIntegranteParaTransferir(null) }} />
+      {confirmacaoSensivel && (
+        <ConfirmacaoSensivelDialog
+          titulo={confirmacaoSensivel.tipo === 'transferir' ? 'Transferir administração?' : 'Remover integrante?'}
+          descricao={confirmacaoSensivel.tipo === 'transferir'
+            ? `${confirmacaoSensivel.integrante.nome} passará a ser Administrador(a) desta família. Você passará a ser Membro.`
+            : `${confirmacaoSensivel.integrante.nome} deixará de participar desta família. Para voltar depois, dependerá das regras de ingresso vigentes.`}
+          rotuloConfirmar={confirmacaoSensivel.tipo === 'transferir' ? 'Confirmar transferência' : 'Confirmar remoção'}
+          rotuloProcessando={confirmacaoSensivel.tipo === 'transferir' ? 'Transferindo...' : 'Removendo...'}
+          corSemantica={confirmacaoSensivel.tipo === 'transferir' ? 'amber' : 'error'}
+          enviando={processandoConfirmacaoSensivel}
+          erro={erroConfirmacaoSensivel}
+          onConfirmar={() => void confirmarAcaoSensivel()}
+          onCancelar={() => { if (!processandoConfirmacaoSensivel) setConfirmacaoSensivel(null) }} />
       )}
 
       {isAdministrador && (

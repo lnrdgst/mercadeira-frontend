@@ -21,6 +21,10 @@ export function transferirAdministracaoFamilia(token: string, familiaId: string,
   return apiRequest<void>(`/familias/${familiaId}/membros/${membroId}/transferir-administracao`, { method: 'POST', token })
 }
 
+export function removerIntegranteFamilia(token: string, familiaId: string, membroId: string) {
+  return apiRequest<void>(`/familias/${familiaId}/membros/${membroId}`, { method: 'DELETE', token })
+}
+
 export function buscarMinhasSolicitacoesPendentes(token: string) {
   return apiRequest<MinhaSolicitacaoPendenteResponse[]>(
     '/familias/solicitacoes/minhas-pendentes',

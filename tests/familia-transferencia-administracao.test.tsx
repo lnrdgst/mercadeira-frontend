@@ -18,10 +18,10 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-function membros(podeTransferir = true) {
+function membros(podeTransferir = true, podeRemover = true) {
   return [
-    { membroFamiliaId: 'ana', usuarioId: 'usuario-a', nome: 'Ana', email: 'ana@example.test', papel: 'ADMINISTRADOR', usuarioAtual: true, acoes: { podeTransferirAdministracao: false } },
-    { membroFamiliaId: 'bia', usuarioId: 'usuario-b', nome: 'Bia', email: 'bia@example.test', papel: 'MEMBRO', usuarioAtual: false, acoes: { podeTransferirAdministracao: podeTransferir } },
+    { membroFamiliaId: 'ana', usuarioId: 'usuario-a', nome: 'Ana', email: 'ana@example.test', papel: 'ADMINISTRADOR', usuarioAtual: true, acoes: { podeTransferirAdministracao: false, podeRemoverIntegrante: false } },
+    { membroFamiliaId: 'bia', usuarioId: 'usuario-b', nome: 'Bia', email: 'bia@example.test', papel: 'MEMBRO', usuarioAtual: false, acoes: { podeTransferirAdministracao: podeTransferir, podeRemoverIntegrante: podeRemover } },
   ]
 }
 
@@ -123,4 +123,34 @@ test('voltar e Escape fecham a confirmação sem chamar a API', async () => {
   fireEvent(screen.getByRole('dialog'), new Event('cancel', { bubbles: false, cancelable: true }))
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   expect(fetchMock.mock.calls.some(([input]) => String(input).includes('transferir-administracao'))).toBe(false)
+})
+
+test('administrador remove integrante somente com o código exibido', async () => {
+  let chamadasRemocao = 0
+  let urlRemocao = ''
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+    const path = String(input)
+    if (path.endsWith('/membros/bia') && init?.method === 'DELETE') { chamadasRemocao += 1; urlRemocao = path; return new Response(null, { status: 204 }) }
+    if (path.includes('/membros')) return Response.json(membros())
+    if (path.endsWith('/familias')) return Response.json([familyFixture({ papel: 'ADMINISTRADOR', contextoUsuario: { podeGerenciarIntegrantes: true } })])
+    if (path.includes('/solicitacoes')) return Response.json([])
+    return Response.json([])
+  })
+  const familia = familyFixture({ papel: 'ADMINISTRADOR', contextoUsuario: { podeGerenciarIntegrantes: true } })
+  const { user } = renderApp(<FamiliaPage />, { family: familyContextFixture({ familias: [familia], familiaSelecionada: familia }) })
+
+  await user.click(await screen.findByRole('button', { name: 'Remover integrante' }))
+  const dialog = await screen.findByRole('dialog', { name: 'Remover integrante?' })
+  expect(within(dialog).getByRole('button', { name: 'Confirmar remoção' })).toBeDisabled()
+  await user.type(within(dialog).getByLabelText('Código de confirmação'), '1000')
+  await user.click(within(dialog).getByRole('button', { name: 'Confirmar remoção' }))
+  await waitFor(() => expect(chamadasRemocao).toBe(1))
+  expect(urlRemocao).toContain('/membros/bia')
+})
+
+test('ação de remoção só aparece quando a capability do integrante estiver habilitada', async () => {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => String(input).includes('/membros') ? Response.json(membros(true, false)) : Response.json([]))
+  renderApp(<FamiliaPage />)
+  await screen.findByText('Ana (você)')
+  expect(screen.queryByRole('button', { name: 'Remover integrante' })).not.toBeInTheDocument()
 })

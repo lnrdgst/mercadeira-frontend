@@ -24,7 +24,10 @@ export interface MembroFamiliaResponse {
   email: string
   papel: PapelFamilia
   usuarioAtual: boolean
-  acoes?: { podeTransferirAdministracao: boolean }
+  acoes?: {
+    podeTransferirAdministracao: boolean
+    podeRemoverIntegrante: boolean
+  }
 }
 
 export type StatusSolicitacaoFamilia =

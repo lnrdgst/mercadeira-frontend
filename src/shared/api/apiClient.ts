@@ -21,9 +21,10 @@ interface ApiRequestOptions {
   signal?: AbortSignal
 }
 
-interface ApiResponse<T> {
+export interface ApiResponse<T> {
   status: number
   data: T | null
+  headers: Headers
 }
 
 function buildUrl(path: string) {
@@ -68,7 +69,7 @@ async function parseJson(response: Response): Promise<unknown | null> {
   }
 }
 
-export async function apiRequest<T>(
+export async function apiRequestComHeaders<T>(
   path: string,
   { method = 'GET', body, token, signal }: ApiRequestOptions = {},
 ): Promise<ApiResponse<T>> {
@@ -96,7 +97,7 @@ export async function apiRequest<T>(
   }
 
   if (response.status === 204) {
-    return { status: response.status, data: null }
+    return { status: response.status, data: null, headers: response.headers }
   }
 
   const data = await parseJson(response)
@@ -110,5 +111,10 @@ export async function apiRequest<T>(
     )
   }
 
-  return { status: response.status, data: data as T }
+  return { status: response.status, data: data as T, headers: response.headers }
+}
+
+export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<Omit<ApiResponse<T>, 'headers'>> {
+  const { status, data } = await apiRequestComHeaders<T>(path, options)
+  return { status, data }
 }

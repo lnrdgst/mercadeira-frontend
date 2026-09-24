@@ -92,7 +92,7 @@ As áreas principais utilizam o AppShell e compartilham navegação global:
 
 Em dispositivos móveis, essas áreas utilizam navegação inferior com alvos de toque adequados e respeito à safe area.
 
-A V1 segue o piloto reduzido: resumos de compras finalizadas são acessíveis por “Minhas Listas”. A navegação contém Início, Listas e Família. O Histórico dedicado permanece no backlog; seu componente foi preservado para implementação futura, sem expor o placeholder no piloto.
+A V1 segue o piloto reduzido: resumos de compras finalizadas são acessíveis por “Minhas Listas”. A navegação contém Início, Listas e Família. Compras finalizadas até 14 dias inclusive seguem na listagem principal; as mais antigas ficam em “Compras anteriores”, carregado sob demanda e paginado. Não há exclusão automática e o resumo histórico continua permitindo reutilização quando aplicável.
 
 O AppShell também disponibiliza logout global para as áreas autenticadas principais.
 

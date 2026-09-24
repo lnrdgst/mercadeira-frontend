@@ -1,9 +1,10 @@
-import { apiRequest } from '../../../shared/api/apiClient'
+import { apiRequest, apiRequestComHeaders } from '../../../shared/api/apiClient'
 import type {
   CriarListaCompraRequest,
   ItemListaCompraResponse,
   ListaCompraDetalheResponse,
   ListaCompraResumoResponse,
+  HistoricoListaCompraResponse,
   MembroFamiliaResponse,
   ParticipanteListaResponse,
   SalvarItemListaRequest,
@@ -20,7 +21,15 @@ export function buscarSugestoesItens(token: string, familiaId: string, termo: st
 }
 
 export function buscarListas(token: string, familiaId: string) {
-  return apiRequest<ListaCompraResumoResponse[]>(listasPath(familiaId), { token })
+  return apiRequestComHeaders<ListaCompraResumoResponse[]>(listasPath(familiaId), { token })
+}
+
+export function buscarTotalHistoricoListas(token: string, familiaId: string) {
+  return apiRequest<{ total: number }>(`${listasPath(familiaId)}/historico/total`, { token })
+}
+
+export function buscarHistoricoListas(token: string, familiaId: string, page: number, size = 20) {
+  return apiRequest<HistoricoListaCompraResponse>(`${listasPath(familiaId)}/historico?page=${page}&size=${size}`, { token })
 }
 
 export function criarLista(

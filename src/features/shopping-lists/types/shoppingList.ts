@@ -24,6 +24,20 @@ export interface ListaCompraResumoResponse {
   atualizadaEm: string
 }
 
+export interface HistoricoListaCompraItemResponse {
+  lista: ListaCompraResumoResponse
+  finalizadaEm: string
+}
+
+export interface HistoricoListaCompraResponse {
+  content: HistoricoListaCompraItemResponse[]
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
+  hasNext: boolean
+}
+
 export interface CriadorListaResponse {
   membroFamiliaId: string
   usuarioId: string

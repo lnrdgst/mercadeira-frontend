@@ -285,6 +285,13 @@ export function InicioPage() {
 
       <hr style={{ border: '0', borderTop: '1px solid #e0e0e0', margin: '16px 0' }} />
 
+      <Link
+        to="/listas/nova"
+        className="flex min-h-touch w-full items-center justify-center rounded-control border-2 border-primary bg-surface px-page font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      >
+        Preparar nova lista de compras
+      </Link>
+
       {!loading && !error && (compraEmAndamentoVisivel || listaEmPreparacao) && (
         <section className={`grid gap-page ${compraEmAndamentoVisivel && listaEmPreparacao ? "md:grid-cols-2" : ""}`}>
           {compraEmAndamentoVisivel && (
@@ -296,18 +303,14 @@ export function InicioPage() {
                   <span className="rounded-full bg-primary/10 px-gutter py-1 text-label-md font-semibold text-primary">Em andamento</span>
                 </div>
                 <h3 className="font-semibold">{compraEmAndamentoVisivel.nomeLista}</h3>
+                {listaEmPreparacao.criadaPorUsuarioId === usuario?.id &&  <p className="mt-1 text-label-md font-medium text-primary">Lista criada por você</p>}
                 {compraEmAndamentoVisivel.estabelecimento && <p className="text-body-md text-foreground-muted">{compraEmAndamentoVisivel.estabelecimento}</p>}
                 <span className="inline-flex min-h-touch items-center font-semibold text-primary">Acompanhar</span>
+
+
               </Link>
             </section>
           )}
-
-          <Link
-          to="/listas/nova"
-          className="flex min-h-touch w-full items-center justify-center rounded-control border-2 border-primary bg-surface px-page font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        >
-          Preparar nova lista de compras
-        </Link>
 
           {listaEmPreparacao && (
             <section className={`space-y-gutter ${compraEmAndamentoVisivel ? "border-t border-foreground/10 pt-page md:border-t-0 md:border-l md:pt-0 md:pl-page" : ""}`} aria-labelledby="lista-em-preparacao">
@@ -318,7 +321,7 @@ export function InicioPage() {
                   <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md text-foreground-muted">{statusListaCompraLabels[listaEmPreparacao.status]}</span>
                 </div>
                 <h3 className="font-semibold">{listaEmPreparacao.nome}</h3>
-                {listaEmPreparacao.criadaPorUsuarioId === usuario?.id && <p className="text-label-md text-foreground-muted">Lista criada por você</p>}
+                {listaEmPreparacao.criadaPorUsuarioId === usuario?.id &&  <p className="mt-1 text-label-md font-medium text-primary">Lista criada por você</p>}
                 {listaEmPreparacao.estabelecimento && <p className="text-body-md text-foreground-muted">{listaEmPreparacao.estabelecimento}</p>}
                 <span className="inline-flex min-h-touch items-center font-semibold text-primary">Abrir lista</span>
               </Link>

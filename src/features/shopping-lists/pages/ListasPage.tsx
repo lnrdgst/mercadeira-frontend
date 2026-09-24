@@ -189,12 +189,17 @@ export function ListasPage() {
                   >
                     {labelStatus}
                   </span>
+                  
                 </div>
 
                 <div>
                   <h2 className="text-headline-md font-semibold">
                     {lista.nome}
                   </h2>
+                  <span>
+
+                  {criadaPeloUsuario && <p className="mt-1 text-label-md font-medium text-primary">Lista criada por você</p>}
+                  </span>
 
                   {lista.estabelecimento && (
                     <p className="mt-1 text-body-md text-foreground-muted">
@@ -202,14 +207,13 @@ export function ListasPage() {
                     </p>
                   )}
                 </div>
-                {criadaPeloUsuario && <p className="text-label-md text-foreground-muted">Lista criada por você</p>}
 
                 <p className="text-label-lg font-semibold text-primary">
                   {finalizada
                     ? 'Ver resumo'
                     : emAndamento
-                      ? 'Ver compra'
-                      : 'Abrir lista'}
+                    ? 'Ver compra'
+                    : 'Abrir lista'}
                 </p>
               </Link>
               </li>

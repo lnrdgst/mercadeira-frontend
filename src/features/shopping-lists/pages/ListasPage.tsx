@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import type { ApiRequestError } from '../../../shared/api/apiClient'
 import { useSession } from '../../auth/session/sessionContext'
+import { useAuthenticatedUser } from '../../auth/user/AuthenticatedUserContext'
 import { buscarHistoricoListas, buscarListas } from '../api/shoppingListsApi'
 import { useFamilyContext } from '../../family/session/familyContext'
 import type { HistoricoListaCompraItemResponse, ListaCompraResumoResponse } from '../types/shoppingList'
@@ -12,6 +13,7 @@ import {
 
 export function ListasPage() {
   const { auth, logout } = useSession()
+  const { usuario } = useAuthenticatedUser()
   const { familiaSelecionada } = useFamilyContext()
   const [listas, setListas] = useState<ListaCompraResumoResponse[]>([])
   const [familiaCarregadaId, setFamiliaCarregadaId] = useState<string | null>(null)
@@ -153,6 +155,7 @@ export function ListasPage() {
             const emAndamento = lista.status === 'EM_COMPRA'
             const finalizada = lista.status === 'FINALIZADA'
             const labelStatus = emAndamento ? 'Em andamento' : statusListaCompraLabels[lista.status]
+            const criadaPeloUsuario = lista.criadaPorUsuarioId === usuario?.id
 
             return (
               <li key={lista.id}>
@@ -199,6 +202,7 @@ export function ListasPage() {
                     </p>
                   )}
                 </div>
+                {criadaPeloUsuario && <p className="text-label-md text-foreground-muted">Lista criada por você</p>}
 
                 <p className="text-label-lg font-semibold text-primary">
                   {finalizada

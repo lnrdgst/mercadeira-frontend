@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { FamiliaPage } from '../src/features/family/pages/FamiliaPage'
 import { familyContextFixture, familyFixture, renderApp } from './helpers'
@@ -66,7 +66,7 @@ test('confirmação permanece aberta após o ciclo assíncrono normal da página
 
   await user.click(await screen.findByRole('button', { name: 'Transferir administração' }))
   await waitFor(() => expect(screen.getByRole('dialog', { name: 'Transferir administração?' })).toBeVisible())
-  await Promise.resolve()
+  await act(async () => { window.dispatchEvent(new Event('focus')); await Promise.resolve() })
   expect(screen.getByText('1000')).toBeVisible()
   expect(screen.getByRole('button', { name: 'Confirmar transferência' })).toBeDisabled()
 })

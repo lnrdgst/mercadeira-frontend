@@ -318,6 +318,7 @@ export function InicioPage() {
                   <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md text-foreground-muted">{statusListaCompraLabels[listaEmPreparacao.status]}</span>
                 </div>
                 <h3 className="font-semibold">{listaEmPreparacao.nome}</h3>
+                {listaEmPreparacao.criadaPorUsuarioId === usuario?.id && <p className="text-label-md text-foreground-muted">Lista criada por você</p>}
                 {listaEmPreparacao.estabelecimento && <p className="text-body-md text-foreground-muted">{listaEmPreparacao.estabelecimento}</p>}
                 <span className="inline-flex min-h-touch items-center font-semibold text-primary">Abrir lista</span>
               </Link>

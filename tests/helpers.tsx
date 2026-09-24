@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router'
 import { vi } from 'vitest'
 import { SessionContext } from '../src/features/auth/session/sessionContext'
 import { FamilyContext, type FamilyContextValue } from '../src/features/family/session/familyContext'
+import { AuthenticatedUserContext } from '../src/features/auth/user/AuthenticatedUserContext'
 import type { FamiliaResponse } from '../src/features/family/types/family'
 
 type SessionValue = NonNullable<ComponentProps<typeof SessionContext>['value']>
@@ -36,9 +37,9 @@ export function renderApp(ui: ReactNode, {
 }: { session?: SessionValue; family?: FamilyContextValue; route?: string } = {}) {
   return {
     user: userEvent.setup(), session, family,
-    ...render(<SessionContext value={session}><FamilyContext value={family}>
+    ...render(<SessionContext value={session}><AuthenticatedUserContext value={{ usuario: null, loading: false, error: false, recarregarUsuario: async () => {} }}><FamilyContext value={family}>
       <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
-    </FamilyContext></SessionContext>),
+    </FamilyContext></AuthenticatedUserContext></SessionContext>),
   }
 }
 

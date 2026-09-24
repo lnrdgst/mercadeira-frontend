@@ -49,6 +49,7 @@ export function FamiliaPage() {
   const [erroIntegrantes, setErroIntegrantes] = useState<string | null>(null)
   const [revisaoIntegrantes, setRevisaoIntegrantes] = useState(0)
   const geracaoIntegrantes = useRef(0)
+  const integrantesFamiliaIdRef = useRef<string | null>(null)
   const [confirmacaoSensivel, setConfirmacaoSensivel] = useState<{ tipo: 'transferir' | 'remover'; integrante: MembroFamiliaResponse } | null>(null)
   const [processandoConfirmacaoSensivel, setProcessandoConfirmacaoSensivel] = useState(false)
   const [erroConfirmacaoSensivel, setErroConfirmacaoSensivel] = useState<string | null>(null)
@@ -103,15 +104,20 @@ export function FamiliaPage() {
       return () => controller.abort()
     }
 
+    const mostrarCarregamento = integrantesFamiliaIdRef.current !== familiaId
+
     void Promise.resolve().then(async () => {
       if (controller.signal.aborted) return
-      setCarregandoIntegrantes(true)
+      if (mostrarCarregamento) {
+        setCarregandoIntegrantes(true)
+      }
       setErroIntegrantes(null)
 
       try {
         const response = await buscarMembrosFamilia(auth.token, familiaId, controller.signal)
         if (controller.signal.aborted || geracao !== geracaoIntegrantes.current) return
         setIntegrantes(response.data || [])
+        integrantesFamiliaIdRef.current = familiaId
         setIntegrantesFamiliaId(familiaId)
       } catch (error) {
         if (controller.signal.aborted || geracao !== geracaoIntegrantes.current) return
@@ -121,9 +127,10 @@ export function FamiliaPage() {
           return
         }
         setErroIntegrantes(apiError.message || 'N\u00e3o foi poss\u00edvel carregar os integrantes.')
+        integrantesFamiliaIdRef.current = familiaId
         setIntegrantesFamiliaId(familiaId)
       } finally {
-        if (!controller.signal.aborted && geracao === geracaoIntegrantes.current) {
+        if (mostrarCarregamento && !controller.signal.aborted && geracao === geracaoIntegrantes.current) {
           setCarregandoIntegrantes(false)
         }
       }

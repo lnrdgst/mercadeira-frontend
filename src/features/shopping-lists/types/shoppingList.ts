@@ -23,6 +23,7 @@ export interface ListaCompraResumoResponse {
   status: StatusListaCompra
   criadaEm: string
   atualizadaEm: string
+  criadaPorUsuarioId?: string
 }
 
 export interface HistoricoListaCompraItemResponse {

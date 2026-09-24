@@ -259,8 +259,16 @@ export function InicioPage() {
             <div className="mt-gutter border-t border-foreground/10 pt-gutter">
               {ultimaCompraFinalizada?.finalizadaEm ? (
                 <>
-                  <p className="font-semibold ">
-                    Última compra finalizada: <br></br> <time dateTime={ultimaCompraFinalizada.finalizadaEm}>{formatarFinalizacao(ultimaCompraFinalizada.finalizadaEm)}</time>
+                  <p className="font-semibold">
+                    Última compra finalizada:
+                    <br />
+                    <time dateTime={ultimaCompraFinalizada.finalizadaEm}>
+                      {formatarFinalizacao(ultimaCompraFinalizada.finalizadaEm)}
+                    </time>
+                    <br />
+                    <span className="font-normal">
+                      {ultimaCompraFinalizada.nomeLista}
+                    </span>
                   </p>
                   <Link
                     to={`/listas/${ultimaCompraFinalizada.listaId}/compra/revisao`}
@@ -303,7 +311,7 @@ export function InicioPage() {
                   <span className="rounded-full bg-primary/10 px-gutter py-1 text-label-md font-semibold text-primary">Em andamento</span>
                 </div>
                 <h3 className="font-semibold">{compraEmAndamentoVisivel.nomeLista}</h3>
-                {listaEmPreparacao.criadaPorUsuarioId === usuario?.id &&  <p className="mt-1 text-label-md font-medium text-primary">Lista criada por você</p>}
+                {listaEmPreparacao.criadaPorUsuarioId === usuario?.id && <p className="mt-1 text-label-md font-medium text-primary">Lista criada por você</p>}
                 {compraEmAndamentoVisivel.estabelecimento && <p className="text-body-md text-foreground-muted">{compraEmAndamentoVisivel.estabelecimento}</p>}
                 <span className="inline-flex min-h-touch items-center font-semibold text-primary">Acompanhar</span>
 
@@ -321,7 +329,7 @@ export function InicioPage() {
                   <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md text-foreground-muted">{statusListaCompraLabels[listaEmPreparacao.status]}</span>
                 </div>
                 <h3 className="font-semibold">{listaEmPreparacao.nome}</h3>
-                {listaEmPreparacao.criadaPorUsuarioId === usuario?.id &&  <p className="mt-1 text-label-md font-medium text-primary">Lista criada por você</p>}
+                {listaEmPreparacao.criadaPorUsuarioId === usuario?.id && <p className="mt-1 text-label-md font-medium text-primary">Lista criada por você</p>}
                 {listaEmPreparacao.estabelecimento && <p className="text-body-md text-foreground-muted">{listaEmPreparacao.estabelecimento}</p>}
                 <span className="inline-flex min-h-touch items-center font-semibold text-primary">Abrir lista</span>
               </Link>

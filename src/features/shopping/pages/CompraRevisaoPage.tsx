@@ -8,6 +8,7 @@ import { CompraResumo } from '../components/CompraResumo'
 import { ReutilizarListaButton } from '../components/ReutilizarListaButton'
 import { ReaproveitarItensForaButton } from '../components/ReaproveitarItensForaButton'
 import { EncerramentoAdministrativoCompra } from '../components/EncerramentoAdministrativoCompra'
+import { useCompraTransacional } from '../session/CompraTransacionalContext'
 import type { CompraResponse } from '../types/shopping'
 
 export function CompraRevisaoPage() {
@@ -21,6 +22,7 @@ export function CompraRevisaoPage() {
 function RevisaoCompra({ token, familiaId, listaId }: { token: string; familiaId: string; listaId: string }) {
   const { logout } = useSession()
   const navigate = useNavigate()
+  const { atualizarStatusCompra } = useCompraTransacional()
   const [compra, setCompra] = useState<CompraResponse | null>(null)
   const [erro, setErro] = useState<string | null>(null)
   const [carregando, setCarregando] = useState(true)
@@ -52,6 +54,10 @@ function RevisaoCompra({ token, familiaId, listaId }: { token: string; familiaId
     }).finally(() => { if (ativo) setCarregando(false) })
     return () => { ativo = false }
   }, [token, familiaId, listaId, tentativa, logout])
+
+  useEffect(() => {
+    atualizarStatusCompra(listaId, compra?.status ?? null)
+  }, [atualizarStatusCompra, compra?.status, listaId])
 
   function atualizar() {
     if (enviandoRef.current || carregando) return

@@ -10,6 +10,7 @@ import { AdicionarItemCompraDialog } from '../components/AdicionarItemCompraDial
 import { ItemCompraCard } from '../components/ItemCompraCard'
 import { MinhaPresenca } from '../components/MinhaPresenca'
 import { EncerramentoAdministrativoCompra } from '../components/EncerramentoAdministrativoCompra'
+import { useCompraTransacional } from '../session/CompraTransacionalContext'
 import type { AcaoRemocaoItemCompra, AdicionarItemCompraRequest, CompraResponse, ItemCompraResponse } from '../types/shopping'
 
 export function CompraAndamentoPage() {
@@ -24,6 +25,7 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
   const { logout } = useSession()
   const navigate = useNavigate()
   const { usuario, loading: usuarioCarregando, error: usuarioErro } = useAuthenticatedUser()
+  const { atualizarStatusCompra } = useCompraTransacional()
   const ativo = useRef(true)
   const operacao = useRef(false)
   const geracao = useRef(0)
@@ -68,6 +70,9 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
   const carregando = resultado?.chave !== chave || resultado?.token !== token
   const compra = !carregando ? resultado?.compra : undefined
   const erro = !carregando ? resultado?.erro : undefined
+  useEffect(() => {
+    atualizarStatusCompra(listaId, compra?.status ?? null)
+  }, [atualizarStatusCompra, compra?.status, listaId])
 
   useEffect(() => {
     if (compra?.status !== 'EM_ANDAMENTO') return

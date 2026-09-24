@@ -2,6 +2,7 @@ import { act, fireEvent, screen, within } from '@testing-library/react'
 import { afterAll, beforeAll, beforeEach, expect, test, vi } from 'vitest'
 import { Link, Route, Routes, useLocation, useNavigationType } from 'react-router'
 import { CompraAndamentoPage } from '../src/features/shopping/pages/CompraAndamentoPage'
+import { TransactionalShell } from '../src/app/layouts/TransactionalShell'
 import { AuthenticatedUserContext } from '../src/features/auth/user/AuthenticatedUserContext'
 import type { CompraResponse } from '../src/features/shopping/types/shopping'
 import { deferred, renderApp } from './helpers'
@@ -34,7 +35,7 @@ beforeEach(() => {
   vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(true)
 })
 
-async function preparar({ inicial = compra(), get = async () => Response.json(compra()), post = async () => Response.json(compra().itens[0]), sugestoes = async () => Response.json([]) } = {}) {
+async function preparar({ inicial = compra(), get = async () => Response.json(compra()), post = async () => Response.json(compra().itens[0]), sugestoes = async () => Response.json([]), comShell = false } = {}) {
   let consultas = 0
   const http = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, options) => {
     if (String(input).includes('/itens/sugestoes?termo=')) return sugestoes()
@@ -44,8 +45,15 @@ async function preparar({ inicial = compra(), get = async () => Response.json(co
   const view = renderApp(<AuthenticatedUserContext value={{ usuario: { id: 'u-a', nome: 'Ana', email: 'a@test.local' }, loading: false, error: false, recarregarUsuario: vi.fn(async () => {}) }}>
     <Link to="/listas/lista-b/compra">Outra compra</Link>
     <Routes>
-      <Route path="/listas/:listaId/compra" element={<CompraAndamentoPage />} />
-      <Route path="/listas/:listaId/compra/revisao" element={<DestinoRevisao />} />
+      {comShell ? (
+        <Route element={<TransactionalShell />}>
+          <Route path="/listas/:listaId/compra" element={<CompraAndamentoPage />} />
+          <Route path="/listas/:listaId/compra/revisao" element={<DestinoRevisao />} />
+        </Route>
+      ) : <>
+        <Route path="/listas/:listaId/compra" element={<CompraAndamentoPage />} />
+        <Route path="/listas/:listaId/compra/revisao" element={<DestinoRevisao />} />
+      </>}
     </Routes>
   </AuthenticatedUserContext>, { route: '/listas/lista-a/compra' })
   await act(async () => {})
@@ -72,6 +80,26 @@ test('mantém o status em andamento antes da categoria com identidade verde', as
   expect(status.compareDocumentPosition(categoria) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0)
   expect(status).toHaveClass('bg-primary/10', 'text-primary')
   expect(categoria).toHaveClass('bg-foreground/5', 'text-foreground-muted')
+})
+
+test('Compra em andamento exibe controle discreto e libera Wake Lock ao desligar', async () => {
+  const original = Object.getOwnPropertyDescriptor(navigator, 'wakeLock')
+  const sentinel = new EventTarget() as EventTarget & { release: ReturnType<typeof vi.fn> }
+  sentinel.release = vi.fn(async () => {})
+  const request = vi.fn(async () => sentinel)
+  Object.defineProperty(navigator, 'wakeLock', { configurable: true, value: { request } })
+  try {
+    await preparar({ comShell: true })
+    await act(async () => {})
+    expect(screen.getByText('Manter tela ligada')).toBeVisible()
+    expect(request).toHaveBeenCalledWith('screen')
+    fireEvent.click(screen.getByRole('button', { name: 'Desligar' }))
+    expect(sentinel.release).toHaveBeenCalledOnce()
+  } finally {
+    if (original) Object.defineProperty(navigator, 'wakeLock', original)
+    else Reflect.deleteProperty(navigator, 'wakeLock')
+    localStorage.removeItem('mercadeira:manter-tela-ligada')
+  }
 })
 
 test('modal da Compra carrega sugestões, preenche descrição e unidade e preserva inclusão livre', async () => {

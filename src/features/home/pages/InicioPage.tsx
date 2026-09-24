@@ -4,6 +4,8 @@ import type { ApiRequestError } from "../../../shared/api/apiClient";
 import { useSession } from "../../auth/session/sessionContext";
 import { useAuthenticatedUser } from "../../auth/user/AuthenticatedUserContext";
 import { useFamilyContext } from "../../family/session/familyContext";
+import { aprovarSolicitacaoFamilia, buscarSolicitacoesFamilia, rejeitarSolicitacaoFamilia } from "../../family/api/familyApi";
+import type { SolicitacaoFamiliaResponse } from "../../family/types/family";
 import { buscarListas } from "../../shopping-lists/api/shoppingListsApi";
 import { buscarCompra } from "../../shopping/api/shoppingApi";
 import type { CompraResponse } from "../../shopping/types/shopping";
@@ -50,7 +52,9 @@ export function InicioPage() {
     error: perfilError,
     recarregarUsuario,
   } = useAuthenticatedUser();
-  const { familiaSelecionada } = useFamilyContext();
+  const { familiaSelecionada, recarregarFamilias } = useFamilyContext();
+  const familiaSelecionadaId = familiaSelecionada?.id;
+  const podeGerenciarSolicitacoes = familiaSelecionada?.contextoUsuario?.podeGerenciarIntegrantes === true;
   const [listas, setListas] = useState<ListaCompraResumoResponse[]>([]);
   const [familiaId, setFamiliaId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -61,16 +65,30 @@ export function InicioPage() {
   const [compraEmAndamento, setCompraEmAndamento] = useState<CompraResponse | null>(null);
   const [familiaCompraEmAndamentoId, setFamiliaCompraEmAndamentoId] = useState<string | null>(null);
   const [erroCompraEmAndamento, setErroCompraEmAndamento] = useState(false);
+  const [solicitacoes, setSolicitacoes] = useState<SolicitacaoFamiliaResponse[]>([]);
+  const [solicitacaoEmAnalise, setSolicitacaoEmAnalise] = useState<SolicitacaoFamiliaResponse | null>(null);
+  const [decidindoSolicitacao, setDecidindoSolicitacao] = useState(false);
+  const [erroSolicitacao, setErroSolicitacao] = useState<string | null>(null);
   const geracaoCarregamentoRef = useRef(0);
-  const carregar = useCallback(async () => {
-    if (!auth || !familiaSelecionada) return;
+  const carregandoRef = useRef(false);
+  const familiaCarregandoRef = useRef<string | null>(null);
+  const carregar = useCallback(async (mostrarCarregamento = false) => {
+    if (!auth || !familiaSelecionadaId) return;
+    if (carregandoRef.current && familiaCarregandoRef.current === familiaSelecionadaId) return;
+    carregandoRef.current = true;
     const geracao = ++geracaoCarregamentoRef.current;
-    const familiaIdAtual = familiaSelecionada.id;
-    setLoading(true);
-    setError(false);
+    const familiaIdAtual = familiaSelecionadaId;
+    familiaCarregandoRef.current = familiaIdAtual;
+    if (mostrarCarregamento) {
+      setLoading(true);
+      setError(false);
+    }
     setErroHistorico(false);
     setErroCompraEmAndamento(false);
     try {
+      const requisicaoSolicitacoes = podeGerenciarSolicitacoes
+        ? buscarSolicitacoesFamilia(auth.token, familiaIdAtual)
+        : Promise.resolve({ data: [] as SolicitacaoFamiliaResponse[] });
       const response = await buscarListas(
         auth.token,
         familiaIdAtual,
@@ -84,9 +102,10 @@ export function InicioPage() {
         if (listasFiltradas.length === 0) return [];
         return Promise.all(listasFiltradas.map((lista) => buscarCompra(auth.token, familiaIdAtual, lista.id)));
       };
-      const [resultadoHistorico, resultadoAndamento] = await Promise.allSettled([
+      const [resultadoHistorico, resultadoAndamento, resultadoSolicitacoes] = await Promise.allSettled([
         carregarCompras("FINALIZADA"),
         carregarCompras("EM_COMPRA"),
+        requisicaoSolicitacoes,
       ]);
       if (geracao !== geracaoCarregamentoRef.current) return;
 
@@ -115,6 +134,13 @@ export function InicioPage() {
         setFamiliaCompraEmAndamentoId(familiaIdAtual);
         setErroCompraEmAndamento(true);
       }
+      if (resultadoSolicitacoes.status === "fulfilled") {
+        setSolicitacoes(resultadoSolicitacoes.value.data || []);
+      } else if ((resultadoSolicitacoes.reason as ApiRequestError).status === 401) {
+        logout();
+      } else {
+        setSolicitacoes([]);
+      }
     } catch (err) {
       if (geracao !== geracaoCarregamentoRef.current) return;
       if ((err as ApiRequestError).status === 401) logout();
@@ -123,12 +149,35 @@ export function InicioPage() {
         setFamiliaId(familiaIdAtual);
       }
     } finally {
-      if (geracao === geracaoCarregamentoRef.current) setLoading(false);
+      if (mostrarCarregamento && geracao === geracaoCarregamentoRef.current) setLoading(false);
+      if (geracao === geracaoCarregamentoRef.current) {
+        carregandoRef.current = false;
+        familiaCarregandoRef.current = null;
+      }
     }
-  }, [auth, familiaSelecionada, logout]);
+  }, [auth, familiaSelecionadaId, logout, podeGerenciarSolicitacoes]);
   useEffect(() => {
-    void Promise.resolve().then(carregar);
+    void Promise.resolve().then(() => carregar(true));
   }, [carregar]);
+  useEffect(() => {
+    if (!auth || !familiaSelecionadaId) return;
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const atualizar = () => { if (!document.hidden && navigator.onLine) void carregar(); };
+    const iniciar = () => { if (!timer && !document.hidden && navigator.onLine) timer = setInterval(atualizar, 10_000); };
+    const parar = () => { if (timer) { clearInterval(timer); timer = undefined; } };
+    const aoMudarVisibilidade = () => { if (document.hidden) parar(); else { atualizar(); iniciar(); } };
+    const aoFicarOnline = () => { atualizar(); iniciar(); };
+    iniciar();
+    window.addEventListener('focus', atualizar);
+    window.addEventListener('online', aoFicarOnline);
+    document.addEventListener('visibilitychange', aoMudarVisibilidade);
+    return () => {
+      parar();
+      window.removeEventListener('focus', atualizar);
+      window.removeEventListener('online', aoFicarOnline);
+      document.removeEventListener('visibilitychange', aoMudarVisibilidade);
+    };
+  }, [auth, familiaSelecionadaId, carregar]);
   if (!familiaSelecionada) return null;
   const listaEmPreparacao =
     familiaId === familiaSelecionada.id
@@ -141,6 +190,24 @@ export function InicioPage() {
   const compraEmAndamentoVisivel = familiaCompraEmAndamentoId === familiaSelecionada.id && !erroCompraEmAndamento
     ? compraEmAndamento
     : null;
+  async function decidirSolicitacao(acao: 'aprovar' | 'rejeitar') {
+    if (!auth || !familiaSelecionada || !solicitacaoEmAnalise || !podeGerenciarSolicitacoes || decidindoSolicitacao) return;
+    setDecidindoSolicitacao(true); setErroSolicitacao(null);
+    try {
+      if (acao === 'aprovar') await aprovarSolicitacaoFamilia(auth.token, familiaSelecionada.id, solicitacaoEmAnalise.id);
+      else await rejeitarSolicitacaoFamilia(auth.token, familiaSelecionada.id, solicitacaoEmAnalise.id);
+      setSolicitacaoEmAnalise(null);
+      await recarregarFamilias(familiaSelecionada.id);
+      await carregar();
+    } catch (error) {
+      const apiError = error as ApiRequestError;
+      if (apiError.status === 401) { logout(); return; }
+      if (apiError.status === 404 || apiError.status === 409) {
+        setSolicitacaoEmAnalise(null);
+        await carregar();
+      } else setErroSolicitacao(apiError.message || 'Não foi possível concluir a solicitação.');
+    } finally { setDecidindoSolicitacao(false); }
+  }
   const formatarFinalizacao = (valor: string) => {
     const data = new Date(valor);
     const dataFormatada = data.toLocaleDateString("pt-BR");
@@ -209,6 +276,13 @@ export function InicioPage() {
 
       </header>
 
+      {podeGerenciarSolicitacoes && solicitacoes.length > 0 && (
+        <section className="space-y-gutter rounded-card border border-amber-300 bg-amber-50 p-page shadow-soft" aria-label="Solicitações de ingresso">
+          <div><h2 className="text-headline-md font-semibold">{solicitacoes.length === 1 ? 'Solicitação de ingresso' : `${solicitacoes.length} solicitações de ingresso pendentes`}</h2><p className="mt-1 text-body-md text-foreground-muted">{solicitacoes.length === 1 ? `${solicitacoes[0].solicitante.nome} quer entrar na família.` : 'Há solicitações aguardando sua análise.'}</p></div>
+          <button type="button" onClick={() => { setErroSolicitacao(null); setSolicitacaoEmAnalise(solicitacoes[0]); }} className="min-h-touch rounded-control border border-amber-600 px-page font-semibold text-amber-900">{solicitacoes.length === 1 ? 'Analisar solicitação' : 'Analisar solicitações'}</button>
+        </section>
+      )}
+
       <hr style={{ border: '0', borderTop: '1px solid #e0e0e0', margin: '16px 0' }} />
 
       {!loading && !error && (compraEmAndamentoVisivel || listaEmPreparacao) && (
@@ -251,6 +325,8 @@ export function InicioPage() {
           )}
         </section>
       )}
+
+      {solicitacaoEmAnalise && <div role="dialog" aria-modal="true" aria-label="Analisar solicitação" className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-page"><section className="w-full max-w-md space-y-gutter rounded-card bg-surface p-page shadow-lg"><div><h2 className="text-headline-md font-semibold">Solicitação de ingresso</h2><p className="mt-2 font-semibold">{solicitacaoEmAnalise.solicitante.nome}</p><p className="text-body-md text-foreground-muted">{solicitacaoEmAnalise.solicitante.email}</p></div>{erroSolicitacao && <p role="alert" className="text-error">{erroSolicitacao}</p>}<div className="grid gap-gutter sm:grid-cols-3"><button type="button" disabled={decidindoSolicitacao} onClick={() => void decidirSolicitacao('aprovar')} className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60">{decidindoSolicitacao ? 'Processando...' : 'Aprovar'}</button><button type="button" disabled={decidindoSolicitacao} onClick={() => void decidirSolicitacao('rejeitar')} className="min-h-touch rounded-control border border-error px-page font-semibold text-error disabled:opacity-60">Recusar</button><button type="button" disabled={decidindoSolicitacao} onClick={() => setSolicitacaoEmAnalise(null)} className="min-h-touch rounded-control border border-foreground/20 px-page font-semibold">Cancelar</button></div></section></div>}
 
     </section>
   );

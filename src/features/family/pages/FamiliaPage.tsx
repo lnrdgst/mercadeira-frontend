@@ -132,6 +132,22 @@ export function FamiliaPage() {
     return () => controller.abort()
   }, [auth, familiaSelecionada?.id, logout, revisaoIntegrantes])
 
+  useEffect(() => {
+    if (!auth || !familiaSelecionada) return
+    let timer: ReturnType<typeof setInterval> | undefined
+    const atualizar = () => {
+      if (document.hidden || !navigator.onLine) return
+      setRevisaoIntegrantes((revisao) => revisao + 1)
+      void carregarSolicitacoes(false)
+    }
+    const iniciar = () => { if (!timer && !document.hidden && navigator.onLine) timer = setInterval(atualizar, 10_000) }
+    const parar = () => { if (timer) { clearInterval(timer); timer = undefined } }
+    const visibilidade = () => { if (document.hidden) parar(); else { atualizar(); iniciar() } }
+    const online = () => { atualizar(); iniciar() }
+    iniciar(); window.addEventListener('focus', atualizar); window.addEventListener('online', online); document.addEventListener('visibilitychange', visibilidade)
+    return () => { parar(); window.removeEventListener('focus', atualizar); window.removeEventListener('online', online); document.removeEventListener('visibilitychange', visibilidade) }
+  }, [auth, familiaSelecionada?.id, carregarSolicitacoes])
+
   if (!familiaSelecionada) {
     return null
   }
@@ -197,6 +213,7 @@ export function FamiliaPage() {
 
       setFeedback(acao === 'aprovar' ? 'Solicitação aprovada.' : 'Solicitação rejeitada.')
       await carregarSolicitacoes(false)
+      setRevisaoIntegrantes((revisao) => revisao + 1)
     } catch (error) {
       const apiError = error as ApiRequestError
 

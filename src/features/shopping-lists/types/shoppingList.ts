@@ -2,6 +2,7 @@ import type { PapelFamilia } from '../../family/types/family'
 
 export type CategoriaCompra =
   | 'SUPERMERCADO'
+  | 'FARMACIA'
   | 'ROUPAS'
   | 'BRINQUEDOS'
   | 'ACESSORIOS'
@@ -113,6 +114,7 @@ export interface SalvarItemListaRequest {
 
 export const categoriaCompraLabels: Record<CategoriaCompra, string> = {
   SUPERMERCADO: 'Supermercado',
+  FARMACIA: 'Farmácia',
   ROUPAS: 'Roupas',
   BRINQUEDOS: 'Brinquedos',
   ACESSORIOS: 'Acessórios',

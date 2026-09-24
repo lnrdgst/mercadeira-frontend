@@ -5,8 +5,9 @@ import { useSession } from '../../auth/session/sessionContext'
 import { useFamilyContext } from '../../family/session/familyContext'
 import { buscarSugestoesItens } from '../../shopping-lists/api/shoppingListsApi'
 import type { AdicionarItemCompraRequest } from '../types/shopping'
+import type { CategoriaCompra } from '../../shopping-lists/types/shoppingList'
 
-export function AdicionarItemCompraDialog({ onAdicionar }: { onAdicionar: (data: AdicionarItemCompraRequest) => Promise<void> }) {
+export function AdicionarItemCompraDialog({ onAdicionar, listaId, categoria }: { onAdicionar: (data: AdicionarItemCompraRequest) => Promise<void>; listaId: string; categoria: CategoriaCompra }) {
   const { auth, logout } = useSession()
   const { familiaSelecionada } = useFamilyContext()
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -20,12 +21,12 @@ export function AdicionarItemCompraDialog({ onAdicionar }: { onAdicionar: (data:
   const carregarSugestoes = useCallback(async (termo: string) => {
     if (!auth || !familiaSelecionada) return []
     try {
-      return (await buscarSugestoesItens(auth.token, familiaSelecionada.id, termo)).data || []
+      return (await buscarSugestoesItens(auth.token, familiaSelecionada.id, listaId, categoria, termo)).data || []
     } catch (error) {
       if ((error as ApiRequestError).status === 401) logout()
       throw error
     }
-  }, [auth, familiaSelecionada, logout])
+  }, [auth, familiaSelecionada, listaId, categoria, logout])
 
   function fechar() {
     if (enviandoRef.current) return

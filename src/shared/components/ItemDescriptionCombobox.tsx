@@ -15,15 +15,17 @@ export function ItemDescriptionCombobox({ value, disabled, onChange, onSelect, l
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(-1)
   const [result, setResult] = useState<{ term: string; source: LoadItemSuggestions; items: ItemSuggestion[]; error: boolean } | null>(null)
-  const matches = result?.term === value && result.source === load
+  const termo = value.trim()
+  const podeBuscar = termo.length >= 2
+  const matches = podeBuscar && result?.term === value && result.source === load
   const items = matches ? result.items : []
   const expanded = open && !disabled
-  const loading = expanded && !matches
+  const loading = expanded && podeBuscar && !matches
 
   useEffect(() => { list.current?.children[active]?.scrollIntoView?.({ block: 'nearest' }) }, [active])
 
   useEffect(() => {
-    if (!expanded) return
+    if (!expanded || !podeBuscar) return
     let current = true
     const timer = setTimeout(() => {
       void load(value).then((items) => {
@@ -33,7 +35,7 @@ export function ItemDescriptionCombobox({ value, disabled, onChange, onSelect, l
       })
     }, 200)
     return () => { current = false; clearTimeout(timer) }
-  }, [value, load, expanded])
+  }, [value, load, expanded, podeBuscar])
 
   function select(item: ItemSuggestion) {
     onSelect(item)
@@ -58,8 +60,8 @@ export function ItemDescriptionCombobox({ value, disabled, onChange, onSelect, l
       }} className="min-h-touch w-full rounded-card border border-foreground/20 bg-background px-gutter focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60" />
     <p id={`${id}-hint`} className="text-label-md text-foreground-muted">Escolha uma sugestão ou digite um novo item.</p>
     {expanded && <div className="relative z-10 mt-1 rounded-card border border-foreground/20 bg-surface p-2">
-      <p className="text-label-md text-foreground-muted">{value.trim() ? 'Sugestões da família' : 'Usados recentemente'}</p>
-      <p role="status" className="text-label-md text-foreground-muted">{loading ? 'Buscando sugestões...' : result?.error ? 'Não foi possível carregar sugestões. Você pode continuar digitando.' : items.length === 0 ? 'Nenhuma sugestão. Você pode cadastrar um novo item.' : ''}</p>
+      <p className="text-label-md text-foreground-muted">Sugestões da família</p>
+      <p role="status" className="text-label-md text-foreground-muted">{!podeBuscar ? 'Digite ao menos 2 caracteres para buscar sugestões.' : loading ? 'Buscando sugestões...' : result?.error ? 'Não foi possível carregar sugestões. Você pode continuar digitando.' : items.length === 0 ? 'Nenhuma sugestão. Você pode cadastrar um novo item.' : ''}</p>
       <ul ref={list} id={id} role="listbox" aria-label="Sugestões de itens" className="max-h-56 overflow-y-auto">
         {items.map((item, index) => <li key={item.descricao} id={`${id}-${index}`} role="option" aria-selected={active === index}
           onPointerDown={(event) => event.preventDefault()} onClick={() => select(item)}

@@ -449,6 +449,8 @@ export function ListaDetalhePage() {
             >
               {podeAlterar && itemEditando && (
                 <ItemForm
+                  listaId={lista.id}
+                  categoria={lista.categoria}
                   item={
                     itemEditando === 'novo' ? undefined : itemEditando
                   }

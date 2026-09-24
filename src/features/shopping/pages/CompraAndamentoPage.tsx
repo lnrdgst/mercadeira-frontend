@@ -332,6 +332,8 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
             {compra.contextoUsuario.participanteCompra && (
               <AdicionarItemCompraDialog
                 key={chave}
+                listaId={listaId}
+                categoria={compra.categoria}
                 onAdicionar={adicionarItem}
               />
             )}

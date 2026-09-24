@@ -8,6 +8,7 @@ import type {
   MembroFamiliaResponse,
   ParticipanteListaResponse,
   SalvarItemListaRequest,
+  CategoriaCompra,
 } from '../types/shoppingList'
 
 function listasPath(familiaId: string) {
@@ -16,8 +17,9 @@ function listasPath(familiaId: string) {
 
 export interface SugestaoItem { descricao: string; unidadeMedida: import('../types/shoppingList').UnidadeMedida | null }
 
-export function buscarSugestoesItens(token: string, familiaId: string, termo: string) {
-  return apiRequest<SugestaoItem[]>(`/familias/${familiaId}/itens/sugestoes?termo=${encodeURIComponent(termo)}`, { token })
+export function buscarSugestoesItens(token: string, familiaId: string, listaId: string, categoria: CategoriaCompra, termo: string) {
+  const params = new URLSearchParams({ listaId, categoria, termo })
+  return apiRequest<SugestaoItem[]>(`/familias/${familiaId}/itens/sugestoes?${params}`, { token })
 }
 
 export function buscarListas(token: string, familiaId: string) {

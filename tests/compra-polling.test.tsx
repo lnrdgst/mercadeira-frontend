@@ -38,7 +38,7 @@ beforeEach(() => {
 async function preparar({ inicial = compra(), get = async () => Response.json(compra()), post = async () => Response.json(compra().itens[0]), sugestoes = async () => Response.json([]), comShell = false } = {}) {
   let consultas = 0
   const http = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, options) => {
-    if (String(input).includes('/itens/sugestoes?termo=')) return sugestoes()
+    if (String(input).includes('/itens/sugestoes?')) return sugestoes()
     if (options?.method === 'POST' || options?.method === 'PUT') return post()
     return ++consultas === 1 ? Response.json(inicial) : get()
   })
@@ -109,11 +109,12 @@ test('modal da Compra carrega sugestões, preenche descrição e unidade e prese
 
   fireEvent.click(screen.getByRole('button', { name: 'Adicionar novo item à compra' }))
   const dialog = screen.getByRole('dialog', { name: 'Adicionar item à compra' })
+  const descricao = within(dialog).getByRole('combobox', { name: 'Descrição' })
+  fireEvent.change(descricao, { target: { value: 'le' } })
   await avancar(200)
   await act(async () => {})
-  const descricao = within(dialog).getByRole('combobox', { name: 'Descrição' })
   expect(within(dialog).getByRole('option', { name: /Leite em pó/ })).toBeVisible()
-  expect(String(http.mock.calls.find(([url]) => String(url).includes('/itens/sugestoes'))?.[0])).toMatch(/\/familias\/familia-a\/itens\/sugestoes\?termo=$/)
+  expect(String(http.mock.calls.find(([url]) => String(url).includes('/itens/sugestoes'))?.[0])).toContain('listaId=lista-a&categoria=SUPERMERCADO&termo=le')
   const listaSugestoes = within(dialog).getByRole('listbox')
   expect(listaSugestoes.parentElement).toHaveClass('relative', 'z-10')
 

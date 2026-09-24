@@ -228,6 +228,13 @@ export function InicioPage() {
             </section>
           )}
 
+          <Link
+          to="/listas/nova"
+          className="flex min-h-touch w-full items-center justify-center rounded-control border-2 border-primary bg-surface px-page font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          Preparar nova lista de compras
+        </Link>
+
           {listaEmPreparacao && (
             <section className={`space-y-gutter ${compraEmAndamentoVisivel ? "border-t border-foreground/10 pt-page md:border-t-0 md:border-l md:pt-0 md:pl-page" : ""}`} aria-labelledby="lista-em-preparacao">
               <h2 id="lista-em-preparacao" className="text-headline-md font-semibold">Lista em preparação</h2>

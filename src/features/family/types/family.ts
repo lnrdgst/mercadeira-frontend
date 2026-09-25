@@ -15,6 +15,8 @@ export interface FamiliaResponse {
 
 export interface ContextoUsuarioFamiliaResponse {
   podeGerenciarIntegrantes: boolean
+  podeSairDaFamilia?: boolean
+  motivoSaidaFamiliaIndisponivel?: 'ADMINISTRADOR_UNICO' | 'COMPRA_EM_ANDAMENTO' | null
 }
 
 export interface MembroFamiliaResponse {

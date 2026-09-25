@@ -9,6 +9,7 @@ import {
   buscarSolicitacoesFamilia,
   rejeitarSolicitacaoFamilia,
   removerIntegranteFamilia,
+  sairDaFamilia,
   transferirAdministracaoFamilia,
 } from '../api/familyApi'
 import { ConfirmacaoSensivelDialog } from '../components/ConfirmacaoSensivelDialog'
@@ -50,9 +51,11 @@ export function FamiliaPage() {
   const [revisaoIntegrantes, setRevisaoIntegrantes] = useState(0)
   const geracaoIntegrantes = useRef(0)
   const integrantesFamiliaIdRef = useRef<string | null>(null)
-  const [confirmacaoSensivel, setConfirmacaoSensivel] = useState<{ tipo: 'transferir' | 'remover'; integrante: MembroFamiliaResponse } | null>(null)
+  const [confirmacaoSensivel, setConfirmacaoSensivel] = useState<{ tipo: 'transferir' | 'remover' | 'sair'; integrante?: MembroFamiliaResponse } | null>(null)
   const [processandoConfirmacaoSensivel, setProcessandoConfirmacaoSensivel] = useState(false)
   const [erroConfirmacaoSensivel, setErroConfirmacaoSensivel] = useState<string | null>(null)
+  const [saidaBloqueada, setSaidaBloqueada] = useState<{ motivo: 'ADMINISTRADOR_UNICO' | 'COMPRA_EM_ANDAMENTO'; membroFamiliaId: string } | null>(null)
+  const [remocaoBloqueada, setRemocaoBloqueada] = useState<MembroFamiliaResponse | null>(null)
 
   const carregarSolicitacoes = useCallback(async (mostrarCarregamento = true) => {
     if (!auth || !familiaSelecionada || familiaSelecionada.contextoUsuario?.podeGerenciarIntegrantes !== true) {
@@ -240,14 +243,20 @@ export function FamiliaPage() {
     setProcessandoConfirmacaoSensivel(true)
     setErroConfirmacaoSensivel(null)
     try {
-      if (confirmacaoSensivel.tipo === 'transferir') {
+      if (confirmacaoSensivel.tipo === 'transferir' && confirmacaoSensivel.integrante) {
         await transferirAdministracaoFamilia(auth.token, familia.id, confirmacaoSensivel.integrante.membroFamiliaId)
-      } else {
+      } else if (confirmacaoSensivel.tipo === 'remover' && confirmacaoSensivel.integrante) {
         await removerIntegranteFamilia(auth.token, familia.id, confirmacaoSensivel.integrante.membroFamiliaId)
+      } else {
+        await sairDaFamilia(auth.token, familia.id)
       }
-      await recarregarFamilias(familia.id)
       const acaoConcluida = confirmacaoSensivel.tipo
+      await recarregarFamilias()
       setConfirmacaoSensivel(null)
+      if (acaoConcluida === 'sair') {
+        navigate('/', { replace: true })
+        return
+      }
       setRevisaoIntegrantes((revisao) => revisao + 1)
       setFeedback(acaoConcluida === 'transferir' ? 'Administração transferida.' : 'Integrante removido da família.')
     } catch (error) {
@@ -258,9 +267,34 @@ export function FamiliaPage() {
       }
       setErroConfirmacaoSensivel(apiError.message || (confirmacaoSensivel.tipo === 'transferir'
         ? 'Não foi possível transferir a administração desta família.'
-        : 'Não foi possível remover este integrante da família.'))
+        : confirmacaoSensivel.tipo === 'sair'
+          ? 'Não foi possível sair desta família.'
+          : 'Não foi possível remover este integrante da família.'))
     } finally {
       setProcessandoConfirmacaoSensivel(false)
+    }
+  }
+
+  function solicitarSaida(membro: MembroFamiliaResponse) {
+    const contexto = familia.contextoUsuario
+    if (contexto?.podeSairDaFamilia === true) {
+      setErroConfirmacaoSensivel(null)
+      setConfirmacaoSensivel({ tipo: 'sair' })
+      return
+    }
+    if (contexto?.motivoSaidaFamiliaIndisponivel) {
+      setSaidaBloqueada({ motivo: contexto.motivoSaidaFamiliaIndisponivel, membroFamiliaId: membro.membroFamiliaId })
+    }
+  }
+
+  function solicitarRemocao(integrante: MembroFamiliaResponse) {
+    if (integrante.acoes?.podeRemoverIntegrante === true) {
+      setErroConfirmacaoSensivel(null)
+      setConfirmacaoSensivel({ tipo: 'remover', integrante })
+      return
+    }
+    if (integrante.acoes?.motivoRemocaoIndisponivel === 'COMPRA_EM_ANDAMENTO') {
+      setRemocaoBloqueada(integrante)
     }
   }
 
@@ -272,7 +306,7 @@ export function FamiliaPage() {
         </p>
         <div className="flex flex-wrap items-center gap-gutter">
           <h1 className="text-headline-lg font-bold">{familiaSelecionada.nome}</h1>
-          <span className="rounded-full bg-primary/10 px-gutter py-1 text-label-md font-semibold text-primary">
+          <span className="rounded-full bg-blue-100 px-gutter py-1 text-label-md font-semibold text-blue-700">
             {papelLabel[familiaSelecionada.papel]}
           </span>
         </div>
@@ -349,27 +383,28 @@ export function FamiliaPage() {
                     <p title={integrante.email} className="mt-1 line-clamp-2 break-words text-body-md text-foreground-muted sm:truncate">{integrante.email}</p>
                   </div>
                   <span className={integrante.papel === 'ADMINISTRADOR'
-                    ? 'w-fit shrink-0 rounded-full bg-primary/10 px-gutter py-1 text-label-md font-semibold text-primary'
+                    ? 'w-fit shrink-0 rounded-full bg-blue-100 px-gutter py-1 text-label-md font-semibold text-blue-700'
                     : 'w-fit shrink-0 rounded-full bg-foreground/5 px-gutter py-1 text-label-md text-foreground-muted'}>
                     {papelLabel[integrante.papel]}
                   </span>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
+                  {integrante.usuarioAtual && (
+                    <div className="w-full border-t border-foreground/10 pt-gutter sm:flex sm:justify-end">
+                      <button type="button" onClick={() => solicitarSaida(integrante)} className="min-h-touch rounded-control border border-error px-gutter text-label-md font-semibold text-error hover:bg-error/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                        Sair da família
+                      </button>
+                    </div>
+                  )}
                   {integrante.acoes?.podeTransferirAdministracao === true && (
-                    <button type="button" onClick={() => { setErroConfirmacaoSensivel(null); setConfirmacaoSensivel({ tipo: 'transferir', integrante }) }} className="min-h-touch rounded-control border border-primary px-gutter text-label-md font-semibold text-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                    <button type="button" onClick={() => { setErroConfirmacaoSensivel(null); setConfirmacaoSensivel({ tipo: 'transferir', integrante }) }} className="min-h-touch rounded-control border border-blue-600 px-gutter text-label-md font-semibold text-blue-700 hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
                       Transferir administração
                     </button>
                   )}
-                  {integrante.acoes?.podeRemoverIntegrante === true && (
-                    <button type="button" onClick={() => { setErroConfirmacaoSensivel(null); setConfirmacaoSensivel({ tipo: 'remover', integrante }) }} className="min-h-touch rounded-control border border-error px-gutter text-label-md font-semibold text-error hover:bg-error/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                  {!integrante.usuarioAtual && (integrante.acoes?.podeRemoverIntegrante === true || integrante.acoes?.motivoRemocaoIndisponivel === 'COMPRA_EM_ANDAMENTO') && (
+                    <button type="button" onClick={() => solicitarRemocao(integrante)} className="min-h-touch rounded-control border border-error px-gutter text-label-md font-semibold text-error hover:bg-error/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
                       Remover integrante
                     </button>
-                  )}
-                  {integrante.acoes?.podeRemoverIntegrante === false && integrante.acoes.motivoRemocaoIndisponivel === 'COMPRA_EM_ANDAMENTO' && (
-                    <div className="w-full space-y-2 rounded-card bg-foreground/5 p-gutter text-left text-label-md text-foreground-muted">
-                      <p>Este integrante participa de uma compra em andamento e não pode ser removido enquanto ela estiver aberta.</p>
-                      <button type="button" onClick={() => navigate(`/listas?participante=${integrante.membroFamiliaId}`)} className="min-h-touch rounded-control border border-primary px-gutter font-semibold text-primary hover:bg-primary/5">Ver compras relacionadas</button>
-                    </div>
                   )}
                 </div>
               </li>
@@ -380,17 +415,65 @@ export function FamiliaPage() {
 
       {confirmacaoSensivel && (
         <ConfirmacaoSensivelDialog
-          titulo={confirmacaoSensivel.tipo === 'transferir' ? 'Transferir administração?' : 'Remover integrante?'}
+          titulo={confirmacaoSensivel.tipo === 'transferir' ? 'Transferir administração?' : confirmacaoSensivel.tipo === 'sair' ? 'Sair desta família?' : 'Remover integrante?'}
           descricao={confirmacaoSensivel.tipo === 'transferir'
-            ? `${confirmacaoSensivel.integrante.nome} passará a ser Administrador(a) desta família. Você passará a ser Membro.`
-            : `${confirmacaoSensivel.integrante.nome} deixará de participar desta família. Para voltar depois, dependerá das regras de ingresso vigentes.`}
-          rotuloConfirmar={confirmacaoSensivel.tipo === 'transferir' ? 'Confirmar transferência' : 'Confirmar remoção'}
-          rotuloProcessando={confirmacaoSensivel.tipo === 'transferir' ? 'Transferindo...' : 'Removendo...'}
+            ? `${confirmacaoSensivel.integrante?.nome} passará a ser Administrador(a) desta família. Você passará a ser Membro.`
+            : confirmacaoSensivel.tipo === 'sair'
+              ? 'Você deixará de participar desta família. O histórico de listas e compras será preservado.'
+              : `${confirmacaoSensivel.integrante?.nome} deixará de participar desta família. Para voltar depois, dependerá das regras de ingresso vigentes.`}
+          rotuloConfirmar={confirmacaoSensivel.tipo === 'transferir' ? 'Confirmar transferência' : confirmacaoSensivel.tipo === 'sair' ? 'Confirmar saída' : 'Confirmar remoção'}
+          rotuloProcessando={confirmacaoSensivel.tipo === 'transferir' ? 'Transferindo...' : confirmacaoSensivel.tipo === 'sair' ? 'Saindo...' : 'Removendo...'}
           corSemantica={confirmacaoSensivel.tipo === 'transferir' ? 'amber' : 'error'}
           enviando={processandoConfirmacaoSensivel}
           erro={erroConfirmacaoSensivel}
           onConfirmar={() => void confirmarAcaoSensivel()}
           onCancelar={() => { if (!processandoConfirmacaoSensivel) setConfirmacaoSensivel(null) }} />
+      )}
+
+      {saidaBloqueada && (
+        <div role="dialog" aria-modal="true" aria-labelledby="saida-bloqueada-titulo" className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-page">
+          <section className="w-full max-w-md space-y-gutter rounded-card bg-surface p-page shadow-soft">
+            <div>
+              <h2 id="saida-bloqueada-titulo" className="text-headline-md font-semibold">
+                {saidaBloqueada.motivo === 'COMPRA_EM_ANDAMENTO' ? 'Não é possível sair da família' : 'Transfira a administração primeiro'}
+              </h2>
+              <p className="mt-1 text-body-md text-foreground-muted">
+                {saidaBloqueada.motivo === 'COMPRA_EM_ANDAMENTO'
+                  ? 'Você participa de uma compra em andamento e precisa aguardar ou encerrar essa participação antes de sair da família.'
+                  : 'Você é o único administrador desta família. Transfira a administração para outro integrante antes de sair.'}
+              </p>
+            </div>
+            <div className="grid gap-gutter border-t border-foreground/10 pt-gutter sm:grid-cols-2">
+              {saidaBloqueada.motivo === 'COMPRA_EM_ANDAMENTO' && (
+                <button type="button" onClick={() => { navigate(`/listas?participante=${saidaBloqueada.membroFamiliaId}`); setSaidaBloqueada(null) }} className="min-h-touch rounded-control bg-primary px-page text-label-lg font-semibold text-surface hover:opacity-90">
+                  Ver compras relacionadas
+                </button>
+              )}
+              <button type="button" onClick={() => setSaidaBloqueada(null)} className="min-h-touch rounded-control border border-foreground/20 px-page text-label-lg font-semibold">
+                {saidaBloqueada.motivo === 'COMPRA_EM_ANDAMENTO' ? 'Voltar' : 'Entendi'}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {remocaoBloqueada && (
+        <div role="dialog" aria-modal="true" aria-labelledby="remocao-bloqueada-titulo" className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-page">
+          <section className="w-full max-w-md space-y-gutter rounded-card bg-surface p-page shadow-soft">
+            <div>
+              <h2 id="remocao-bloqueada-titulo" className="text-headline-md font-semibold">Não é possível remover este integrante</h2>
+              <p className="mt-1 text-body-md text-foreground-muted">Este integrante participa de uma compra em andamento e não pode ser removido enquanto ela estiver aberta.</p>
+            </div>
+            <div className="grid gap-gutter border-t border-foreground/10 pt-gutter sm:grid-cols-2">
+              <button type="button" onClick={() => { navigate(`/listas?participante=${remocaoBloqueada.membroFamiliaId}`); setRemocaoBloqueada(null) }} className="min-h-touch rounded-control bg-primary px-page text-label-lg font-semibold text-surface hover:opacity-90">
+                Ver compras relacionadas
+              </button>
+              <button type="button" onClick={() => setRemocaoBloqueada(null)} className="min-h-touch rounded-control border border-foreground/20 px-page text-label-lg font-semibold">
+                Voltar
+              </button>
+            </div>
+          </section>
+        </div>
       )}
 
       {isAdministrador && (

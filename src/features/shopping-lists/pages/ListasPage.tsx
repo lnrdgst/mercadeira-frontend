@@ -228,11 +228,14 @@ export function ListasPage() {
     }, [carregarListas]);
 
     useEffect(() => {
-        if (!auth || !familiaSelecionada || !modalFiltrosAberto) return;
+        const precisaResolverMembros = modalFiltrosAberto
+            || Boolean(filtros.participanteMembroFamiliaId)
+            || Boolean(filtros.criadaPorUsuarioId);
+        if (!auth || !familiaSelecionada || !precisaResolverMembros) return;
         void buscarMembrosFamilia(auth.token, familiaSelecionada.id)
             .then((response) => setMembros(response.data || []))
             .catch(() => setMembros([]));
-    }, [auth, familiaSelecionada, modalFiltrosAberto]);
+    }, [auth, familiaSelecionada, modalFiltrosAberto, filtros.participanteMembroFamiliaId, filtros.criadaPorUsuarioId]);
 
     function atualizarFiltros(parcial: Partial<FiltrosListas>) {
         const proximos = { ...filtros, ...parcial };
@@ -295,7 +298,7 @@ export function ListasPage() {
         id: string | undefined,
         tipo: "usuarioId" | "membroFamiliaId",
     ) {
-        return membros.find((membro) => membro[tipo] === id)?.nome || id;
+        return membros.find((membro) => membro[tipo] === id)?.nome || "Participante selecionado";
     }
 
     if (!familiaSelecionada) {

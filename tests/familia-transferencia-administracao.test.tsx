@@ -113,6 +113,51 @@ test('membro comum e o próprio administrador não recebem ação de transferên
   expect(screen.queryByRole('button', { name: 'Transferir administração' })).not.toBeInTheDocument()
 })
 
+test('integrante com capability de saída confirma a própria saída pelo endpoint explícito', async () => {
+  let chamadasSaida = 0
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+    const path = String(input)
+    if (path.endsWith('/membros/me') && init?.method === 'DELETE') { chamadasSaida += 1; return new Response(null, { status: 204 }) }
+    if (path.includes('/membros')) return Response.json(membros())
+    if (path.endsWith('/familias')) return Response.json([])
+    if (path.includes('/solicitacoes')) return Response.json([])
+    return Response.json([])
+  })
+  const familia = familyFixture({ papel: 'ADMINISTRADOR', contextoUsuario: { podeGerenciarIntegrantes: true, podeSairDaFamilia: true } })
+  const { user, family } = renderApp(<FamiliaPage />, { family: familyContextFixture({ familias: [familia], familiaSelecionada: familia }) })
+
+  await user.click(await screen.findByRole('button', { name: 'Sair da família' }))
+  const dialog = screen.getByRole('dialog', { name: 'Sair desta família?' })
+  expect(chamadasSaida).toBe(0)
+  await user.type(within(dialog).getByLabelText('Código de confirmação'), '1000')
+  await user.click(within(dialog).getByRole('button', { name: 'Confirmar saída' }))
+  await waitFor(() => expect(chamadasSaida).toBe(1))
+  expect(family.recarregarFamilias).toHaveBeenCalled()
+})
+
+test('bloqueio por compra só é explicado após manifestar intenção de sair', async () => {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => String(input).includes('/membros') ? Response.json(membros()) : Response.json([]))
+  const familia = familyFixture({ papel: 'MEMBRO', contextoUsuario: { podeGerenciarIntegrantes: false, podeSairDaFamilia: false, motivoSaidaFamiliaIndisponivel: 'COMPRA_EM_ANDAMENTO' } })
+  const { user } = renderApp(<FamiliaPage />, { family: familyContextFixture({ familias: [familia], familiaSelecionada: familia }) })
+
+  await screen.findByText('Ana')
+  expect(screen.queryByText(/você participa de uma compra em andamento e não pode sair/i)).not.toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Sair da família' }))
+  expect(screen.getByRole('dialog', { name: 'Não é possível sair da família' })).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Ver compras relacionadas' })).toBeVisible()
+})
+
+test('administrador único recebe orientação somente após clicar em sair', async () => {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => String(input).includes('/membros') ? Response.json(membros()) : Response.json([]))
+  const familia = familyFixture({ papel: 'ADMINISTRADOR', contextoUsuario: { podeGerenciarIntegrantes: true, podeSairDaFamilia: false, motivoSaidaFamiliaIndisponivel: 'ADMINISTRADOR_UNICO' } })
+  const { user } = renderApp(<FamiliaPage />, { family: familyContextFixture({ familias: [familia], familiaSelecionada: familia }) })
+
+  await screen.findByText('Ana')
+  expect(screen.queryByText(/você é o único administrador/i)).not.toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Sair da família' }))
+  expect(screen.getByRole('dialog', { name: 'Transfira a administração primeiro' })).toBeVisible()
+})
+
 test('voltar e Escape fecham a confirmação sem chamar a API', async () => {
   const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => String(input).includes('/membros') ? Response.json(membros()) : Response.json([]))
   const { user } = renderApp(<FamiliaPage />)
@@ -153,4 +198,23 @@ test('ação de remoção só aparece quando a capability do integrante estiver 
   renderApp(<FamiliaPage />)
   await screen.findByText('Ana')
   expect(screen.queryByRole('button', { name: 'Remover integrante' })).not.toBeInTheDocument()
+})
+
+test('remoção bloqueada por compra abre explicação somente após o clique', async () => {
+  const integrantes = [
+    { membroFamiliaId: 'ana', usuarioId: 'usuario-a', nome: 'Ana', email: 'ana@example.test', papel: 'ADMINISTRADOR', usuarioAtual: true, acoes: { podeTransferirAdministracao: false, podeRemoverIntegrante: false } },
+    { membroFamiliaId: 'bia', usuarioId: 'usuario-b', nome: 'Bia', email: 'bia@example.test', papel: 'MEMBRO', usuarioAtual: false, acoes: { podeTransferirAdministracao: true, podeRemoverIntegrante: false, motivoRemocaoIndisponivel: 'COMPRA_EM_ANDAMENTO' } },
+  ]
+  const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => String(input).includes('/membros') ? Response.json(integrantes) : Response.json([]))
+  const familia = familyFixture({ papel: 'ADMINISTRADOR', contextoUsuario: { podeGerenciarIntegrantes: true, podeSairDaFamilia: false, motivoSaidaFamiliaIndisponivel: 'ADMINISTRADOR_UNICO' } })
+  const { user } = renderApp(<FamiliaPage />, { family: familyContextFixture({ familias: [familia], familiaSelecionada: familia }) })
+
+  await screen.findByText('Bia')
+  expect(screen.getByRole('button', { name: 'Remover integrante' })).toBeVisible()
+  expect(screen.queryByText(/este integrante participa de uma compra em andamento/i)).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Ver compras relacionadas' })).not.toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Remover integrante' }))
+  expect(screen.getByRole('dialog', { name: 'Não é possível remover este integrante' })).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Ver compras relacionadas' })).toBeVisible()
+  expect(fetchMock.mock.calls.some(([input, init]) => String(input).endsWith('/membros/bia') && init?.method === 'DELETE')).toBe(false)
 })

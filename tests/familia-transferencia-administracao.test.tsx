@@ -109,7 +109,7 @@ test('membro comum e o próprio administrador não recebem ação de transferên
     return Response.json([])
   })
   renderApp(<FamiliaPage />)
-  await screen.findByText('Ana (você)')
+  await screen.findByText('Ana')
   expect(screen.queryByRole('button', { name: 'Transferir administração' })).not.toBeInTheDocument()
 })
 
@@ -151,6 +151,6 @@ test('administrador remove integrante somente com o código exibido', async () =
 test('ação de remoção só aparece quando a capability do integrante estiver habilitada', async () => {
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => String(input).includes('/membros') ? Response.json(membros(true, false)) : Response.json([]))
   renderApp(<FamiliaPage />)
-  await screen.findByText('Ana (você)')
+  await screen.findByText('Ana')
   expect(screen.queryByRole('button', { name: 'Remover integrante' })).not.toBeInTheDocument()
 })

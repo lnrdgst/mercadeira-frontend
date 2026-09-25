@@ -342,17 +342,19 @@ export function FamiliaPage() {
         {!carregandoIntegrantes && !erroIntegrantesVisivel && integrantesOrdenados.length > 0 && (
           <ul className="space-y-2">
             {integrantesOrdenados.map((integrante) => (
-              <li key={integrante.membroFamiliaId} className="flex items-center justify-between gap-gutter rounded-card border border-foreground/10 bg-surface px-page py-gutter">
-                <div className="min-w-0">
-                  <p className="truncate font-semibold">{integrante.nome}{integrante.usuarioAtual ? ' (voc\u00ea)' : ''}</p>
-                  <p className="truncate text-body-md text-foreground-muted">{integrante.email}</p>
-                </div>
-                <div className="flex shrink-0 flex-col items-end gap-2">
+              <li key={integrante.membroFamiliaId} className="space-y-gutter rounded-card border border-foreground/10 bg-surface p-page">
+                <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-gutter">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:gap-2"><p title={integrante.nome} className="line-clamp-2 font-semibold sm:truncate">{integrante.nome}</p>{integrante.usuarioAtual && <span className="w-fit shrink-0 rounded-full bg-primary/10 px-gutter py-1 text-label-md font-semibold text-primary">Você</span>}</div>
+                    <p title={integrante.email} className="mt-1 line-clamp-2 break-words text-body-md text-foreground-muted sm:truncate">{integrante.email}</p>
+                  </div>
                   <span className={integrante.papel === 'ADMINISTRADOR'
-                    ? 'rounded-full bg-primary/10 px-gutter py-1 text-label-md font-semibold text-primary'
-                    : 'rounded-full bg-foreground/5 px-gutter py-1 text-label-md text-foreground-muted'}>
+                    ? 'w-fit shrink-0 rounded-full bg-primary/10 px-gutter py-1 text-label-md font-semibold text-primary'
+                    : 'w-fit shrink-0 rounded-full bg-foreground/5 px-gutter py-1 text-label-md text-foreground-muted'}>
                     {papelLabel[integrante.papel]}
                   </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
                   {integrante.acoes?.podeTransferirAdministracao === true && (
                     <button type="button" onClick={() => { setErroConfirmacaoSensivel(null); setConfirmacaoSensivel({ tipo: 'transferir', integrante }) }} className="min-h-touch rounded-control border border-primary px-gutter text-label-md font-semibold text-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
                       Transferir administração
@@ -364,7 +366,7 @@ export function FamiliaPage() {
                     </button>
                   )}
                   {integrante.acoes?.podeRemoverIntegrante === false && integrante.acoes.motivoRemocaoIndisponivel === 'COMPRA_EM_ANDAMENTO' && (
-                    <div className="max-w-xs space-y-2 text-right text-label-md text-foreground-muted">
+                    <div className="w-full space-y-2 rounded-card bg-foreground/5 p-gutter text-left text-label-md text-foreground-muted">
                       <p>Este integrante participa de uma compra em andamento e não pode ser removido enquanto ela estiver aberta.</p>
                       <button type="button" onClick={() => navigate(`/listas?participante=${integrante.membroFamiliaId}`)} className="min-h-touch rounded-control border border-primary px-gutter font-semibold text-primary hover:bg-primary/5">Ver compras relacionadas</button>
                     </div>

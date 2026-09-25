@@ -30,7 +30,8 @@ test('carrega integrantes, ordena administrador primeiro e identifica o usuário
 
   renderApp(<FamiliaPage />, { family: familyContextFixture({ familias: [familia], familiaSelecionada: familia }) })
 
-  const integrante = await screen.findByText('Leonardo (você)')
+  const integrante = await screen.findByText('Leonardo')
+  expect(screen.getByText('Você')).toBeVisible()
   expect(integrante).toBeInTheDocument()
   expect(screen.getByText('leo@example.test')).toBeInTheDocument()
   expect(screen.getAllByText('Administrador(a)')).toHaveLength(2)
@@ -40,6 +41,30 @@ test('carrega integrantes, ordena administrador primeiro e identifica o usuário
   const nomes = screen.getAllByRole('listitem').map((item) => item.textContent)
   expect(nomes.findIndex((texto) => texto?.includes('Leonardo'))).toBeLessThan(nomes.findIndex((texto) => texto?.includes('Camila')))
   expect(screen.queryByRole('button', { name: /remover|transferir|editar nome|sugerir/i })).not.toBeInTheDocument()
+})
+
+test('prioriza a identidade em telas pequenas e limita nome e e-mail longos a duas linhas', async () => {
+  const nomeLongo = 'Leonardo com um nome bastante longo para a largura de uma tela pequena'
+  const emailLongo = 'leonardo.com.um.endereco.muito.longo@exemplo-com-dominio-extenso.test'
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+    const path = String(input)
+    if (path.includes('/membros')) return Response.json([
+      { membroFamiliaId: 'membro-a', usuarioId: 'usuario-a', nome: nomeLongo, email: emailLongo, papel: 'ADMINISTRADOR', usuarioAtual: true },
+      { membroFamiliaId: 'membro-b', usuarioId: 'usuario-b', nome: 'Membro comum', email: 'membro@example.test', papel: 'MEMBRO', usuarioAtual: false },
+    ])
+    if (path.includes('/solicitacoes')) return Response.json([])
+    return Response.json([])
+  })
+  const familia = familyFixture({ papel: 'ADMINISTRADOR', contextoUsuario: { podeGerenciarIntegrantes: true } })
+  renderApp(<FamiliaPage />, { family: familyContextFixture({ familias: [familia], familiaSelecionada: familia }) })
+
+  const nome = await screen.findByTitle(nomeLongo)
+  const email = screen.getByTitle(emailLongo)
+  expect(nome).toHaveClass('line-clamp-2', 'sm:truncate')
+  expect(email).toHaveClass('line-clamp-2', 'break-words', 'sm:truncate')
+  expect(screen.getByText('Você')).toHaveClass('w-fit')
+  expect(screen.getAllByText('Administrador(a)').at(-1)).toHaveClass('w-fit')
+  expect(screen.getByText('Membro')).toBeVisible()
 })
 
 test('reconcilia integrantes ao trocar a família sem manter resultados anteriores', async () => {
@@ -53,11 +78,11 @@ test('reconcilia integrantes ao trocar a família sem manter resultados anterior
   })
 
   const view = render(telaDaFamilia(familiaA, [familiaA, familiaB]))
-  await screen.findByText('Ana (você)')
+  await screen.findByText('Ana')
 
   view.rerender(telaDaFamilia(familiaB, [familiaA, familiaB]))
-  expect(screen.queryByText('Ana (você)')).not.toBeInTheDocument()
-  expect(await screen.findByText('Bia (você)')).toBeInTheDocument()
+  expect(screen.queryByText('Ana')).not.toBeInTheDocument()
+  expect(await screen.findByText('Bia')).toBeInTheDocument()
 })
 
 test('erro de integrantes mantém a página da família disponível para nova tentativa', async () => {
@@ -92,13 +117,13 @@ test('polling e refresh em segundo plano preservam os integrantes montados e atu
   renderApp(<FamiliaPage />, { family: familyContextFixture({ familias: [familia], familiaSelecionada: familia }) })
 
   await act(async () => { await Promise.resolve(); await Promise.resolve(); await Promise.resolve() })
-  expect(screen.getByText('Leonardo (voc\u00ea)')).toBeVisible()
+  expect(screen.getByText('Leonardo')).toBeVisible()
   await act(async () => { window.dispatchEvent(new Event('focus')); await Promise.resolve() })
   document.dispatchEvent(new Event('visibilitychange'))
   window.dispatchEvent(new Event('online'))
   await waitFor(() => expect(consultasDeMembros).toBeGreaterThanOrEqual(2))
 
-  expect(screen.getByText('Leonardo (voc\u00ea)')).toBeVisible()
+  expect(screen.getByText('Leonardo')).toBeVisible()
   expect(screen.queryByText('Carregando integrantes...')).not.toBeInTheDocument()
 
   respostasPendentes.at(-1)?.resolve(Response.json([
@@ -127,11 +152,11 @@ test('polling periódico não ativa loading global depois da carga inicial', asy
   renderApp(<FamiliaPage />, { family: familyContextFixture({ familias: [familia], familiaSelecionada: familia }) })
 
   await act(async () => { await Promise.resolve(); await Promise.resolve(); await Promise.resolve() })
-  expect(screen.getByText('Leonardo (voc\u00ea)')).toBeVisible()
+  expect(screen.getByText('Leonardo')).toBeVisible()
   await act(async () => { await vi.advanceTimersByTimeAsync(10_000) })
 
   expect(consultasDeMembros).toBe(2)
-  expect(screen.getByText('Leonardo (voc\u00ea)')).toBeVisible()
+  expect(screen.getByText('Leonardo')).toBeVisible()
   expect(screen.queryByText('Carregando integrantes...')).not.toBeInTheDocument()
   respostaPendente.resolve(Response.json(membros()))
   vi.useRealTimers()

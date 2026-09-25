@@ -22,16 +22,22 @@ export function buscarSugestoesItens(token: string, familiaId: string, listaId: 
   return apiRequest<SugestaoItem[]>(`/familias/${familiaId}/itens/sugestoes?${params}`, { token })
 }
 
-export function buscarListas(token: string, familiaId: string) {
-  return apiRequestComHeaders<ListaCompraResumoResponse[]>(listasPath(familiaId), { token })
+export interface FiltrosListas { criadaDe?: string; criadaAte?: string; criadaPorUsuarioId?: string; participanteMembroFamiliaId?: string; page?: string; size?: string }
+function comFiltros(path: string, filtros: FiltrosListas = {}) {
+  const params = new URLSearchParams()
+  for (const [chave, valor] of Object.entries(filtros)) if (valor) params.set(chave, valor)
+  return params.size ? `${path}?${params}` : path
+}
+export function buscarListas(token: string, familiaId: string, filtros?: FiltrosListas) {
+  return apiRequestComHeaders<ListaCompraResumoResponse[]>(comFiltros(listasPath(familiaId), filtros), { token })
 }
 
 export function buscarTotalHistoricoListas(token: string, familiaId: string) {
   return apiRequest<{ total: number }>(`${listasPath(familiaId)}/historico/total`, { token })
 }
 
-export function buscarHistoricoListas(token: string, familiaId: string, page: number, size = 20) {
-  return apiRequest<HistoricoListaCompraResponse>(`${listasPath(familiaId)}/historico?page=${page}&size=${size}`, { token })
+export function buscarHistoricoListas(token: string, familiaId: string, page: number, size = 20, filtros?: FiltrosListas) {
+  return apiRequest<HistoricoListaCompraResponse>(comFiltros(`${listasPath(familiaId)}/historico`, { ...filtros, page: String(page), size: String(size) }), { token })
 }
 
 export function criarLista(

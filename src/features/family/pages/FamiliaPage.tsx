@@ -363,6 +363,12 @@ export function FamiliaPage() {
                       Remover integrante
                     </button>
                   )}
+                  {integrante.acoes?.podeRemoverIntegrante === false && integrante.acoes.motivoRemocaoIndisponivel === 'COMPRA_EM_ANDAMENTO' && (
+                    <div className="max-w-xs space-y-2 text-right text-label-md text-foreground-muted">
+                      <p>Este integrante participa de uma compra em andamento e não pode ser removido enquanto ela estiver aberta.</p>
+                      <button type="button" onClick={() => navigate(`/listas?participante=${integrante.membroFamiliaId}`)} className="min-h-touch rounded-control border border-primary px-gutter font-semibold text-primary hover:bg-primary/5">Ver compras relacionadas</button>
+                    </div>
+                  )}
                 </div>
               </li>
             ))}

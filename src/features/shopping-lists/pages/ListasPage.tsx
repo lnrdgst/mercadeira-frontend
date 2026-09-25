@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import type { ApiRequestError } from '../../../shared/api/apiClient'
 import { useSession } from '../../auth/session/sessionContext'
 import { useAuthenticatedUser } from '../../auth/user/AuthenticatedUserContext'
-import { buscarHistoricoListas, buscarListas } from '../api/shoppingListsApi'
+import { buscarHistoricoListas, buscarListas, buscarMembrosFamilia, type FiltrosListas } from '../api/shoppingListsApi'
 import { useFamilyContext } from '../../family/session/familyContext'
-import type { HistoricoListaCompraItemResponse, ListaCompraResumoResponse } from '../types/shoppingList'
+import type { HistoricoListaCompraItemResponse, ListaCompraResumoResponse, MembroFamiliaResponse } from '../types/shoppingList'
 import {
   categoriaCompraLabels,
   statusListaCompraLabels,
@@ -15,6 +15,11 @@ export function ListasPage() {
   const { auth, logout } = useSession()
   const { usuario } = useAuthenticatedUser()
   const { familiaSelecionada } = useFamilyContext()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [filtros, setFiltros] = useState<FiltrosListas>(() => ({ criadaDe: searchParams.get('dataInicial') || undefined, criadaAte: searchParams.get('dataFinal') || undefined, criadaPorUsuarioId: searchParams.get('criadaPor') || undefined, participanteMembroFamiliaId: searchParams.get('participante') || undefined }))
+  const [membros, setMembros] = useState<MembroFamiliaResponse[]>([])
+  const [modalFiltrosAberto, setModalFiltrosAberto] = useState(false)
+  const [filtrosTemporarios, setFiltrosTemporarios] = useState<FiltrosListas>({})
   const [listas, setListas] = useState<ListaCompraResumoResponse[]>([])
   const [familiaCarregadaId, setFamiliaCarregadaId] = useState<string | null>(null)
   const [carregando, setCarregando] = useState(false)
@@ -32,12 +37,15 @@ export function ListasPage() {
     if (!auth || !familiaSelecionada) {
       return
     }
+    if (filtros.criadaDe && filtros.criadaAte && filtros.criadaDe > filtros.criadaAte) {
+      return
+    }
 
     setCarregando(true)
     setErro(null)
 
     try {
-      const response = await buscarListas(auth.token, familiaSelecionada.id)
+      const response = await buscarListas(auth.token, familiaSelecionada.id, filtros)
       setListas(response.data || [])
       setTotalHistorico(Number(response.headers.get('X-Total-Compras-Anteriores') || 0))
       setHistorico([])
@@ -60,7 +68,7 @@ export function ListasPage() {
     } finally {
       setCarregando(false)
     }
-  }, [auth, familiaSelecionada, logout])
+  }, [auth, familiaSelecionada, logout, filtros])
 
   const carregarHistorico = useCallback(async (pagina: number) => {
     if (!auth || !familiaSelecionada || carregandoHistoricoRef.current) return
@@ -68,7 +76,7 @@ export function ListasPage() {
     setCarregandoHistorico(true)
     setErroHistorico(null)
     try {
-      const response = await buscarHistoricoListas(auth.token, familiaSelecionada.id, pagina)
+      const response = await buscarHistoricoListas(auth.token, familiaSelecionada.id, pagina, 20, filtros)
       const dados = response.data
       if (!dados) throw new Error('NÃ£o foi possÃ­vel carregar compras anteriores.')
       setHistorico((atuais) => pagina === 0 ? dados.content : [...atuais, ...dados.content])
@@ -82,7 +90,7 @@ export function ListasPage() {
       carregandoHistoricoRef.current = false
       setCarregandoHistorico(false)
     }
-  }, [auth, familiaSelecionada, logout])
+  }, [auth, familiaSelecionada, logout, filtros])
 
   const alternarHistorico = () => {
     const abrir = !historicoAberto
@@ -93,6 +101,28 @@ export function ListasPage() {
   useEffect(() => {
     void Promise.resolve().then(carregarListas)
   }, [carregarListas])
+
+  useEffect(() => {
+    if (!auth || !familiaSelecionada || !modalFiltrosAberto) return
+    void buscarMembrosFamilia(auth.token, familiaSelecionada.id).then((response) => setMembros(response.data || [])).catch(() => setMembros([]))
+  }, [auth, familiaSelecionada, modalFiltrosAberto])
+
+  function atualizarFiltros(parcial: Partial<FiltrosListas>) {
+    const proximos = { ...filtros, ...parcial }
+    setFiltros(proximos)
+    const parametros = new URLSearchParams()
+    if (proximos.criadaDe) parametros.set('dataInicial', proximos.criadaDe)
+    if (proximos.criadaAte) parametros.set('dataFinal', proximos.criadaAte)
+    if (proximos.criadaPorUsuarioId) parametros.set('criadaPor', proximos.criadaPorUsuarioId)
+    if (proximos.participanteMembroFamiliaId) parametros.set('participante', proximos.participanteMembroFamiliaId)
+    setSearchParams(parametros, { replace: true })
+  }
+  const filtrosAtivos = Object.entries(filtros).filter(([chave, valor]) => valor && chave !== 'page' && chave !== 'size')
+  const datasTemporariasInvalidas = !!filtrosTemporarios.criadaDe && !!filtrosTemporarios.criadaAte && filtrosTemporarios.criadaDe > filtrosTemporarios.criadaAte
+  function abrirFiltros() { setFiltrosTemporarios(filtros); setModalFiltrosAberto(true) }
+  function aplicarFiltros() { if (!datasTemporariasInvalidas) { atualizarFiltros(filtrosTemporarios); setModalFiltrosAberto(false) } }
+  function limparFiltros() { atualizarFiltros({ criadaDe: undefined, criadaAte: undefined, criadaPorUsuarioId: undefined, participanteMembroFamiliaId: undefined }); setModalFiltrosAberto(false) }
+  function nomeMembro(id: string | undefined, tipo: 'usuarioId' | 'membroFamiliaId') { return membros.find((membro) => membro[tipo] === id)?.nome || id }
 
   if (!familiaSelecionada) {
     return null
@@ -117,6 +147,9 @@ export function ListasPage() {
           Nova lista de compras
         </Link>
       </header>
+
+      <section className="space-y-gutter"><button type="button" onClick={abrirFiltros} className="min-h-touch rounded-control border border-foreground/20 bg-surface px-page font-semibold">Filtrar listas{filtrosAtivos.length ? ` · ${filtrosAtivos.length}` : ''}</button>{filtrosAtivos.length > 0 && <div className="flex flex-wrap items-center gap-2"><span className="text-label-md text-foreground-muted">Filtros ativos:</span>{filtros.criadaDe && <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md">De: {filtros.criadaDe}</span>}{filtros.criadaAte && <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md">Até: {filtros.criadaAte}</span>}{filtros.criadaPorUsuarioId && <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md">Criada por: {nomeMembro(filtros.criadaPorUsuarioId, 'usuarioId')}</span>}{filtros.participanteMembroFamiliaId && <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md">Participante: {nomeMembro(filtros.participanteMembroFamiliaId, 'membroFamiliaId')}</span>}<button type="button" onClick={limparFiltros} className="min-h-touch text-label-md font-semibold text-primary">Limpar filtros</button></div>}</section>
+      {modalFiltrosAberto && <div role="dialog" aria-modal="true" aria-label="Filtrar listas" className="fixed inset-0 z-50 flex items-end bg-foreground/40 p-gutter sm:items-center sm:justify-center"><section className="w-full max-w-xl space-y-gutter rounded-t-card bg-surface p-page sm:rounded-card"><h2 className="text-headline-md font-semibold">Filtrar listas</h2><div className="grid gap-gutter sm:grid-cols-2"><label>Data inicial<input type="date" value={filtrosTemporarios.criadaDe || ''} onChange={(event) => setFiltrosTemporarios((atual) => ({ ...atual, criadaDe: event.target.value || undefined }))} /></label><label>Data final<input type="date" value={filtrosTemporarios.criadaAte || ''} onChange={(event) => setFiltrosTemporarios((atual) => ({ ...atual, criadaAte: event.target.value || undefined }))} /></label><label>Criada por<select value={filtrosTemporarios.criadaPorUsuarioId || ''} onChange={(event) => setFiltrosTemporarios((atual) => ({ ...atual, criadaPorUsuarioId: event.target.value || undefined }))}><option value="">Todas</option>{membros.map((membro) => <option key={membro.usuarioId} value={membro.usuarioId}>{membro.nome}</option>)}</select></label><label>Participante<select value={filtrosTemporarios.participanteMembroFamiliaId || ''} onChange={(event) => setFiltrosTemporarios((atual) => ({ ...atual, participanteMembroFamiliaId: event.target.value || undefined }))}><option value="">Todos</option>{membros.map((membro) => <option key={membro.membroFamiliaId} value={membro.membroFamiliaId}>{membro.nome}</option>)}</select></label></div>{datasTemporariasInvalidas && <p role="alert" className="text-error">A data inicial não pode ser posterior à data final.</p>}<div className="grid gap-gutter sm:grid-cols-3"><button type="button" onClick={() => setModalFiltrosAberto(false)}>Cancelar</button><button type="button" onClick={limparFiltros}>Limpar filtros</button><button type="button" disabled={datasTemporariasInvalidas} onClick={aplicarFiltros}>Aplicar filtros</button></div></section></div>}
 
       {mostrandoCarregamento && (
         <p className="rounded-card bg-surface p-page text-body-md text-foreground-muted shadow-soft">

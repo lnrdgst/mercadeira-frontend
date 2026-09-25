@@ -27,6 +27,7 @@ export interface MembroFamiliaResponse {
   acoes?: {
     podeTransferirAdministracao: boolean
     podeRemoverIntegrante: boolean
+    motivoRemocaoIndisponivel?: 'COMPRA_EM_ANDAMENTO' | null
   }
 }
 

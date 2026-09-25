@@ -311,7 +311,7 @@ export function InicioPage() {
                   <span className="rounded-full bg-primary/10 px-gutter py-1 text-label-md font-semibold text-primary">Em andamento</span>
                 </div>
                 <h3 className="font-semibold">{compraEmAndamentoVisivel.nomeLista}</h3>
-                {listaEmPreparacao.criadaPorUsuarioId === usuario?.id && <p className="mt-1 text-label-md font-medium text-primary">Lista criada por você</p>}
+                {listaEmPreparacao?.criadaPorUsuarioId === usuario?.id && <p className="mt-1 text-label-md font-medium text-primary">Lista criada por você</p>}
                 {compraEmAndamentoVisivel.estabelecimento && <p className="text-body-md text-foreground-muted">{compraEmAndamentoVisivel.estabelecimento}</p>}
                 <span className="inline-flex min-h-touch items-center font-semibold text-primary">Acompanhar</span>
 

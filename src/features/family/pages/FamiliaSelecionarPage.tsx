@@ -82,7 +82,7 @@ export function FamiliaSelecionarPage() {
     <main className="mx-auto max-w-xl space-y-page py-page text-foreground">
       <div className="flex items-center justify-between space-y-1">
         <Link
-          to={`/inicio`}
+          to="/inicio"
           className="inline-flex min-h-touch items-center gap-2 font-semibold text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
           <svg
@@ -93,7 +93,9 @@ export function FamiliaSelecionarPage() {
             strokeLinecap="round"
             strokeLinejoin="round"
           >
-            <path d="m15 18-6-6 6-6" />
+            <path d="M3 10.5 12 3l9 7.5" />
+            <path d="M5 9.5V21h14V9.5" />
+            <path d="M9 21v-6h6v6" />
           </svg>
 
           Página inicial

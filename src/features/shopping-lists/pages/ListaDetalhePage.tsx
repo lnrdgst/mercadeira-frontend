@@ -728,21 +728,7 @@ export function ListaDetalhePage() {
               </span>
             </div>
 
-            <div className="flex flex-wrap items-start justify-between gap-gutter">
-              <div className="min-w-0 space-y-1">
-                <h1 className="break-words text-headline-lg font-bold">
-                  {lista.nome}
-                </h1>
-                {lista.estabelecimento && (
-                  <p className="text-body-md text-foreground-muted">
-                    {lista.estabelecimento}
-                  </p>
-                )}
-                <p className="text-label-lg text-foreground-muted">
-                  Criada por {lista.criador.nome}
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-gutter">
+            <div className="flex flex-wrap items-center justify-end gap-gutter">
                 <EditarDadosLista
                   key={chave}
                   familiaId={familiaSelecionada.id}
@@ -783,6 +769,22 @@ export function ListaDetalhePage() {
 
                 )}
               </div>
+
+            <div className="flex flex-wrap items-start justify-between gap-gutter">
+              <div className="min-w-0 space-y-1">
+                <h1 className="break-words text-headline-lg font-bold">
+                  {lista.nome}
+                </h1>
+                {lista.estabelecimento && (
+                  <p className="text-body-md text-foreground-muted">
+                    {lista.estabelecimento}
+                  </p>
+                )}
+                <p className="text-label-lg text-foreground-muted">
+                  Criada por {lista.criador.nome}
+                </p>
+              </div>
+              
             </div>
 
             <section

@@ -327,6 +327,107 @@ export function FamiliaPage() {
         </p>
       )}
 
+      {((isAdministrador) && (solicitacoesVisiveis.length > 0)) && (
+        <section className="space-y-gutter">
+          <div>
+            <h2 className="text-headline-md font-semibold">Solicitações pendentes</h2>
+            <p className="mt-1 text-body-md text-foreground-muted">
+              Aprove ou rejeite os pedidos de entrada nesta família.
+            </p>
+          </div>
+
+          {mostrandoCarregamento && (
+            <p className="rounded-card bg-surface p-page text-body-md text-foreground-muted shadow-soft">
+              Carregando solicitações...
+            </p>
+          )}
+
+          {!mostrandoCarregamento && erroSolicitacoes && (
+            <div className="space-y-gutter rounded-card bg-error/10 p-page text-error">
+              <p>{erroSolicitacoes}</p>
+              <button
+                type="button"
+                onClick={() => void carregarSolicitacoes()}
+                className="min-h-touch rounded-control border border-current px-page font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              >
+                Tentar novamente
+              </button>
+            </div>
+          )}
+
+          {!mostrandoCarregamento && !erroSolicitacoes && solicitacoesVisiveis.length === 0 && (
+            <p className="rounded-card bg-surface p-page text-body-md text-foreground-muted shadow-soft">
+              Nenhuma solicitação pendente.
+            </p>
+          )}
+
+          {!mostrandoCarregamento && !erroSolicitacoes && solicitacoesVisiveis.length > 0 && (
+            <ul className="space-y-gutter">
+              {solicitacoesVisiveis.map((solicitacao) => {
+                const emProcessamento = solicitacaoEmProcessamentoId === solicitacao.id
+                const dataFormatada = formatarData(solicitacao.solicitadaEm)
+
+                return (
+                  <li key={solicitacao.id} className="space-y-gutter rounded-card border border-foreground/10 bg-surface p-page shadow-soft">
+                    <div>
+                      <p className="text-label-lg font-semibold">{solicitacao.solicitante.nome}</p>
+                      <p className="text-body-md text-foreground-muted">{solicitacao.solicitante.email}</p>
+                      {dataFormatada && (
+                        <p className="mt-1 text-label-md text-foreground-muted">
+                          Solicitado em {dataFormatada}
+                        </p>
+                      )}
+                    </div>
+                    <div className="grid gap-gutter sm:grid-cols-2">
+                      <button
+                        type="button"
+                        disabled={emProcessamento}
+                        onClick={() => void atualizarSolicitacao(solicitacao.id, 'aprovar')}
+                        className="min-h-touch rounded-control bg-primary px-page text-label-lg font-semibold text-surface transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {emProcessamento ? 'Processando...' : 'Aprovar'}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={emProcessamento}
+                        onClick={() => void atualizarSolicitacao(solicitacao.id, 'rejeitar')}
+                        className="min-h-touch rounded-control border border-error px-page text-label-lg font-semibold text-error transition-colors hover:bg-error/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Rejeitar
+                      </button>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </section>
+      )}
+
+      <section className="space-y-gutter border-t border-foreground/10 pt-page">
+        <button
+          type="button"
+          onClick={() => navigate('/familia/selecionar')}
+          className="flex min-h-touch w-full items-center justify-center gap-2 rounded-control border-2 border-primary bg-surface px-page font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            className="size-5 fill-none stroke-current"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M7 7h10" />
+            <path d="m14 4 3 3-3 3" />
+            <path d="M17 17H7" />
+            <path d="m10 14-3 3 3 3" />
+          </svg>
+
+          Trocar de família
+        </button>
+      </section>
+
       <section className="space-y-gutter rounded-card border border-foreground/10 bg-surface p-page shadow-soft">
         <div>
           <h2 className="text-headline-md font-semibold">Código de ingresso</h2>
@@ -341,15 +442,43 @@ export function FamiliaPage() {
           <button
             type="button"
             onClick={() => void copiarCodigo()}
-            className="min-h-touch rounded-control bg-primary px-page text-label-lg font-semibold text-surface transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="inline-flex min-h-touch items-center justify-center gap-2 rounded-control bg-primary px-page text-label-lg font-semibold text-surface transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              className="size-5 fill-none stroke-current"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="9" y="9" width="11" height="11" rx="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+
             Copiar código
           </button>
+
           <button
             type="button"
             onClick={() => void compartilharCodigo()}
-            className="min-h-touch rounded-control border border-primary px-page text-label-lg font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="inline-flex min-h-touch items-center justify-center gap-2 rounded-control border border-primary px-page text-label-lg font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              className="size-5 fill-none stroke-current"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <path d="m8.6 10.5 6.8-4" />
+              <path d="m8.6 13.5 6.8 4" />
+            </svg>
+
             Compartilhar
           </button>
         </div>
@@ -441,7 +570,7 @@ export function FamiliaPage() {
             : confirmacaoSensivel.tipo === 'sair'
               ? 'Você deixará de participar desta família. O histórico de listas e compras será preservado.'
               : confirmacaoSensivel.tipo === 'excluir' ? 'Esta família nunca possuiu uma compra. A exclusão removerá definitivamente a família, suas listas em preparação, integrantes e solicitações.'
-              : `${confirmacaoSensivel.integrante?.nome} deixará de participar desta família. Para voltar depois, dependerá das regras de ingresso vigentes.`}
+                : `${confirmacaoSensivel.integrante?.nome} deixará de participar desta família. Para voltar depois, dependerá das regras de ingresso vigentes.`}
           rotuloConfirmar={confirmacaoSensivel.tipo === 'transferir' ? 'Confirmar transferência' : confirmacaoSensivel.tipo === 'sair' ? 'Confirmar saída' : confirmacaoSensivel.tipo === 'excluir' ? 'Excluir família' : 'Confirmar remoção'}
           rotuloProcessando={confirmacaoSensivel.tipo === 'transferir' ? 'Transferindo...' : confirmacaoSensivel.tipo === 'sair' ? 'Saindo...' : confirmacaoSensivel.tipo === 'excluir' ? 'Excluindo família...' : 'Removendo...'}
           corSemantica={confirmacaoSensivel.tipo === 'transferir' ? 'amber' : 'error'}
@@ -496,93 +625,6 @@ export function FamiliaPage() {
           </section>
         </div>
       )}
-
-      {isAdministrador && (
-        <section className="space-y-gutter">
-          <div>
-            <h2 className="text-headline-md font-semibold">Solicitações pendentes</h2>
-            <p className="mt-1 text-body-md text-foreground-muted">
-              Aprove ou rejeite os pedidos de entrada nesta família.
-            </p>
-          </div>
-
-          {mostrandoCarregamento && (
-            <p className="rounded-card bg-surface p-page text-body-md text-foreground-muted shadow-soft">
-              Carregando solicitações...
-            </p>
-          )}
-
-          {!mostrandoCarregamento && erroSolicitacoes && (
-            <div className="space-y-gutter rounded-card bg-error/10 p-page text-error">
-              <p>{erroSolicitacoes}</p>
-              <button
-                type="button"
-                onClick={() => void carregarSolicitacoes()}
-                className="min-h-touch rounded-control border border-current px-page font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-              >
-                Tentar novamente
-              </button>
-            </div>
-          )}
-
-          {!mostrandoCarregamento && !erroSolicitacoes && solicitacoesVisiveis.length === 0 && (
-            <p className="rounded-card bg-surface p-page text-body-md text-foreground-muted shadow-soft">
-              Nenhuma solicitação pendente.
-            </p>
-          )}
-
-          {!mostrandoCarregamento && !erroSolicitacoes && solicitacoesVisiveis.length > 0 && (
-            <ul className="space-y-gutter">
-              {solicitacoesVisiveis.map((solicitacao) => {
-                const emProcessamento = solicitacaoEmProcessamentoId === solicitacao.id
-                const dataFormatada = formatarData(solicitacao.solicitadaEm)
-
-                return (
-                  <li key={solicitacao.id} className="space-y-gutter rounded-card border border-foreground/10 bg-surface p-page shadow-soft">
-                    <div>
-                      <p className="text-label-lg font-semibold">{solicitacao.solicitante.nome}</p>
-                      <p className="text-body-md text-foreground-muted">{solicitacao.solicitante.email}</p>
-                      {dataFormatada && (
-                        <p className="mt-1 text-label-md text-foreground-muted">
-                          Solicitado em {dataFormatada}
-                        </p>
-                      )}
-                    </div>
-                    <div className="grid gap-gutter sm:grid-cols-2">
-                      <button
-                        type="button"
-                        disabled={emProcessamento}
-                        onClick={() => void atualizarSolicitacao(solicitacao.id, 'aprovar')}
-                        className="min-h-touch rounded-control bg-primary px-page text-label-lg font-semibold text-surface transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {emProcessamento ? 'Processando...' : 'Aprovar'}
-                      </button>
-                      <button
-                        type="button"
-                        disabled={emProcessamento}
-                        onClick={() => void atualizarSolicitacao(solicitacao.id, 'rejeitar')}
-                        className="min-h-touch rounded-control border border-error px-page text-label-lg font-semibold text-error transition-colors hover:bg-error/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        Rejeitar
-                      </button>
-                    </div>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-        </section>
-      )}
-
-      <section className="space-y-gutter border-t border-foreground/10 pt-page">
-        <button
-          type="button"
-          onClick={() => navigate('/familia/selecionar')}
-          className="min-h-touch w-full rounded-control border border-primary px-page text-label-lg font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        >
-          Trocar família
-        </button>
-      </section>
     </section>
   )
 }

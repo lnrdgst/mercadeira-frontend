@@ -25,3 +25,10 @@ test('mantém preparação neutra, apresenta andamento em verde e finalizada em 
   expect(finalizada).toHaveAttribute('href', '/listas/finalizada/compra/revisao')
   expect(preparacao).toHaveAttribute('href', '/listas/preparacao')
 })
+
+test('apresenta datas ISO dos filtros ativos em PT-BR', async () => {
+  vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json([]))
+  renderApp(<ListasPage />, { route: '/listas?dataInicial=2026-09-18&dataFinal=2026-09-20' })
+  expect(await screen.findByText('De: 18/09/2026')).toBeVisible()
+  expect(screen.getByText('Até: 20/09/2026')).toBeVisible()
+})

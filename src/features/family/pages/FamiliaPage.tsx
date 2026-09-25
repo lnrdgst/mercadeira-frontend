@@ -537,25 +537,89 @@ export function FamiliaPage() {
                     {papelLabel[integrante.papel]}
                   </span>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
+
+
+                <div className="flex w-full flex-wrap items-center justify-end gap-2 border-t border-foreground/10 pt-gutter">
                   {integrante.usuarioAtual && (
-                    <div className="w-full border-t border-foreground/10 pt-gutter sm:flex sm:justify-end">
-                      <button type="button" onClick={() => solicitarSaida(integrante)} className="min-h-touch rounded-control border border-error px-gutter text-label-md font-semibold text-error hover:bg-error/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
-                        Sair da família
-                      </button>
+                    <button
+                      type="button"
+                      onClick={() => solicitarSaida(integrante)}
+                      className="inline-flex min-h-touch items-center gap-2 rounded-control border border-error px-gutter text-label-md font-semibold text-error hover:bg-error/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        className="size-4 fill-none stroke-current"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M13 5H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7" />
+                        <path d="M10 12h10" />
+                        <path d="m17 7 5 5-5 5" />
+                      </svg>
+
+                      <span>Sair da família</span>
+                    </button>
+                  )}
+
+                  {!integrante.usuarioAtual && (
+                    <div className="flex w-full gap-2">
+                      {integrante.acoes?.podeTransferirAdministracao === true && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setErroConfirmacaoSensivel(null)
+                            setConfirmacaoSensivel({
+                              tipo: 'transferir',
+                              integrante,
+                            })
+                          }}
+                          className="inline-flex min-h-touch flex-1 items-center justify-center gap-2 rounded-control border border-blue-600 px-2 text-center text-label-md font-semibold leading-tight text-blue-700 hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            viewBox="0 0 24 24"
+                            className="size-4 fill-none stroke-current"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M4 12h10" />
+                            <path d="m11 5 7 7-7 7" />
+                            <path d="M18 12h2" />
+                          </svg>
+
+                          <span>Transferir administração</span>
+                        </button>
+                      )}
+
+                      {(integrante.acoes?.podeRemoverIntegrante === true ||
+                        integrante.acoes?.motivoRemocaoIndisponivel ===
+                        'COMPRA_EM_ANDAMENTO') && (
+                          <button
+                            type="button"
+                            onClick={() => solicitarRemocao(integrante)}
+                            className="inline-flex min-h-touch flex-1 items-center justify-center gap-2 rounded-control border border-error px-2 text-center text-label-md font-semibold leading-tight text-error hover:bg-error/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                          >
+                            <svg
+                              aria-hidden="true"
+                              viewBox="0 0 24 24"
+                              className="size-4 fill-none stroke-current"
+                              strokeWidth="2.5"
+                              strokeLinecap="round"
+                            >
+                              <path d="M18 6 6 18" />
+                              <path d="m6 6 12 12" />
+                            </svg>
+
+                            <span>Remover integrante</span>
+                          </button>
+                        )}
                     </div>
                   )}
-                  {integrante.acoes?.podeTransferirAdministracao === true && (
-                    <button type="button" onClick={() => { setErroConfirmacaoSensivel(null); setConfirmacaoSensivel({ tipo: 'transferir', integrante }) }} className="min-h-touch rounded-control border border-blue-600 px-gutter text-label-md font-semibold text-blue-700 hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
-                      Transferir administração
-                    </button>
-                  )}
-                  {!integrante.usuarioAtual && (integrante.acoes?.podeRemoverIntegrante === true || integrante.acoes?.motivoRemocaoIndisponivel === 'COMPRA_EM_ANDAMENTO') && (
-                    <button type="button" onClick={() => solicitarRemocao(integrante)} className="min-h-touch rounded-control border border-error px-gutter text-label-md font-semibold text-error hover:bg-error/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
-                      Remover integrante
-                    </button>
-                  )}
                 </div>
+
               </li>
             ))}
           </ul>

@@ -45,8 +45,8 @@ function mascararData(valor: string) {
     return digitos.length > 4
         ? `${digitos.slice(0, 2)}/${digitos.slice(2, 4)}/${digitos.slice(4)}`
         : digitos.length > 2
-          ? `${digitos.slice(0, 2)}/${digitos.slice(2)}`
-          : digitos;
+            ? `${digitos.slice(0, 2)}/${digitos.slice(2)}`
+            : digitos;
 }
 
 function CampoData({
@@ -146,7 +146,7 @@ export function ListasPage() {
             };
             setFiltros(saneados);
             salvarFiltrosListas(usuario.id, familiaSelecionada.id, saneados);
-        }).catch(() => {});
+        }).catch(() => { });
     }, [auth, usuario?.id, familiaSelecionada, searchParams, filtrosDaUrl]);
 
     const carregarListas = useCallback(async () => {
@@ -233,7 +233,7 @@ export function ListasPage() {
                 }
                 setErroHistorico(
                     apiError.message ||
-                        "NÃ£o foi possÃ­vel carregar compras anteriores.",
+                    "NÃ£o foi possÃ­vel carregar compras anteriores.",
                 );
             } finally {
                 carregandoHistoricoRef.current = false;
@@ -350,6 +350,95 @@ export function ListasPage() {
                         {familiaSelecionada.nome}.
                     </p>
                 </div>
+
+                <section className="relative left-1/2 w-dvw -translate-x-1/2 bg-foreground/5">
+                    <button
+                        type="button"
+                        onClick={abrirFiltros}
+                        className="flex min-h-touch w-full items-center justify-center gap-2 rounded-control font-semibold text-foreground transition-colors hover:text-primary"
+                    >
+                        <svg
+                            aria-hidden="true"
+                            viewBox="0 0 24 24"
+                            className="size-5 fill-none stroke-current"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        >
+                            <circle cx="11" cy="11" r="8" />
+                            <path d="m21 21-4.3-4.3" />
+                        </svg>
+
+                        {filtrosAtivos.length > 0
+                            ? `Busca de listas com ${filtrosAtivos.length} ${filtrosAtivos.length === 1 ? "filtro" : "filtros"
+                            }`
+                            : "Toque para buscar listas"}
+                    </button>
+
+                    {filtrosAtivos.length > 0 && (
+                        <div className="space-y-3 px-page pb-gutter">
+                            <div className="flex items-center justify-between gap-gutter">
+                                <p className="text-label-md font-semibold text-foreground-muted">
+                                    Filtros ativos:
+                                </p>
+
+                                <button
+                                    type="button"
+                                    onClick={limparFiltros}
+                                    className="inline-flex items-center gap-1.5 text-label-md font-semibold text-error hover:underline"
+                                >
+                                    <svg
+                                        aria-hidden="true"
+                                        viewBox="0 0 24 24"
+                                        className="size-4 fill-none stroke-current"
+                                        strokeWidth="2.5"
+                                        strokeLinecap="round"
+                                    >
+                                        <path d="M18 6 6 18" />
+                                        <path d="m6 6 12 12" />
+                                    </svg>
+
+                                    <span>Limpar filtros</span>
+                                </button>
+                            </div>
+
+                            <div className="flex flex-wrap gap-2">
+                                {filtros.criadaDe && (
+                                    <span className="rounded-full bg-surface px-gutter py-1 text-label-md">
+                                        De: {formatarDataBr(filtros.criadaDe)}
+                                    </span>
+                                )}
+
+                                {filtros.criadaAte && (
+                                    <span className="rounded-full bg-surface px-gutter py-1 text-label-md">
+                                        Até: {formatarDataBr(filtros.criadaAte)}
+                                    </span>
+                                )}
+
+                                {filtros.criadaPorUsuarioId && (
+                                    <span className="rounded-full bg-surface px-gutter py-1 text-label-md">
+                                        Criada por:{" "}
+                                        {nomeMembro(
+                                            filtros.criadaPorUsuarioId,
+                                            "usuarioId",
+                                        )}
+                                    </span>
+                                )}
+
+                                {filtros.participanteMembroFamiliaId && (
+                                    <span className="rounded-full bg-surface px-gutter py-1 text-label-md">
+                                        Participante:{" "}
+                                        {nomeMembro(
+                                            filtros.participanteMembroFamiliaId,
+                                            "membroFamiliaId",
+                                        )}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </section>
+
                 <Link
                     to="/listas/nova"
                     className="flex min-h-touch w-full items-center justify-center rounded-control bg-primary px-page font-semibold text-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
@@ -358,58 +447,6 @@ export function ListasPage() {
                 </Link>
             </header>
 
-            <section className="space-y-gutter">
-                <button
-                    type="button"
-                    onClick={abrirFiltros}
-                    className="min-h-touch rounded-control border border-foreground/20 bg-surface px-page font-semibold"
-                >
-                    Filtrar listas
-                    {filtrosAtivos.length ? ` · ${filtrosAtivos.length}` : ""}
-                </button>
-                {filtrosAtivos.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-label-md text-foreground-muted">
-                            Filtros ativos:
-                        </span>
-                        {filtros.criadaDe && (
-                            <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md">
-                                De: {formatarDataBr(filtros.criadaDe)}
-                            </span>
-                        )}
-                        {filtros.criadaAte && (
-                            <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md">
-                                Até: {formatarDataBr(filtros.criadaAte)}
-                            </span>
-                        )}
-                        {filtros.criadaPorUsuarioId && (
-                            <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md">
-                                Criada por:{" "}
-                                {nomeMembro(
-                                    filtros.criadaPorUsuarioId,
-                                    "usuarioId",
-                                )}
-                            </span>
-                        )}
-                        {filtros.participanteMembroFamiliaId && (
-                            <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md">
-                                Participante:{" "}
-                                {nomeMembro(
-                                    filtros.participanteMembroFamiliaId,
-                                    "membroFamiliaId",
-                                )}
-                            </span>
-                        )}
-                        <button
-                            type="button"
-                            onClick={limparFiltros}
-                            className="min-h-touch text-label-md font-semibold text-primary"
-                        >
-                            Limpar filtros
-                        </button>
-                    </div>
-                )}
-            </section>
             {modalFiltrosAberto && (
                 <div
                     role="dialog"
@@ -419,7 +456,7 @@ export function ListasPage() {
                 >
                     <section className="max-h-[calc(100dvh-2rem)] w-full max-w-2xl space-y-page overflow-y-auto rounded-t-card bg-surface p-page shadow-soft sm:rounded-card sm:p-8">
                         <h2 className="text-headline-md font-semibold">
-                            Filtrar listas
+                            Buscar listas da família
                         </h2>
                         <div className="grid gap-page sm:grid-cols-2">
                             <CampoData
@@ -583,34 +620,32 @@ export function ListasPage() {
                                         finalizada
                                             ? `/listas/${lista.id}/compra/revisao`
                                             : emAndamento
-                                              ? `/listas/${lista.id}/compra`
-                                              : `/listas/${lista.id}`
+                                                ? `/listas/${lista.id}/compra`
+                                                : `/listas/${lista.id}`
                                     }
-                                    className={`block min-h-touch space-y-gutter rounded-card border p-page shadow-soft transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
-                                        finalizada
-                                            ? "border-blue-300 bg-blue-50"
-                                            : emAndamento
-                                              ? "border-primary/20 bg-primary/5"
-                                              : "border-foreground/10 bg-surface"
-                                    }`}
+                                    className={`block min-h-touch space-y-gutter rounded-card border p-page shadow-soft transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${finalizada
+                                        ? "border-blue-300 bg-blue-50"
+                                        : emAndamento
+                                            ? "border-primary/20 bg-primary/5"
+                                            : "border-foreground/10 bg-surface"
+                                        }`}
                                 >
                                     <div className="flex flex-wrap gap-2">
                                         <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md font-semibold text-foreground-muted">
                                             {
                                                 categoriaCompraLabels[
-                                                    lista.categoria
+                                                lista.categoria
                                                 ]
                                             }
                                         </span>
 
                                         <span
-                                            className={`rounded-full px-gutter py-1 text-label-md font-semibold ${
-                                                finalizada
-                                                    ? "bg-blue-100 text-blue-700"
-                                                    : emAndamento
-                                                      ? "bg-primary/10 text-primary"
-                                                      : "bg-foreground/5 text-foreground-muted"
-                                            }`}
+                                            className={`rounded-full px-gutter py-1 text-label-md font-semibold ${finalizada
+                                                ? "bg-blue-100 text-blue-700"
+                                                : emAndamento
+                                                    ? "bg-primary/10 text-primary"
+                                                    : "bg-foreground/5 text-foreground-muted"
+                                                }`}
                                         >
                                             {labelStatus}
                                         </span>
@@ -639,8 +674,8 @@ export function ListasPage() {
                                         {finalizada
                                             ? "Ver resumo"
                                             : emAndamento
-                                              ? "Ver compra"
-                                              : "Abrir lista"}
+                                                ? "Ver compra"
+                                                : "Abrir lista"}
                                     </p>
                                 </Link>
                             </li>
@@ -703,7 +738,7 @@ export function ListasPage() {
                                                     <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md font-semibold text-foreground-muted">
                                                         {
                                                             categoriaCompraLabels[
-                                                                lista.categoria
+                                                            lista.categoria
                                                             ]
                                                         }
                                                     </span>

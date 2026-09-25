@@ -1,5 +1,8 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
+import type { ApiRequestError } from '../../../shared/api/apiClient'
 import { useSession } from '../../auth/session/sessionContext'
+import { criarFamilia, solicitarEntrada } from '../api/familyApi'
 import { useFamilyContext } from '../session/familyContext'
 import trocaFamilia from '../../../assets/branding/mercadeira/troca-familia.png'
 
@@ -10,12 +13,69 @@ const papelLabel = {
 
 export function FamiliaSelecionarPage() {
   const navigate = useNavigate()
-  const { logout } = useSession()
-  const { familias, selecionarFamilia } = useFamilyContext()
+  const { auth, logout } = useSession()
+  const { familias, selecionarFamilia, recarregarFamilias } = useFamilyContext()
+  const [acaoAberta, setAcaoAberta] = useState<'criar' | 'ingressar' | null>(null)
+  const [nome, setNome] = useState('')
+  const [codigo, setCodigo] = useState('')
+  const [enviando, setEnviando] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
+  const [feedback, setFeedback] = useState<string | null>(null)
 
   function handleSelect(familiaId: string) {
     selecionarFamilia(familiaId)
     navigate('/inicio', { replace: true })
+  }
+
+  const nomeNormalizado = nome.trim()
+  const nomeValido = nomeNormalizado.length >= 2 && !/\bfamilia\b/i.test(nomeNormalizado.normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
+
+  function abrir(acao: 'criar' | 'ingressar') {
+    setErro(null)
+    setAcaoAberta(acao)
+  }
+
+  async function criar(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!auth || !nomeValido) return
+    setEnviando(true)
+    setErro(null)
+    try {
+      const response = await criarFamilia(auth.token, { nome: nomeNormalizado })
+      if (!response.data) throw new Error('Não foi possível criar a família.')
+      await recarregarFamilias()
+      setFeedback(`Família "${response.data.nome}" criada com sucesso.`)
+      setNome('')
+      setAcaoAberta(null)
+    } catch (error) {
+      const falha = error as ApiRequestError
+      if (falha.status === 401) logout()
+      else if (falha.status === 400) setErro('Ops! Parece que você não digitou um nome válido. Por favor, tente novamente.')
+      else setErro(falha.message)
+    } finally {
+      setEnviando(false)
+    }
+  }
+
+  async function ingressar(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const codigoIngresso = codigo.trim()
+    if (!auth || !codigoIngresso) return
+    setEnviando(true)
+    setErro(null)
+    try {
+      await solicitarEntrada(auth.token, { codigoIngresso })
+      setFeedback('Solicitação enviada. Aguarde a aprovação de um administrador.')
+      setCodigo('')
+      setAcaoAberta(null)
+    } catch (error) {
+      const falha = error as ApiRequestError
+      if (falha.status === 401) logout()
+      else if (falha.status === 400 || falha.status === 404) setErro('Ops! Parece que o código digitado não é válido. Por favor tente novamente.')
+      else setErro(falha.message)
+    } finally {
+      setEnviando(false)
+    }
   }
 
   return (
@@ -77,6 +137,44 @@ export function FamiliaSelecionarPage() {
           </li>
         ))}
       </ul>
+
+      {feedback && <p role="status" className="rounded-card bg-primary/10 p-gutter text-body-md text-primary">{feedback}</p>}
+
+      <section className="grid gap-gutter border-t border-foreground/10 pt-page sm:grid-cols-2">
+        <button type="button" onClick={() => abrir('criar')} className="min-h-touch rounded-control bg-primary px-page text-label-lg font-semibold text-surface hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+          Criar nova família
+        </button>
+        <button type="button" onClick={() => abrir('ingressar')} className="min-h-touch rounded-control border border-primary px-page text-label-lg font-semibold text-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+          Ingressar com código
+        </button>
+      </section>
+
+      {acaoAberta && (
+        <div role="dialog" aria-modal="true" aria-labelledby="acao-familia-titulo" className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-page">
+          <form onSubmit={acaoAberta === 'criar' ? criar : ingressar} className="w-full max-w-md space-y-gutter rounded-card bg-surface p-page shadow-soft">
+            <div>
+              <h2 id="acao-familia-titulo" className="text-headline-md font-semibold">{acaoAberta === 'criar' ? 'Criar nova família' : 'Ingressar com código'}</h2>
+              <p className="mt-1 text-body-md text-foreground-muted">{acaoAberta === 'criar' ? 'Digite apenas o nome, sem a palavra “família”.' : 'Informe o código de ingresso compartilhado pela família.'}</p>
+            </div>
+            {acaoAberta === 'criar' ? (
+              <label className="block text-label-lg font-semibold" htmlFor="nome-familia">Nome da família
+                <input id="nome-familia" value={nome} onChange={(event) => setNome(event.target.value)} maxLength={120} autoFocus disabled={enviando} className="mt-1 min-h-touch w-full rounded-control border border-foreground/20 bg-surface px-gutter" />
+              </label>
+            ) : (
+              <label className="block text-label-lg font-semibold" htmlFor="codigo-ingresso">Código de ingresso
+                <input id="codigo-ingresso" value={codigo} onChange={(event) => setCodigo(event.target.value)} autoFocus disabled={enviando} className="mt-1 min-h-touch w-full rounded-control border border-foreground/20 bg-surface px-gutter" />
+              </label>
+            )}
+            {erro && <p role="alert" className="rounded-card bg-error/10 p-gutter text-error">{erro}</p>}
+            <div className="grid gap-gutter border-t border-foreground/10 pt-gutter sm:grid-cols-2">
+              <button type="submit" disabled={enviando || (acaoAberta === 'criar' ? !nomeValido : !codigo.trim())} className="min-h-touch rounded-control bg-primary px-page text-label-lg font-semibold text-surface disabled:cursor-not-allowed disabled:opacity-60">
+                {enviando ? 'Enviando...' : acaoAberta === 'criar' ? 'Criar família' : 'Solicitar entrada'}
+              </button>
+              <button type="button" disabled={enviando} onClick={() => { setErro(null); setAcaoAberta(null) }} className="min-h-touch rounded-control border border-foreground/20 px-page text-label-lg font-semibold">Cancelar</button>
+            </div>
+          </form>
+        </div>
+      )}
 
     </main>
   )

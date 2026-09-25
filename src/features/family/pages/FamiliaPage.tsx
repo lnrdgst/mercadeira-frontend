@@ -10,6 +10,7 @@ import {
   rejeitarSolicitacaoFamilia,
   removerIntegranteFamilia,
   sairDaFamilia,
+  excluirFamilia,
   transferirAdministracaoFamilia,
 } from '../api/familyApi'
 import { ConfirmacaoSensivelDialog } from '../components/ConfirmacaoSensivelDialog'
@@ -51,7 +52,7 @@ export function FamiliaPage() {
   const [revisaoIntegrantes, setRevisaoIntegrantes] = useState(0)
   const geracaoIntegrantes = useRef(0)
   const integrantesFamiliaIdRef = useRef<string | null>(null)
-  const [confirmacaoSensivel, setConfirmacaoSensivel] = useState<{ tipo: 'transferir' | 'remover' | 'sair'; integrante?: MembroFamiliaResponse } | null>(null)
+  const [confirmacaoSensivel, setConfirmacaoSensivel] = useState<{ tipo: 'transferir' | 'remover' | 'sair' | 'excluir'; integrante?: MembroFamiliaResponse } | null>(null)
   const [processandoConfirmacaoSensivel, setProcessandoConfirmacaoSensivel] = useState(false)
   const [erroConfirmacaoSensivel, setErroConfirmacaoSensivel] = useState<string | null>(null)
   const [saidaBloqueada, setSaidaBloqueada] = useState<{ motivo: 'ADMINISTRADOR_UNICO' | 'COMPRA_EM_ANDAMENTO'; membroFamiliaId: string } | null>(null)
@@ -143,7 +144,7 @@ export function FamiliaPage() {
   }, [auth, familiaSelecionada?.id, logout, revisaoIntegrantes])
 
   useEffect(() => {
-    if (!auth || !familiaSelecionada) return
+    if (!auth || !familiaSelecionada?.id) return
     let timer: ReturnType<typeof setInterval> | undefined
     const atualizar = () => {
       if (document.hidden || !navigator.onLine) return
@@ -247,13 +248,15 @@ export function FamiliaPage() {
         await transferirAdministracaoFamilia(auth.token, familia.id, confirmacaoSensivel.integrante.membroFamiliaId)
       } else if (confirmacaoSensivel.tipo === 'remover' && confirmacaoSensivel.integrante) {
         await removerIntegranteFamilia(auth.token, familia.id, confirmacaoSensivel.integrante.membroFamiliaId)
-      } else {
+      } else if (confirmacaoSensivel.tipo === 'sair') {
         await sairDaFamilia(auth.token, familia.id)
+      } else if (confirmacaoSensivel.tipo === 'excluir') {
+        await excluirFamilia(auth.token, familia.id)
       }
       const acaoConcluida = confirmacaoSensivel.tipo
       await recarregarFamilias()
       setConfirmacaoSensivel(null)
-      if (acaoConcluida === 'sair') {
+      if (acaoConcluida === 'sair' || acaoConcluida === 'excluir') {
         navigate('/', { replace: true })
         return
       }
@@ -265,11 +268,17 @@ export function FamiliaPage() {
         logout()
         return
       }
+      if (confirmacaoSensivel.tipo === 'excluir' && apiError.status === 409) {
+        await recarregarFamilias()
+      }
       setErroConfirmacaoSensivel(apiError.message || (confirmacaoSensivel.tipo === 'transferir'
         ? 'Não foi possível transferir a administração desta família.'
         : confirmacaoSensivel.tipo === 'sair'
           ? 'Não foi possível sair desta família.'
           : 'Não foi possível remover este integrante da família.'))
+      if (confirmacaoSensivel.tipo === 'excluir') {
+        setErroConfirmacaoSensivel(apiError.message || 'Não foi possível excluir esta família. Atualize e tente novamente.')
+      }
     } finally {
       setProcessandoConfirmacaoSensivel(false)
     }
@@ -345,6 +354,17 @@ export function FamiliaPage() {
           </button>
         </div>
       </section>
+      {familia.contextoUsuario?.podeExcluirFamilia === true && (
+        <section className="border-t border-foreground/10 pt-page">
+          <button
+            type="button"
+            onClick={() => { setErroConfirmacaoSensivel(null); setConfirmacaoSensivel({ tipo: 'excluir' }) }}
+            className="min-h-touch rounded-control border border-error px-page font-semibold text-error hover:bg-error/10"
+          >
+            Excluir família
+          </button>
+        </section>
+      )}
 
       <section aria-labelledby="integrantes-titulo" className="space-y-gutter border-t border-foreground/10 pt-page">
         <div>
@@ -415,14 +435,15 @@ export function FamiliaPage() {
 
       {confirmacaoSensivel && (
         <ConfirmacaoSensivelDialog
-          titulo={confirmacaoSensivel.tipo === 'transferir' ? 'Transferir administração?' : confirmacaoSensivel.tipo === 'sair' ? 'Sair desta família?' : 'Remover integrante?'}
+          titulo={confirmacaoSensivel.tipo === 'transferir' ? 'Transferir administração?' : confirmacaoSensivel.tipo === 'sair' ? 'Sair desta família?' : confirmacaoSensivel.tipo === 'excluir' ? 'Excluir esta família?' : 'Remover integrante?'}
           descricao={confirmacaoSensivel.tipo === 'transferir'
             ? `${confirmacaoSensivel.integrante?.nome} passará a ser Administrador(a) desta família. Você passará a ser Membro.`
             : confirmacaoSensivel.tipo === 'sair'
               ? 'Você deixará de participar desta família. O histórico de listas e compras será preservado.'
+              : confirmacaoSensivel.tipo === 'excluir' ? 'Esta família nunca possuiu uma compra. A exclusão removerá definitivamente a família, suas listas em preparação, integrantes e solicitações.'
               : `${confirmacaoSensivel.integrante?.nome} deixará de participar desta família. Para voltar depois, dependerá das regras de ingresso vigentes.`}
-          rotuloConfirmar={confirmacaoSensivel.tipo === 'transferir' ? 'Confirmar transferência' : confirmacaoSensivel.tipo === 'sair' ? 'Confirmar saída' : 'Confirmar remoção'}
-          rotuloProcessando={confirmacaoSensivel.tipo === 'transferir' ? 'Transferindo...' : confirmacaoSensivel.tipo === 'sair' ? 'Saindo...' : 'Removendo...'}
+          rotuloConfirmar={confirmacaoSensivel.tipo === 'transferir' ? 'Confirmar transferência' : confirmacaoSensivel.tipo === 'sair' ? 'Confirmar saída' : confirmacaoSensivel.tipo === 'excluir' ? 'Excluir família' : 'Confirmar remoção'}
+          rotuloProcessando={confirmacaoSensivel.tipo === 'transferir' ? 'Transferindo...' : confirmacaoSensivel.tipo === 'sair' ? 'Saindo...' : confirmacaoSensivel.tipo === 'excluir' ? 'Excluindo família...' : 'Removendo...'}
           corSemantica={confirmacaoSensivel.tipo === 'transferir' ? 'amber' : 'error'}
           enviando={processandoConfirmacaoSensivel}
           erro={erroConfirmacaoSensivel}

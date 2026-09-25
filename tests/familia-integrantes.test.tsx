@@ -1,10 +1,22 @@
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
-import { expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { SessionContext } from '../src/features/auth/session/sessionContext'
 import { FamilyContext } from '../src/features/family/session/familyContext'
 import { FamiliaPage } from '../src/features/family/pages/FamiliaPage'
 import { deferred, familyContextFixture, familyFixture, renderApp, sessionFixture } from './helpers'
+
+const showModalOriginal = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, 'showModal')
+
+beforeEach(() => {
+  Object.defineProperty(HTMLDialogElement.prototype, 'showModal', { configurable: true, value: function (this: HTMLDialogElement) { this.setAttribute('open', '') } })
+})
+
+afterEach(() => {
+  if (showModalOriginal) Object.defineProperty(HTMLDialogElement.prototype, 'showModal', showModalOriginal)
+  else Reflect.deleteProperty(HTMLDialogElement.prototype, 'showModal')
+  vi.restoreAllMocks()
+})
 
 function membros() {
   return [
@@ -41,6 +53,37 @@ test('carrega integrantes, ordena administrador primeiro e identifica o usuário
   const nomes = screen.getAllByRole('listitem').map((item) => item.textContent)
   expect(nomes.findIndex((texto) => texto?.includes('Leonardo'))).toBeLessThan(nomes.findIndex((texto) => texto?.includes('Camila')))
   expect(screen.queryByRole('button', { name: /remover|transferir|editar nome|sugerir/i })).not.toBeInTheDocument()
+})
+
+test('exibe e confirma a exclusão somente quando a capability está disponível', async () => {
+  vi.spyOn(Math, 'random').mockReturnValue(0)
+  const recarregarFamilias = vi.fn(async () => null)
+  const familia = familyFixture({
+    papel: 'ADMINISTRADOR',
+    contextoUsuario: { podeGerenciarIntegrantes: true, podeExcluirFamilia: true },
+  })
+  const http = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, options) => {
+    const path = String(input)
+    if (path.endsWith('/familia-a') && options?.method === 'DELETE') return new Response(null, { status: 204 })
+    if (path.includes('/membros')) return Response.json(membros())
+    if (path.includes('/solicitacoes')) return Response.json([])
+    return Response.json([])
+  })
+
+  const { user } = renderApp(<FamiliaPage />, {
+    family: familyContextFixture({ familias: [familia], familiaSelecionada: familia, recarregarFamilias }),
+  })
+
+  const excluir = await screen.findByRole('button', { name: 'Excluir família' })
+  expect(excluir.closest('li')).toBeNull()
+  await user.click(excluir)
+  const dialog = screen.getByRole('dialog', { name: 'Excluir esta família?' })
+  expect(dialog).toHaveTextContent('Esta família nunca possuiu uma compra.')
+  await user.type(within(dialog).getByLabelText('Código de confirmação'), '1000')
+  await user.click(within(dialog).getByRole('button', { name: 'Excluir família' }))
+
+  await waitFor(() => expect(http.mock.calls.some(([input, options]) => String(input).endsWith('/familia-a') && options?.method === 'DELETE')).toBe(true))
+  expect(recarregarFamilias).toHaveBeenCalledOnce()
 })
 
 test('prioriza a identidade em telas pequenas e limita nome e e-mail longos a duas linhas', async () => {

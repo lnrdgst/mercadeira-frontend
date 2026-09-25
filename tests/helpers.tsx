@@ -6,7 +6,7 @@ import { vi } from 'vitest'
 import { SessionContext } from '../src/features/auth/session/sessionContext'
 import { FamilyContext, type FamilyContextValue } from '../src/features/family/session/familyContext'
 import { AuthenticatedUserContext } from '../src/features/auth/user/AuthenticatedUserContext'
-import type { FamiliaResponse } from '../src/features/family/types/family'
+import type { ContextoUsuarioFamiliaResponse, FamiliaResponse } from '../src/features/family/types/family'
 
 type SessionValue = NonNullable<ComponentProps<typeof SessionContext>['value']>
 
@@ -20,8 +20,20 @@ export function sessionFixture(overrides: Partial<SessionValue> = {}): SessionVa
   }
 }
 
-export function familyFixture(overrides: Partial<FamiliaResponse> = {}): FamiliaResponse {
-  return { id: 'familia-a', nome: 'Família A', codigoIngresso: 'TESTE-A', status: 'ATIVA', papel: 'MEMBRO', ...overrides }
+type FamiliaFixtureOverrides = Partial<Omit<FamiliaResponse, 'contextoUsuario'>> & {
+  contextoUsuario?: Partial<ContextoUsuarioFamiliaResponse>
+}
+
+export function familyFixture(overrides: FamiliaFixtureOverrides = {}): FamiliaResponse {
+  return {
+    id: 'familia-a', nome: 'Família A', codigoIngresso: 'TESTE-A', status: 'ATIVA', papel: 'MEMBRO',
+    ...overrides,
+    contextoUsuario: overrides.contextoUsuario && {
+      podeGerenciarIntegrantes: false,
+      podeExcluirFamilia: false,
+      ...overrides.contextoUsuario,
+    },
+  }
 }
 
 export function familyContextFixture(overrides: Partial<FamilyContextValue> = {}): FamilyContextValue {

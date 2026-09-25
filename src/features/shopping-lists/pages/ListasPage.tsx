@@ -15,6 +15,7 @@ import type {
     ListaCompraResumoResponse,
     MembroFamiliaResponse,
 } from "../types/shoppingList";
+import { lerFiltrosListas, removerFiltrosListas, salvarFiltrosListas } from '../session/listasFiltersStorage';
 import {
     categoriaCompraLabels,
     statusListaCompraLabels,
@@ -122,6 +123,31 @@ export function ListasPage() {
     const [carregandoHistorico, setCarregandoHistorico] = useState(false);
     const [erroHistorico, setErroHistorico] = useState<string | null>(null);
     const carregandoHistoricoRef = useRef(false);
+
+    const filtrosDaUrl = useCallback((): FiltrosListas => ({
+        criadaDe: searchParams.get('dataInicial') || undefined,
+        criadaAte: searchParams.get('dataFinal') || undefined,
+        criadaPorUsuarioId: searchParams.get('criadaPor') || undefined,
+        participanteMembroFamiliaId: searchParams.get('participante') || undefined,
+    }), [searchParams]);
+
+    useEffect(() => {
+        if (!auth || !usuario?.id || !familiaSelecionada) return;
+        const urlExplicita = ['dataInicial', 'dataFinal', 'criadaPor', 'participante'].some((parametro) => searchParams.has(parametro));
+        const candidata = urlExplicita ? filtrosDaUrl() : lerFiltrosListas(usuario.id, familiaSelecionada.id);
+        void buscarMembrosFamilia(auth.token, familiaSelecionada.id).then((resposta) => {
+            const integrantes = resposta.data || [];
+            const dataValida = (data?: string) => !data || /^\d{4}-\d{2}-\d{2}$/.test(data) && !Number.isNaN(new Date(`${data}T00:00:00Z`).getTime());
+            const saneados: FiltrosListas = {
+                criadaDe: dataValida(candidata.criadaDe) ? candidata.criadaDe : undefined,
+                criadaAte: dataValida(candidata.criadaAte) ? candidata.criadaAte : undefined,
+                criadaPorUsuarioId: integrantes.some((membro) => membro.usuarioId === candidata.criadaPorUsuarioId) ? candidata.criadaPorUsuarioId : undefined,
+                participanteMembroFamiliaId: integrantes.some((membro) => membro.membroFamiliaId === candidata.participanteMembroFamiliaId) ? candidata.participanteMembroFamiliaId : undefined,
+            };
+            setFiltros(saneados);
+            salvarFiltrosListas(usuario.id, familiaSelecionada.id, saneados);
+        }).catch(() => {});
+    }, [auth, usuario?.id, familiaSelecionada, searchParams, filtrosDaUrl]);
 
     const carregarListas = useCallback(async () => {
         if (!auth || !familiaSelecionada) {
@@ -240,6 +266,7 @@ export function ListasPage() {
     function atualizarFiltros(parcial: Partial<FiltrosListas>) {
         const proximos = { ...filtros, ...parcial };
         setFiltros(proximos);
+        if (usuario?.id && familiaSelecionada) salvarFiltrosListas(usuario.id, familiaSelecionada.id, proximos);
         const parametros = new URLSearchParams();
         if (proximos.criadaDe) parametros.set("dataInicial", proximos.criadaDe);
         if (proximos.criadaAte) parametros.set("dataFinal", proximos.criadaAte);
@@ -292,6 +319,7 @@ export function ListasPage() {
             criadaPorUsuarioId: undefined,
             participanteMembroFamiliaId: undefined,
         });
+        if (usuario?.id && familiaSelecionada) removerFiltrosListas(usuario.id, familiaSelecionada.id);
         setModalFiltrosAberto(false);
     }
     function nomeMembro(
@@ -534,12 +562,6 @@ export function ListasPage() {
                     <p className="text-body-md text-foreground-muted">
                         Você ainda não possui listas.
                     </p>
-                    <Link
-                        to="/listas/nova"
-                        className="flex min-h-touch w-full items-center justify-center rounded-control bg-primary px-page font-semibold text-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                    >
-                        Criar nova lista de compras
-                    </Link>
                 </div>
             )}
 

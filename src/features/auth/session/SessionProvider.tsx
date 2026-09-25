@@ -3,6 +3,7 @@ import { login as loginRequest } from '../api/authApi'
 import type { AuthSession, LoginRequest } from '../types/auth'
 import { clearStoredAuthSession, persistAuthSession, readStoredAuthSession } from './authStorage'
 import { SessionContext } from './sessionContext'
+import { removerFiltrosDoUsuarioAtual } from '../../shopping-lists/session/listasFiltersStorage'
 
 export type SessionStatus = 'initializing' | 'unauthenticated' | 'authenticated'
 
@@ -20,6 +21,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   })
 
   function logout() {
+    removerFiltrosDoUsuarioAtual()
     clearStoredAuthSession()
     setSession({ status: 'unauthenticated', auth: null })
   }

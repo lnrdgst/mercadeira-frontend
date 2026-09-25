@@ -28,6 +28,9 @@ export function removerIntegranteFamilia(token: string, familiaId: string, membr
 export function sairDaFamilia(token: string, familiaId: string) {
   return apiRequest<void>(`/familias/${familiaId}/membros/me`, { method: 'DELETE', token })
 }
+export function excluirFamilia(token: string, familiaId: string) {
+  return apiRequest<void>(`/familias/${familiaId}`, { method: 'DELETE', token })
+}
 
 export function buscarMinhasSolicitacoesPendentes(token: string) {
   return apiRequest<MinhaSolicitacaoPendenteResponse[]>(

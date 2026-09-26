@@ -24,7 +24,7 @@ function preparar(solicitacoes: unknown[], admin = true, minhasSolicitacoes: unk
   return { fetchMock, user: userEvent.setup(), ...render(<SessionContext value={sessionFixture()}><AuthenticatedUserContext value={{ usuario: { id: 'usuario', nome: 'Ana', email: 'ana@test' }, loading: false, error: false, recarregarUsuario: vi.fn(async () => {}) }}><FamilyContext value={familyContextFixture({ familias: [familia], familiaSelecionada: familia })}><MemoryRouter><InicioPage /></MemoryRouter></FamilyContext></AuthenticatedUserContext></SessionContext>) }
 }
 
-test('Home mostra aviso somente ao administrador e informa múltiplas solicitações', async () => {
+test('Home mostra aviso somente ao(à) administrador(a) e informa múltiplas solicitações', async () => {
   preparar([pendente('a'), pendente('b', 'Bia')])
   expect(await screen.findByRole('heading', { name: '2 solicitações de ingresso pendentes' })).toBeVisible()
   expect(screen.getByRole('button', { name: 'Ver solicitações' })).toBeVisible()

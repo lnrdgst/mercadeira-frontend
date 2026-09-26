@@ -61,7 +61,7 @@ test('capability concede ação sem inferir papel, autoria ou participação; sa
   expect(screen.getByLabelText('Estabelecimento (opcional)')).toHaveValue('')
 })
 
-test('capability falsa oculta ação mesmo para criador administrador participante', async () => {
+test('capability falsa oculta ação mesmo para criador(a) administrador(a) participante', async () => {
   const inicial = lista(false)
   inicial.criador.membroFamiliaId = 'membro-a'
   inicial.contextoUsuario.papelFamilia = 'ADMINISTRADOR'

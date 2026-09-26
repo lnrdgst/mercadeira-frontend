@@ -58,7 +58,7 @@ Atualização funcional de `resultado.compra.itens` preserva respostas concorren
 
 ## Observador
 
-`contextoUsuario.participanteCompra` é a única regra de participação usada. Observadores mantêm consulta, aviso, estados e autoria, sem adicionar ou colocar no carrinho. Papel de administrador não concede exceção.
+`contextoUsuario.participanteCompra` é a única regra de participação usada. Observadores mantêm consulta, aviso, estados e autoria, sem adicionar ou colocar no carrinho. Papel de administrador(a) não concede exceção.
 
 ## GET/F5
 

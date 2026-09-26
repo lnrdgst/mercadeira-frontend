@@ -44,7 +44,7 @@ Dialog nativo modal, nome e descrição acessíveis, layout responsivo e retorno
 
 ## Regra participanteAtivo
 
-Iniciar compra aparece somente para `EM_PREPARACAO` com `contextoUsuario.participanteAtivo === true`. Papel de administrador não concede acesso. Operações locais de preparação em curso desabilitam temporariamente o início.
+Iniciar compra aparece somente para `EM_PREPARACAO` com `contextoUsuario.participanteAtivo === true`. Papel de administrador(a) não concede acesso. Operações locais de preparação em curso desabilitam temporariamente o início.
 
 ## Navegação
 

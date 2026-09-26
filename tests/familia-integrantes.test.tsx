@@ -31,7 +31,7 @@ function telaDaFamilia(familia: ReturnType<typeof familyFixture>, familias = [fa
   </FamilyContext></SessionContext>
 }
 
-test('carrega integrantes, ordena administrador primeiro e identifica o usuário atual', async () => {
+test('carrega integrantes, ordena administrador(a) primeiro e identifica o usuário atual', async () => {
   const familia = familyFixture({ papel: 'ADMINISTRADOR', contextoUsuario: { podeGerenciarIntegrantes: true } })
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
     const path = String(input)

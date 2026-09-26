@@ -63,11 +63,11 @@ test('capability falsa não expõe encerramento administrativo nem altera o flux
   expect(screen.getByRole('link', { name: 'Revisar compra' })).toBeVisible()
 })
 
-test('capability verdadeira expõe a ação ao administrador que não participa da Compra', async () => {
+test('capability verdadeira expõe a ação ao(à) administrador(a) que não participa da Compra', async () => {
   preparar()
 
   await screen.findByRole('button', { name: 'Encerrar compra' })
-  expect(screen.getByText('Como administrador da família, você pode encerrar esta compra caso ela não esteja mais sendo realizada.')).toBeVisible()
+  expect(screen.getByText('Como administrador(a) da família, você pode encerrar esta compra caso ela não esteja mais sendo realizada.')).toBeVisible()
   expect(screen.getByText('Você pode acompanhar esta compra, mas não participa dela.')).toBeVisible()
 })
 
@@ -111,12 +111,12 @@ test('submissão permanece bloqueada enquanto o endpoint está em andamento', as
 test('erro do endpoint mantém a confirmação recuperável sem alterar participantes, presença ou responsabilidade localmente', async () => {
   const inicial = compra()
   const antes = structuredClone(inicial)
-  const { fetch, user } = preparar({ inicial, encerrar: async () => Response.json({ timestamp: '2026-09-21T13:00:00Z', status: 403, erro: 'ACESSO_NEGADO', mensagem: 'Você não é mais administrador desta família.', path: '/api/compra/finalizar-administrativamente' }, { status: 403 }) })
+  const { fetch, user } = preparar({ inicial, encerrar: async () => Response.json({ timestamp: '2026-09-21T13:00:00Z', status: 403, erro: 'ACESSO_NEGADO', mensagem: 'Você não é mais administrador(a) desta família.', path: '/api/compra/finalizar-administrativamente' }, { status: 403 }) })
   const dialog = await abrirConfirmacao()
   await user.type(within(dialog).getByLabelText('Código de confirmação'), '1000')
   await user.click(within(dialog).getByRole('button', { name: 'Confirmar encerramento' }))
 
-  expect(await within(dialog).findByRole('alert')).toHaveTextContent('Você não é mais administrador desta família.')
+  expect(await within(dialog).findByRole('alert')).toHaveTextContent('Você não é mais administrador(a) desta família.')
   expect(inicial).toEqual(antes)
   expect(fetch.mock.calls.filter(([url]) => String(url).endsWith('/finalizar-administrativamente'))).toHaveLength(1)
   await user.click(within(dialog).getByRole('button', { name: 'Voltar' }))

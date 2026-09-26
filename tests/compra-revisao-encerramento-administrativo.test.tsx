@@ -45,7 +45,7 @@ test('revisão permite ao não participante encerrar por confirmação sensível
 })
 
 test('cancelar ou erro administrativo não executa novamente e mantém a revisão recuperável', async () => {
-  const { fetch, user } = preparar(true, async () => Response.json({ timestamp: '2026-09-01T13:00:00Z', status: 403, erro: 'ACESSO_NEGADO', mensagem: 'Você não é mais administrador.', path: '/api/compra/finalizar-administrativamente' }, { status: 403 }))
+  const { fetch, user } = preparar(true, async () => Response.json({ timestamp: '2026-09-01T13:00:00Z', status: 403, erro: 'ACESSO_NEGADO', mensagem: 'Você não é mais administrador(a).', path: '/api/compra/finalizar-administrativamente' }, { status: 403 }))
   await user.click(await screen.findByRole('button', { name: 'Encerrar compra' }))
   let dialog = screen.getByRole('dialog', { name: 'Encerrar esta compra?' })
   await user.click(within(dialog).getByRole('button', { name: 'Voltar' }))
@@ -54,6 +54,6 @@ test('cancelar ou erro administrativo não executa novamente e mantém a revisã
   dialog = screen.getByRole('dialog', { name: 'Encerrar esta compra?' })
   await user.type(within(dialog).getByLabelText('Código de confirmação'), '1000')
   await user.click(within(dialog).getByRole('button', { name: 'Confirmar encerramento' }))
-  expect(await within(dialog).findByRole('alert')).toHaveTextContent('Você não é mais administrador.')
+  expect(await within(dialog).findByRole('alert')).toHaveTextContent('Você não é mais administrador(a).')
   expect(screen.getByRole('heading', { name: 'Revisão da compra' })).toBeVisible()
 })

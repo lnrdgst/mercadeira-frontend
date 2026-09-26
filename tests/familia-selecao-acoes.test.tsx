@@ -61,5 +61,5 @@ test('envia solicitação de ingresso sem criar vínculo local', async () => {
   await waitFor(() => expect(http).toHaveBeenCalledWith(expect.stringMatching(/\/familias\/solicitacoes$/), expect.objectContaining({ method: 'POST' })))
   expect(recarregarFamilias).not.toHaveBeenCalled()
   expect(selecionarFamilia).not.toHaveBeenCalled()
-  expect(await screen.findByRole('status')).toHaveTextContent('Solicitação enviada. Aguarde a aprovação de um administrador.')
+  expect(await screen.findByRole('status')).toHaveTextContent('Solicitação enviada. Aguarde a aprovação de um(a) administrador(a).')
 })

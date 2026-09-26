@@ -36,7 +36,7 @@ Não foi necessário criar componente, biblioteca ou modificar o shell. Os novos
 
 ## Capabilities por item
 
-Solicitar usa exclusivamente `item.acoes.podeSolicitarRemocao === true`; aprovar/rejeitar usam exclusivamente `item.acoes.podeDecidirRemocao === true`. Não há inferência por identidade, autor, administrador ou participante. Participação continua sendo usada somente nas ações preexistentes de inclusão/carrinho.
+Solicitar usa exclusivamente `item.acoes.podeSolicitarRemocao === true`; aprovar/rejeitar usam exclusivamente `item.acoes.podeDecidirRemocao === true`. Não há inferência por identidade, autor, administrador(a) ou participante. Participação continua sendo usada somente nas ações preexistentes de inclusão/carrinho.
 
 ## Solicitar remoção
 
@@ -139,7 +139,7 @@ São testes com HTTP simulado e renderização estática, sem comprovação de f
 | E | Rejeição mantém auditoria e permite nova solicitação por capability | Pendente |
 | F | Solicitação pelo responsável retorna REMOVIDO diretamente | Pendente |
 | G | F5 recupera pendência, aprovação e rejeição com timestamps | Pendente |
-| H | Observador/administrador não participante vê auditoria sem ações | Pendente |
+| H | Observador/administrador(a) não participante vê auditoria sem ações | Pendente |
 | I | Decisões concorrentes produzem 409 e GET apresenta vencedor | Pendente |
 | J | REMOVIDO permanece após F5 | Pendente |
 

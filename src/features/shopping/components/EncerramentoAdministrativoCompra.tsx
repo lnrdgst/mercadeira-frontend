@@ -61,7 +61,7 @@ export function EncerramentoAdministrativoCompra({ compra, token, familiaId, lis
     <section aria-labelledby="encerramento-administrativo" className={compacto ? 'space-y-gutter rounded-card border border-amber-500/40 bg-amber-50/60 p-gutter' : 'space-y-gutter rounded-card border border-amber-500/40 bg-amber-50/60 p-page'}>
       <div className="space-y-1">
         <h2 id="encerramento-administrativo" className="text-headline-md font-semibold text-amber-900">Encerramento administrativo</h2>
-        <p className="text-body-md text-foreground-muted">{compacto ? 'Você não pode finalizar esta compra pelo fluxo operacional. Como administrador da família, pode encerrá-la caso ela não esteja mais sendo realizada.' : 'Como administrador da família, você pode encerrar esta compra caso ela não esteja mais sendo realizada.'}</p>
+        <p className="text-body-md text-foreground-muted">{compacto ? 'Você não pode finalizar esta compra pelo fluxo operacional. Como administrador(a) da família, pode encerrá-la caso ela não esteja mais sendo realizada.' : 'Como administrador(a) da família, você pode encerrar esta compra caso ela não esteja mais sendo realizada.'}</p>
       </div>
       <button type="button" disabled={bloqueio} onClick={() => { setErro(null); setConfirmando(true) }} className="min-h-touch rounded-control border border-amber-600 bg-amber-100 px-page font-semibold text-amber-900 hover:bg-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700 disabled:opacity-60">Encerrar compra</button>
     </section>

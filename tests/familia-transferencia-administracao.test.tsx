@@ -25,7 +25,7 @@ function membros(podeTransferir = true, podeRemover = true) {
   ]
 }
 
-test('administrador confirma transferência somente com o código exibido', async () => {
+test('administrador(a) confirma transferência somente com o código exibido', async () => {
   let chamadasTransferencia = 0
   let urlTransferencia = ''
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
@@ -102,7 +102,7 @@ test('mobile usa teclado interno sem input nativo e limita o código a quatro d�
   await waitFor(() => expect(chamadasTransferencia).toBe(1))
 })
 
-test('membro comum e o próprio administrador não recebem ação de transferência', async () => {
+test('membro comum e o(a) próprio(a) administrador(a) não recebem ação de transferência', async () => {
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
     const path = String(input)
     if (path.includes('/membros')) return Response.json(membros(false))
@@ -147,13 +147,13 @@ test('bloqueio por compra só é explicado após manifestar intenção de sair',
   expect(screen.getByRole('button', { name: 'Ver compras relacionadas' })).toBeVisible()
 })
 
-test('administrador único recebe orientação somente após clicar em sair', async () => {
+test('administrador(a) único(a) recebe orientação somente após clicar em sair', async () => {
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => String(input).includes('/membros') ? Response.json(membros()) : Response.json([]))
   const familia = familyFixture({ papel: 'ADMINISTRADOR', contextoUsuario: { podeGerenciarIntegrantes: true, podeSairDaFamilia: false, motivoSaidaFamiliaIndisponivel: 'ADMINISTRADOR_UNICO' } })
   const { user } = renderApp(<FamiliaPage />, { family: familyContextFixture({ familias: [familia], familiaSelecionada: familia }) })
 
   await screen.findByText('Ana')
-  expect(screen.queryByText(/você é o único administrador/i)).not.toBeInTheDocument()
+  expect(screen.queryByText(/você é o(a) único(a) administrador(a)/i)).not.toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Sair da família' }))
   expect(screen.getByRole('dialog', { name: 'Transfira a administração primeiro' })).toBeVisible()
 })
@@ -170,7 +170,7 @@ test('voltar e Escape fecham a confirmação sem chamar a API', async () => {
   expect(fetchMock.mock.calls.some(([input]) => String(input).includes('transferir-administracao'))).toBe(false)
 })
 
-test('administrador remove integrante somente com o código exibido', async () => {
+test('administrador(a) remove integrante somente com o código exibido', async () => {
   let chamadasRemocao = 0
   let urlRemocao = ''
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {

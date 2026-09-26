@@ -96,7 +96,7 @@ export function FamiliaSelecionarPage() {
     try {
       await solicitarEntrada(auth.token, { codigoIngresso })
       await carregarSolicitacoesPendentes()
-      setFeedback('Solicitação enviada. Aguarde a aprovação de um administrador.')
+      setFeedback('Solicitação enviada. Aguarde a aprovação de um(a) administrador(a).')
       setCodigo('')
       setAcaoAberta(null)
     } catch (error) {
@@ -175,7 +175,7 @@ export function FamiliaSelecionarPage() {
         <section className="space-y-gutter rounded-card border border-amber-200 bg-amber-50/60 p-page" aria-labelledby="solicitacoes-pendentes-titulo">
           <div>
             <h2 id="solicitacoes-pendentes-titulo" className="text-headline-md font-semibold text-amber-900">Solicitações aguardando aprovação</h2>
-            <p className="text-body-md text-foreground-muted">Aguarde a decisão de um administrador para acompanhar a família.</p>
+            <p className="text-body-md text-foreground-muted">Aguarde a decisão de um(a) administrador(a) para acompanhar a família.</p>
           </div>
           <ul className="space-y-2">
             {solicitacoesPendentes.map((solicitacao) => (

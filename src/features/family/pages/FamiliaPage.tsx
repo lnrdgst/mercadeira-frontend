@@ -483,17 +483,6 @@ export function FamiliaPage() {
           </button>
         </div>
       </section>
-      {familia.contextoUsuario?.podeExcluirFamilia === true && (
-        <section className="border-t border-foreground/10 pt-page">
-          <button
-            type="button"
-            onClick={() => { setErroConfirmacaoSensivel(null); setConfirmacaoSensivel({ tipo: 'excluir' }) }}
-            className="min-h-touch rounded-control border border-error px-page font-semibold text-error hover:bg-error/10"
-          >
-            Excluir família
-          </button>
-        </section>
-      )}
 
       <section aria-labelledby="integrantes-titulo" className="space-y-gutter border-t border-foreground/10 pt-page">
         <div>
@@ -626,6 +615,36 @@ export function FamiliaPage() {
         )}
       </section>
 
+      {familia.contextoUsuario?.podeExcluirFamilia === true && (
+        <section className="w-full border-t border-foreground/10 pt-page">
+          <button
+            type="button"
+            onClick={() => {
+              setErroConfirmacaoSensivel(null)
+              setConfirmacaoSensivel({ tipo: "excluir" })
+            }}
+            className="flex min-h-touch w-full items-center justify-center gap-2 rounded-control bg-error px-page font-semibold text-surface transition-colors hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-error"
+          >
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              className="size-5 fill-none stroke-current"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3 6h18" />
+              <path d="M8 6V4h8v2" />
+              <path d="M19 6l-1 14H6L5 6" />
+              <path d="M10 11v5" />
+              <path d="M14 11v5" />
+            </svg>
+
+            <span>Excluir família</span>
+          </button>
+        </section>
+      )}
+
       {confirmacaoSensivel && (
         <ConfirmacaoSensivelDialog
           titulo={confirmacaoSensivel.tipo === 'transferir' ? 'Transferir administração?' : confirmacaoSensivel.tipo === 'sair' ? 'Sair desta família?' : confirmacaoSensivel.tipo === 'excluir' ? 'Excluir esta família?' : 'Remover integrante?'}
@@ -654,7 +673,7 @@ export function FamiliaPage() {
               <p className="mt-1 text-body-md text-foreground-muted">
                 {saidaBloqueada.motivo === 'COMPRA_EM_ANDAMENTO'
                   ? 'Você participa de uma compra em andamento e precisa aguardar ou encerrar essa participação antes de sair da família.'
-                  : 'Você é o único administrador desta família. Transfira a administração para outro integrante antes de sair.'}
+                  : 'Você é o(a) único(a) administrador(a) desta família. Transfira a administração para outro integrante antes de sair.'}
               </p>
             </div>
             <div className="grid gap-gutter border-t border-foreground/10 pt-gutter sm:grid-cols-2">

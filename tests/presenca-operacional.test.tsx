@@ -47,10 +47,10 @@ test('ordena visualmente o responsável primeiro, preserva a presença e identif
   expect(within(participantes[1]).getByTitle('Ana')).toHaveTextContent('Ana (você)')
 })
 
-test('participante comum não presente mantém linha cinza', async () => {
+test('participante remoto recebe destaque salmão', async () => {
   preparar({ inicial: compra('NAO_PRESENTE') })
   const secao = (await screen.findByRole('heading', { name: 'Participantes' })).closest('section')!
-  expect(within(secao).getAllByRole('listitem')[1]).toHaveClass('bg-foreground/5')
+  expect(within(secao).getAllByRole('listitem')[1]).toHaveClass('bg-orange-50')
 })
 
 test('só exibe divisor operacional quando há conteúdo abaixo dos participantes', async () => {

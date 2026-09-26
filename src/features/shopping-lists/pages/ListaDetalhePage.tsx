@@ -1349,6 +1349,8 @@ export function ListaDetalhePage() {
                     key={chave}
                     familiaId={familiaSelecionada.id}
                     listaId={listaId}
+                    participantes={listaParticipantes}
+                    iniciadorMembroFamiliaId={lista.contextoUsuario.membroFamiliaId}
                     onMutacao={atualizarEstadoMutacao}
                     disabled={
                       !itensProntos ||

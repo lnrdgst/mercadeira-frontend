@@ -5,7 +5,7 @@ import { useSession } from '../../auth/session/sessionContext'
 import { useAuthenticatedUser } from '../../auth/user/AuthenticatedUserContext'
 import { useFamilyContext } from '../../family/session/familyContext'
 import { categoriaCompraLabels } from '../../shopping-lists/types/shoppingList'
-import { adicionarItemCompra, alterarMinhaPresenca, buscarCompra, cancelarSolicitacaoPresenca, cancelarSolicitacaoResponsabilidade, colocarItemNoCarrinho, decidirSolicitacaoPresenca, decidirSolicitacaoResponsabilidade, removerItemCompra, restaurarItemNoCarrinho, solicitarMinhaPresenca, solicitarResponsabilidade } from '../api/shoppingApi'
+import { adicionarItemCompra, alterarMinhaPresenca, buscarCompra, cancelarSolicitacaoPresenca, cancelarSolicitacaoResponsabilidade, colocarItemNoCarrinho, decidirSolicitacaoPresenca, decidirSolicitacaoResponsabilidade, removerItemCompra, restaurarItemNoCarrinho, solicitarMinhaPresenca, solicitarResponsabilidade, transferirResponsabilidade } from '../api/shoppingApi'
 import { AdicionarItemCompraDialog } from '../components/AdicionarItemCompraDialog'
 import { ItemCompraCard } from '../components/ItemCompraCard'
 import { MinhaPresenca } from '../components/MinhaPresenca'
@@ -159,7 +159,7 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
   }
 
   async function adicionarItem(data: AdicionarItemCompraRequest) {
-    if (!token || !familiaId || !listaId || !compra?.contextoUsuario.participanteCompra) throw new Error('Não foi possível confirmar sua participação na compra.')
+    if (compra?.contextoUsuario.podeAdicionarItemDuranteCompra === false || !compra?.contextoUsuario.participanteCompra) throw new Error('A inclusão de item não está disponível.')
     await executar(async () => atualizarItem(await adicionarItemCompra(token, familiaId, listaId, data), true))
   }
 
@@ -203,6 +203,10 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
   async function decidirResponsabilidade(solicitacaoId: string, decisao: 'aprovar' | 'rejeitar') {
     if (compra?.solicitacoesResponsabilidadePendentes?.find((pedido) => pedido.id === solicitacaoId)?.acoes.podeDecidirResponsabilidade !== true) throw new Error('A decisão não está disponível.')
     await executar(async () => atualizarCompra(await decidirSolicitacaoResponsabilidade(token, familiaId, listaId, solicitacaoId, decisao)))
+  }
+  async function transferirResponsabilidadeOperacional(participanteCompraId: string) {
+    if (compra?.contextoUsuario.podeTransferirResponsabilidade !== true) throw new Error('A transferência não está disponível.')
+    await executar(async () => atualizarCompra(await transferirResponsabilidade(token, familiaId, listaId, participanteCompraId)))
   }
 
   async function removerItem(itemId: string, acao: AcaoRemocaoItemCompra) {
@@ -318,6 +322,7 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
               onSolicitarResponsabilidade={solicitarResponsabilidadeOperacional}
               onCancelarResponsabilidade={cancelarResponsabilidade}
               onDecidirResponsabilidade={decidirResponsabilidade}
+              onTransferirResponsabilidade={transferirResponsabilidadeOperacional}
               onAtualizar={reconciliarCompra}
             />
           </header>
@@ -329,7 +334,7 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
             className="min-w-0 space-y-gutter"
             aria-labelledby="compra-itens"
           >
-            {compra.contextoUsuario.participanteCompra && (
+            {(compra.contextoUsuario.podeAdicionarItemDuranteCompra ?? compra.contextoUsuario.participanteCompra) && (
               <AdicionarItemCompraDialog
                 key={chave}
                 listaId={listaId}

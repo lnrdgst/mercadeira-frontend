@@ -31,6 +31,8 @@ export interface ContextoUsuarioCompraResponse {
   podeCancelarSolicitacaoResponsabilidade?: boolean
   precisaEstarPresenteParaFinalizar?: boolean
   podeEncerrarCompraAdministrativamente?: boolean
+  podeAdicionarItemDuranteCompra?: boolean
+  podeTransferirResponsabilidade?: boolean
 }
 
 export interface ReferenciaParticipanteCompra {
@@ -44,7 +46,7 @@ export type AutorItemCompraResponse = ReferenciaParticipanteCompra
 
 export type EstadoSolicitacaoPresenca = 'PENDENTE' | 'APROVADA' | 'REJEITADA' | 'CANCELADA'
 export type MotivoCancelamentoPresenca = 'SOLICITANTE' | 'SEM_PRESENTES' | 'COMPRA_FINALIZADA'
-export type MotivoResponsabilidade = 'INICIO_COMPRA' | 'PRIMEIRA_ENTRADA' | 'SUCESSAO' | 'REASSUNCAO' | 'SEM_PRESENTES' | 'BOOTSTRAP_V10' | 'LEGADO_SEM_ELEGIVEL'
+export type MotivoResponsabilidade = 'INICIO_COMPRA' | 'PRIMEIRA_ENTRADA' | 'SUCESSAO' | 'REASSUNCAO' | 'SEM_PRESENTES' | 'BOOTSTRAP_V10' | 'LEGADO_SEM_ELEGIVEL' | 'TRANSFERENCIA_DIRETA'
 
 export interface ResponsabilidadeOperacionalResponse {
   responsavel: ReferenciaParticipanteCompra | null

@@ -26,6 +26,7 @@ export function MinhaPresenca({
   onSolicitarResponsabilidade,
   onCancelarResponsabilidade,
   onDecidirResponsabilidade,
+  onTransferirResponsabilidade,
   onAtualizar,
 }: {
   compra: CompraResponse;
@@ -44,6 +45,7 @@ export function MinhaPresenca({
     solicitacaoId: string,
     decisao: "aprovar" | "rejeitar",
   ) => Promise<void>;
+  onTransferirResponsabilidade: (participanteCompraId: string) => Promise<void>;
   onAtualizar: () => Promise<void>;
 }) {
   const { logout } = useSession();
@@ -53,6 +55,7 @@ export function MinhaPresenca({
   const [erro, setErro] = useState<string | null>(null);
   const [precisaAtualizar, setPrecisaAtualizar] = useState(false);
   const [confirmacao, setConfirmacao] = useState<Confirmacao>(null);
+  const [transferindo, setTransferindo] = useState(false);
   const proprio = compra.participantes.find(
     (participante) => participante.usuarioId === usuarioId,
   );
@@ -60,6 +63,8 @@ export function MinhaPresenca({
   const contexto = compra.contextoUsuario;
   const responsabilidade = compra.responsabilidadeOperacional;
   const responsavelId = responsabilidade?.responsavel?.participanteCompraId;
+  const elegiveisTransferencia = compra.participantes.filter((participante) => participante.id !== proprio?.id && participante.presencaOperacional?.estado === 'PRESENTE');
+  const podeTransferir = contexto.podeTransferirResponsabilidade === true;
   const participantesOrdenados = [...compra.participantes].sort(
     (a, b) => Number(b.id === responsavelId) - Number(a.id === responsavelId),
   );
@@ -104,6 +109,7 @@ export function MinhaPresenca({
       await acao();
       if (!ativo.current) return;
       setConfirmacao(null);
+      setTransferindo(false);
       setPrecisaAtualizar(false);
       setMensagem("Compra atualizada.");
     } catch (error) {
@@ -202,7 +208,9 @@ export function MinhaPresenca({
                 ? "border border-blue-400 bg-blue-50 text-blue-700"
                 : estado === "PRESENTE"
                   ? "border border-primary bg-primary/10 text-primary"
-                  : "bg-foreground/5 border border-foreground/20 text-foreground-muted";
+                  : estado === "NAO_PRESENTE"
+                    ? "border border-orange-200 bg-orange-50 text-orange-800"
+                    : "bg-foreground/5 border border-foreground/20 text-foreground-muted";
 
               return (
                 <li key={participante.id} className={`min-h-touch min-w-0 rounded-card px-gutter py-2 ${estiloLinha}`}>
@@ -436,6 +444,18 @@ export function MinhaPresenca({
                 </div>
               )}
 
+              {confirmacao === null && podeTransferir && (
+                <button type="button" disabled={ocupada || precisaAtualizar} onClick={() => setTransferindo(true)} className="py-1 font-semibold text-blue-700 hover:underline disabled:opacity-60">Transferir responsabilidade</button>
+              )}
+
+              {transferindo && (
+                <div role="dialog" aria-label="Transferir responsabilidade" className="mt-gutter w-full space-y-gutter border-t border-foreground/10 bg-blue-50 p-page text-center">
+                  <div><h3 className="text-headline-md font-semibold text-blue-700">Transferir responsabilidade</h3><p className="text-foreground-muted">Quem ficará responsável pela compra?</p></div>
+                  <div className="space-y-2 text-left">{elegiveisTransferencia.map((participante) => <button key={participante.id} type="button" disabled={ocupada || precisaAtualizar} onClick={() => void executar('Transferindo responsabilidade...', () => onTransferirResponsabilidade(participante.id))} className="flex min-h-touch w-full items-center justify-between rounded-control border border-blue-200 bg-surface px-gutter font-semibold text-blue-700">{participante.nome}<span className="text-label-md text-primary">No mercado</span></button>)}</div>
+                  <button type="button" disabled={ocupada} onClick={() => setTransferindo(false)} className="min-h-touch rounded-control border border-blue-700 px-page font-semibold text-blue-700">Cancelar</button>
+                </div>
+              )}
+
               {confirmacao === "sair" && (
                 <div
                   className="mt-gutter w-full space-y-gutter border border-foreground/10 border-t bg-foreground/5 p-page pt-gutter"
@@ -453,9 +473,10 @@ export function MinhaPresenca({
                     </p>
                   </div>
                   <div className="flex flex-col items-center gap-2">
+                    {podeTransferir && <><p className="rounded-control bg-warning/10 p-gutter text-warning">Transfira a responsabilidade antes de informar que está remoto.</p><button type="button" disabled={ocupada || precisaAtualizar} onClick={() => { setConfirmacao(null); setTransferindo(true); }} className="min-h-touch rounded-control bg-blue-700 px-page font-semibold text-white">Transferir responsabilidade</button></>}
                     <button
                       type="button"
-                      disabled={ocupada || precisaAtualizar}
+                      disabled={ocupada || precisaAtualizar || podeTransferir}
                       onClick={() =>
                         void executar("Declarando saída...", onSair)
                       }

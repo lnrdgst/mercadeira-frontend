@@ -72,17 +72,80 @@ export function TransactionalShell() {
         {ajudaAberta && (
           <div role="dialog" aria-modal="true" aria-labelledby="ajuda-compra-titulo" className="fixed inset-0 z-50 flex items-end bg-foreground/40 sm:items-center sm:justify-center sm:p-page">
             <section className="w-full max-w-lg space-y-gutter rounded-t-card bg-surface p-page pb-[calc(theme(spacing.page)+env(safe-area-inset-bottom))] shadow-soft sm:rounded-card sm:pb-page">
-              <div className="flex items-start justify-between gap-gutter">
-                <h2 id="ajuda-compra-titulo" className="text-headline-md font-semibold">Como funciona esta compra</h2>
-                <button type="button" onClick={() => setAjudaAberta(false)} className="min-h-touch rounded-control px-gutter font-semibold text-primary">Fechar</button>
+              <div className="flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden">
+                <div className="flex shrink-0 items-start justify-between gap-gutter border-b border-border bg-surface pb-gutter">
+                  <h2
+                    id="ajuda-compra-titulo"
+                    className="text-headline-md font-semibold"
+                  >
+                    Como funciona esta compra
+                  </h2>
+
+                  <button
+                    type="button"
+                    onClick={() => setAjudaAberta(false)}
+                    className="min-h-touch shrink-0 rounded-control px-gutter font-semibold text-primary"
+                  >
+                    Fechar
+                  </button>
+                </div>
+
+                <div className="min-h-0 flex-1 overflow-y-auto py-gutter">
+                  <dl className="space-y-gutter text-body-md">
+                    <div>
+                      <dt className="font-semibold text-blue-700">
+                        Responsável operacional
+                      </dt>
+                      <dd className="text-foreground-muted">
+                        É a pessoa que coordena operacionalmente esta compra. A responsabilidade
+                        pode ser transferida para outro participante que esteja no mercado.
+                      </dd>
+                    </div>
+
+                    <div>
+                      <dt className="font-semibold text-primary">
+                        No mercado
+                      </dt>
+                      <dd className="text-foreground-muted">
+                        Indica que a presença do participante foi confirmada. Participantes no
+                        mercado podem executar as ações presenciais permitidas na compra.
+                      </dd>
+                    </div>
+
+                    <div>
+                      <dt className="font-semibold text-orange-800">
+                        Remoto
+                      </dt>
+                      <dd className="text-foreground-muted">
+                        Indica que o participante informou que não está fisicamente no mercado.
+                        Ele continua acompanhando a compra e pode realizar as ações remotas
+                        permitidas.
+                      </dd>
+                    </div>
+
+                    <div>
+                      <dt className="font-semibold text-foreground-muted">
+                        Presença não informada
+                      </dt>
+                      <dd className="text-foreground-muted">
+                        Indica que o participante ainda não informou como está participando.
+                        Nesse estado, ele pode acompanhar a compra e escolher entre solicitar
+                        presença no mercado ou informar que está remoto.
+                      </dd>
+                    </div>
+
+                    <div>
+                      <dt className="font-semibold">
+                        Administrador da família
+                      </dt>
+                      <dd className="text-foreground-muted">
+                        Administra a família, mas não recebe automaticamente poderes
+                        operacionais na compra.
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
               </div>
-              <dl className="space-y-gutter text-body-md">
-                <div><dt className="font-semibold text-blue-700">Responsável operacional</dt><dd className="text-foreground-muted">É a pessoa de referência operacional desta compra e assume as responsabilidades previstas para essa função.</dd></div>
-              <div><dt className="font-semibold text-primary">No mercado</dt><dd className="text-foreground-muted">Indica que o participante confirmou que está fisicamente no mercado.</dd></div>
-              <div><dt className="font-semibold text-foreground-muted">Remoto</dt><dd className="text-foreground-muted">Indica que o participante informou que não está fisicamente no mercado, mas continua acompanhando a compra.</dd></div>
-              <div><dt className="font-semibold text-foreground-muted">Presença não informada</dt><dd className="text-foreground-muted">Indica que o participante ainda não informou se está ou não no mercado.</dd></div>
-                <div><dt className="font-semibold">Administrador da família</dt><dd className="text-foreground-muted">Administra a família, mas não recebe automaticamente poderes operacionais na compra.</dd></div>
-              </dl>
             </section>
           </div>
         )}

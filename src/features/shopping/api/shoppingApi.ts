@@ -43,17 +43,21 @@ export function decidirSolicitacaoResponsabilidade(token: string, familiaId: str
   return comandoPresenca(token, familiaId, listaId, `/solicitacoes-responsabilidade/${solicitacaoId}/${decisao}`)
 }
 
-async function requisitarCompra(token: string, familiaId: string, listaId: string, method: 'GET' | 'POST', signal?: AbortSignal) {
+async function requisitarCompra(token: string, familiaId: string, listaId: string, method: 'GET' | 'POST', signal?: AbortSignal, body?: unknown) {
   const response = await apiRequest<CompraResponse>(
     `/familias/${familiaId}/listas/${listaId}/compra`,
-    { token, method, signal },
+    { token, method, signal, body },
   )
   if (!response.data) throw new Error('Não foi possível recuperar os dados da compra.')
   return response.data
 }
 
-export function iniciarCompra(token: string, familiaId: string, listaId: string) {
-  return requisitarCompra(token, familiaId, listaId, 'POST')
+export function iniciarCompra(token: string, familiaId: string, listaId: string, participantesPresentesIds: string[] = []) {
+  return requisitarCompra(token, familiaId, listaId, 'POST', undefined, { participantesPresentesIds })
+}
+
+export function transferirResponsabilidade(token: string, familiaId: string, listaId: string, participanteCompraId: string) {
+  return comandoPresenca(token, familiaId, listaId, '/responsabilidade-operacional/transferir', { participanteCompraId })
 }
 
 export function buscarCompra(token: string, familiaId: string, listaId: string, signal?: AbortSignal) {

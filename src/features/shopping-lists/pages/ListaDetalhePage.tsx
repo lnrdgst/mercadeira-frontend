@@ -729,46 +729,46 @@ export function ListaDetalhePage() {
             </div>
 
             <div className="flex flex-wrap items-center justify-end gap-gutter">
-                <EditarDadosLista
-                  key={chave}
-                  familiaId={familiaSelecionada.id}
-                  lista={lista}
-                  onAtualizada={(atualizada) => {
-                    setDetalhe(atualizada);
-                    setDetalheKey(chave);
+              <EditarDadosLista
+                key={chave}
+                familiaId={familiaSelecionada.id}
+                lista={lista}
+                onAtualizada={(atualizada) => {
+                  setDetalhe(atualizada);
+                  setDetalheKey(chave);
+                }}
+                onMutacao={atualizarEstadoMutacao}
+              />
+              {podeExcluirLista && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setErroExclusao(null);
+                    setConfirmandoExclusao(true);
                   }}
-                  onMutacao={atualizarEstadoMutacao}
-                />
-                {podeExcluirLista && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setErroExclusao(null);
-                      setConfirmandoExclusao(true);
-                    }}
-                    className="flex h-11 w-11 items-center justify-center rounded-control border border-error text-error transition-colors hover:bg-error/10"
-                    aria-label="Excluir lista"
+                  className="flex h-11 w-11 items-center justify-center rounded-control border border-error text-error transition-colors hover:bg-error/10"
+                  aria-label="Excluir lista"
+                >
+                  {/* Ícone de lixeira nativo em SVG */}
+                  <svg
+                    xmlns="http://w3.org"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   >
-                    {/* Ícone de lixeira nativo em SVG */}
-                    <svg
-                      xmlns="http://w3.org"
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M3 6h18" />
-                      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                    </svg>
-                  </button>
+                    <path d="M3 6h18" />
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                  </svg>
+                </button>
 
-                )}
-              </div>
+              )}
+            </div>
 
             <div className="flex flex-wrap items-start justify-between gap-gutter">
               <div className="min-w-0 space-y-1">
@@ -784,7 +784,7 @@ export function ListaDetalhePage() {
                   Criada por {lista.criador.nome}
                 </p>
               </div>
-              
+
             </div>
 
             <section
@@ -1200,78 +1200,22 @@ export function ListaDetalhePage() {
                   : "Esta lista ainda não possui itens."}
               </div>
             ) : (
-              <ul className="space-y-gutter">
+              <ul className="space-y-2">
                 {listaItens.map((item, indice) => (
                   <li
                     key={item.id}
-                    className="space-y-gutter rounded-card bg-surface p-page shadow-soft"
+                    className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-card bg-surface px-page py-gutter shadow-soft"
                   >
-                    <div>
-                      <h3 className="text-body-lg font-semibold">
-                        {item.descricao}
-                      </h3>
-
-                      {(item.quantidade !== null ||
-                        item.marca) && (
-                          <p className="text-body-md text-foreground-muted">
-                            {item.quantidade !== null &&
-                              `${item.quantidade}${item.unidadeMedida
-                                ? ` ${unidadeMedidaLabels[item.unidadeMedida]}`
-                                : ""
-                              }`}
-
-                            {item.quantidade !== null &&
-                              item.marca &&
-                              " · "}
-
-                            {item.marca}
-                          </p>
-                        )}
-
-                      {item.observacoes && (
-                        <p className="mt-1 text-label-lg text-foreground-muted">
-                          {item.observacoes}
-                        </p>
-                      )}
-                    </div>
-
+                    {/* Mover item */}
                     {podeAlterar && (
-                      <div className="grid gap-2 sm:grid-cols-4">
+                      <div className="flex flex-col gap-1">
                         <button
                           type="button"
-                          onClick={() =>
-                            setItemEditando(item)
-                          }
-                          className="min-h-touch rounded-control border border border-blue-500 bg-transparent px-page font-semibold text-blue-700 hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
-                        >
-                          Editar item
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setItemParaRemover(item)
-                          }
-                          className="min-h-touch rounded-control border border-error px-gutter text-label-lg font-semibold text-error"
-                        >
-                          Remover da lista
-                        </button>
-
-                        <button
-                          type="button"
-                          disabled={
-                            indice === 0 ||
-                            operacaoItem !== null
-                          }
-                          onClick={() =>
-                            void moverItem(
-                              indice,
-                              -1,
-                            )
-                          }
+                          disabled={indice === 0 || operacaoItem !== null}
+                          onClick={() => void moverItem(indice, -1)}
                           aria-label={`Mover ${item.descricao} para cima`}
                           title={`Mover ${item.descricao} para cima`}
-                          className="flex min-h-touch min-w-touch items-center justify-center rounded-control border border-foreground/20 px-gutter disabled:opacity-60"
+                          className="flex size-10 items-center justify-center rounded-control text-foreground-muted transition-colors hover:bg-foreground/5 hover:text-foreground disabled:opacity-30"
                         >
                           <svg
                             aria-hidden="true"
@@ -1288,20 +1232,13 @@ export function ListaDetalhePage() {
                         <button
                           type="button"
                           disabled={
-                            indice ===
-                            listaItens.length -
-                            1 ||
+                            indice === listaItens.length - 1 ||
                             operacaoItem !== null
                           }
-                          onClick={() =>
-                            void moverItem(
-                              indice,
-                              1,
-                            )
-                          }
+                          onClick={() => void moverItem(indice, 1)}
                           aria-label={`Mover ${item.descricao} para baixo`}
                           title={`Mover ${item.descricao} para baixo`}
-                          className="flex min-h-touch min-w-touch items-center justify-center rounded-control border border-foreground/20 px-gutter disabled:opacity-60"
+                          className="flex size-10 items-center justify-center rounded-control text-foreground-muted transition-colors hover:bg-foreground/5 hover:text-foreground disabled:opacity-30"
                         >
                           <svg
                             aria-hidden="true"
@@ -1312,6 +1249,81 @@ export function ListaDetalhePage() {
                             strokeLinejoin="round"
                           >
                             <path d="m6 9 6 6 6-6" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Dados do item */}
+                    <div className="min-w-0 text-center">
+                      <h3 className="truncate text-body-lg font-semibold">
+                        {item.descricao}
+                      </h3>
+
+                      {(item.quantidade !== null || item.marca) && (
+                        <p className="text-body-md text-foreground-muted">
+                          {item.quantidade !== null &&
+                            `${item.quantidade}${item.unidadeMedida
+                              ? ` ${unidadeMedidaLabels[item.unidadeMedida]}`
+                              : ""
+                            }`}
+
+                          {item.quantidade !== null && item.marca && " · "}
+
+                          {item.marca}
+                        </p>
+                      )}
+
+                      {item.observacoes && (
+                        <p className="mt-1 line-clamp-2 text-label-md text-foreground-muted">
+                          {item.observacoes}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Editar / remover */}
+                    {podeAlterar && (
+                      <div className="flex flex-col gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setItemEditando(item)}
+                          aria-label={`Editar ${item.descricao}`}
+                          title="Alterar item"
+                          className="flex size-10 items-center justify-center rounded-control text-blue-700 transition-colors hover:bg-blue-50"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            viewBox="0 0 24 24"
+                            className="size-5 fill-none stroke-current"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M12 20h9" />
+                            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z" />
+                          </svg>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setItemParaRemover(item)}
+                          aria-label={`Remover ${item.descricao} da lista`}
+                          title="Remover da lista"
+                          className="flex size-10 items-center justify-center rounded-control text-error transition-colors hover:bg-error/10"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            viewBox="0 0 24 24"
+                            className="size-5 fill-none stroke-current"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M3 6h18" />
+                            <path d="M8 6V4h8v2" />
+                            <path d="M19 6l-1 14H6L5 6" />
+                            <path d="M10 11v5" />
+                            <path d="M14 11v5" />
                           </svg>
                         </button>
                       </div>

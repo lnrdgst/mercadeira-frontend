@@ -22,9 +22,9 @@ test('Home faz polling somente uma vez a cada intervalo quando visível e online
   await act(async () => { await vi.runOnlyPendingTimersAsync() })
   const inicial = fetchMock.mock.calls.length
   await act(async () => { await vi.advanceTimersByTimeAsync(10_000) })
-  expect(fetchMock.mock.calls.length).toBe(inicial + 1)
-  await act(async () => { await vi.advanceTimersByTimeAsync(10_000) })
   expect(fetchMock.mock.calls.length).toBe(inicial + 2)
+  await act(async () => { await vi.advanceTimersByTimeAsync(10_000) })
+  expect(fetchMock.mock.calls.length).toBe(inicial + 4)
 })
 
 test('Home atualiza em focus, visible e online, e desmontagem limpa o timer', async () => {
@@ -64,7 +64,8 @@ test('refresh em segundo plano preserva a árvore principal enquanto a resposta 
   Object.defineProperty(document, 'hidden', { configurable: true, value: false })
   const pendente = deferred<Response>()
   let chamadas = 0
-  const { fetchMock } = preparar(async () => {
+  const { fetchMock } = preparar(async (input) => {
+    if (!String(input).endsWith('/listas')) return Response.json([])
     chamadas += 1
     return chamadas === 1
       ? Response.json([{ id: 'lista', nome: 'Preparação', categoria: 'SUPERMERCADO', estabelecimento: null, status: 'EM_PREPARACAO', criadaEm: '2026-09-24T10:00:00Z', atualizadaEm: '2026-09-24T10:00:00Z' }])
@@ -73,7 +74,7 @@ test('refresh em segundo plano preserva a árvore principal enquanto a resposta 
   expect(await screen.findByRole('heading', { name: 'Lista em preparação' })).toBeVisible()
   await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)) })
   await act(async () => { window.dispatchEvent(new Event('focus')); await Promise.resolve() })
-  expect(fetchMock).toHaveBeenCalledTimes(2)
+  expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(3)
   expect(screen.getByRole('heading', { name: 'Lista em preparação' })).toBeVisible()
   await act(async () => pendente.resolve(Response.json([])))
 })

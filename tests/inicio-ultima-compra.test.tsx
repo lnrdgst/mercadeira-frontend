@@ -36,6 +36,7 @@ function compraEmAndamento(id: string, iniciadaEm: string) {
 test('exibe a compra finalizada mais recente pela data real de finalização', async () => {
   const http = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
     const path = String(input)
+    if (path.endsWith('/solicitacoes/minhas-pendentes')) return Response.json([])
     if (path.endsWith('/familias/familia-a/listas')) return Response.json([lista('antiga'), lista('recente')])
     if (path.endsWith('/listas/antiga/compra')) return Response.json(compra('antiga', '2026-09-20T10:00:00'))
     if (path.endsWith('/listas/recente/compra')) return Response.json(compra('recente', '2026-09-21T18:42:00'))
@@ -45,12 +46,13 @@ test('exibe a compra finalizada mais recente pela data real de finalização', a
 
   expect(await screen.findByText('Última compra finalizada:', { exact: false })).toHaveTextContent('21/09/2026 · Segunda-feira às 18:42')
   expect(screen.getByRole('link', { name: 'Ver compra' })).toHaveAttribute('href', '/listas/recente/compra/revisao')
-  expect(http).toHaveBeenCalledTimes(3)
+  expect(http).toHaveBeenCalledTimes(4)
 })
 
 test('exibe somente a Compra em andamento mais recente e a Lista em preparação mais atual', async () => {
   const http = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
     const path = String(input)
+    if (path.endsWith('/solicitacoes/minhas-pendentes')) return Response.json([])
     if (path.endsWith('/familias/familia-a/listas')) return Response.json([
       lista('compra-antiga', 'EM_COMPRA'), lista('compra-recente', 'EM_COMPRA'),
       { ...lista('preparacao-antiga', 'EM_PREPARACAO'), atualizadaEm: '2026-09-20T10:00:00Z' },
@@ -70,7 +72,7 @@ test('exibe somente a Compra em andamento mais recente e a Lista em preparação
   expect(screen.queryByText('Lista preparacao-antiga')).not.toBeInTheDocument()
   expect(screen.getByText('Acompanhar').closest('a')).toHaveAttribute('href', '/listas/compra-recente/compra')
   expect(screen.getByText('Abrir lista').closest('a')).toHaveAttribute('href', '/listas/preparacao-recente')
-  expect(http).toHaveBeenCalledTimes(3)
+  expect(http).toHaveBeenCalledTimes(4)
 })
 
 test('informa quando a família não tem compras finalizadas', async () => {

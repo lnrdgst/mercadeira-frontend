@@ -197,15 +197,7 @@ export function MinhaPresenca({
               const meu = participante.id === proprio?.id;
               const responsavel = participante.id === responsavelId;
               const nome = nomeCompacto(participante.nome, primeirosNomes, indice);
-              const descricao = responsavel
-                ? (
-                  <>
-                    No mercado
-                    <br />
-                    Responsável operacional pela compra
-                  </>
-                )
-                : presencaLabels[estado] ?? "Presença indisponível";
+              const descricaoPresenca = presencaLabels[estado] ?? "Presença indisponível";
               const estiloLinha = responsavel
                 ? "border border-blue-400 bg-blue-50 text-blue-700"
                 : estado === "PRESENTE"
@@ -218,7 +210,8 @@ export function MinhaPresenca({
                     {nome}
                     {meu && " (você)"}
                   </span>
-                  <span className="block text-label-md">{descricao}</span>
+                  {responsavel && <span className="block text-label-md font-semibold">Responsável operacional</span>}
+                  <span className={`block text-label-md ${estado === "PRESENTE" ? "text-primary" : ""}`}>{descricaoPresenca}</span>
                 </li>
               );
             })}

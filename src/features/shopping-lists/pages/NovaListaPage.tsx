@@ -72,7 +72,7 @@ export function NovaListaPage() {
 
       {erro && <p role="alert" className="rounded-card bg-error/10 p-gutter text-error">{erro}</p>}
 
-      <form onSubmit={handleSubmit} className="space-y-page rounded-card bg-surface p-page shadow-soft">
+      <form onSubmit={handleSubmit} className="space-y-page rounded-card bg-surface p-page pb-28 shadow-soft">
         <div className="space-y-1">
           <label className="block text-label-lg font-semibold" htmlFor="nome">
             Nome da lista
@@ -118,7 +118,7 @@ export function NovaListaPage() {
           />
         </div>
 
-        <div className="grid gap-gutter sm:grid-cols-2">
+        <div className="sticky bottom-0 -mx-page grid gap-gutter border-t border-foreground/10 bg-surface px-page pt-gutter pb-[max(env(safe-area-inset-bottom),1rem)] sm:grid-cols-2">
           <button
             type="submit"
             disabled={enviando}

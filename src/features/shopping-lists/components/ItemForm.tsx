@@ -26,5 +26,5 @@ export function ItemForm({ listaId, categoria, ...props }: ItemFormProps) {
     try { return (await buscarSugestoesItens(token, familiaId, listaId, categoria, termo)).data || [] }
     catch (error) { if ((error as ApiRequestError).status === 401) logout(); throw error }
   }, [token, familiaId, listaId, categoria, logout])
-  return <ItemFieldsForm key={familiaId} {...props} loadSuggestions={load} />
+  return <ItemFieldsForm key={`${familiaId}:${props.item?.id ?? 'novo'}`} {...props} loadSuggestions={load} />
 }

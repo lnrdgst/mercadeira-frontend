@@ -26,7 +26,7 @@ function preparar({ inicial = compra(), comando = async () => Response.json(comp
   return { ...view, http, comandos: () => http.mock.calls.filter(([, options]) => options?.method !== 'GET') }
 }
 
-test.each([['NAO_INFORMADA', 'Presença não informada'], ['NAO_PRESENTE', 'Não está no mercado']] as const)('preserva a semântica de %s e oferece solicitação apenas pela capability', async (estado, label) => {
+test.each([['NAO_INFORMADA', 'Presença não informada'], ['NAO_PRESENTE', 'Remoto']] as const)('preserva a semântica de %s e oferece solicitação apenas pela capability', async (estado, label) => {
   preparar({ inicial: compra(estado) })
   expect(await screen.findByText(label)).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Solicitar presença no mercado' })).toBeEnabled()
@@ -184,7 +184,7 @@ test('erro de comando reconcilia por GET e não faz nova escrita', async () => {
   const { user, comandos, http } = preparar({ comando: async () => Response.json({}, { status: 409 }), get: async () => Response.json(++consultas === 1 ? compra() : atualizada) })
   await user.click(await screen.findByRole('button', { name: 'Solicitar presença no mercado' }))
   await user.click(screen.getByRole('button', { name: 'Confirmar solicitação' }))
-  expect(await screen.findByText('Não está no mercado')).toBeInTheDocument()
+  expect(await screen.findByText('Remoto')).toBeInTheDocument()
   expect(comandos()).toHaveLength(1)
   expect(http.mock.calls.filter(([, options]) => options?.method === 'GET')).toHaveLength(2)
 })

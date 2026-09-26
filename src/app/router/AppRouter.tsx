@@ -14,6 +14,7 @@ import { ListasPage } from '../../features/shopping-lists/pages/ListasPage'
 import { ListaDetalhePage } from '../../features/shopping-lists/pages/ListaDetalhePage'
 import { NovaListaPage } from '../../features/shopping-lists/pages/NovaListaPage'
 import { NotFoundPage } from './NotFoundPage'
+import { ScrollToTop } from './ScrollToTop'
 import {
   AuthenticatedRoute,
   FamilyOnboardingRoute,
@@ -25,7 +26,7 @@ import {
 
 export function AppRouter() {
   return (
-    <Routes>
+    <><ScrollToTop /><Routes>
       <Route path="/" element={<RootRedirect />} />
 
       <Route element={<PublicOnlyRoute />}>
@@ -68,6 +69,6 @@ export function AppRouter() {
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+    </Routes></>
   )
 }

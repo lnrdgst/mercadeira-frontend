@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import type { ApiRequestError } from "../../../shared/api/apiClient";
 import { useSession } from "../../auth/session/sessionContext";
 import { useAuthenticatedUser } from "../../auth/user/AuthenticatedUserContext";
 import { useFamilyContext } from "../../family/session/familyContext";
-import { aprovarSolicitacaoFamilia, buscarSolicitacoesFamilia, rejeitarSolicitacaoFamilia } from "../../family/api/familyApi";
-import type { SolicitacaoFamiliaResponse } from "../../family/types/family";
+import { buscarMinhasSolicitacoesPendentes, buscarSolicitacoesFamilia } from "../../family/api/familyApi";
+import type { MinhaSolicitacaoPendenteResponse, SolicitacaoFamiliaResponse } from "../../family/types/family";
 import { buscarListas } from "../../shopping-lists/api/shoppingListsApi";
 import { buscarCompra } from "../../shopping/api/shoppingApi";
 import type { CompraResponse } from "../../shopping/types/shopping";
@@ -46,13 +46,14 @@ export function InicioPage() {
   const periodo = obterPeriodoDoDia();
 
   const { auth, logout } = useSession();
+  const navigate = useNavigate();
   const {
     usuario,
     loading: perfilLoading,
     error: perfilError,
     recarregarUsuario,
   } = useAuthenticatedUser();
-  const { familiaSelecionada, recarregarFamilias } = useFamilyContext();
+  const { familiaSelecionada } = useFamilyContext();
   const familiaSelecionadaId = familiaSelecionada?.id;
   const podeGerenciarSolicitacoes = familiaSelecionada?.contextoUsuario?.podeGerenciarIntegrantes === true;
   const [listas, setListas] = useState<ListaCompraResumoResponse[]>([]);
@@ -66,9 +67,7 @@ export function InicioPage() {
   const [familiaCompraEmAndamentoId, setFamiliaCompraEmAndamentoId] = useState<string | null>(null);
   const [erroCompraEmAndamento, setErroCompraEmAndamento] = useState(false);
   const [solicitacoes, setSolicitacoes] = useState<SolicitacaoFamiliaResponse[]>([]);
-  const [solicitacaoEmAnalise, setSolicitacaoEmAnalise] = useState<SolicitacaoFamiliaResponse | null>(null);
-  const [decidindoSolicitacao, setDecidindoSolicitacao] = useState(false);
-  const [erroSolicitacao, setErroSolicitacao] = useState<string | null>(null);
+  const [minhasSolicitacoesPendentes, setMinhasSolicitacoesPendentes] = useState<MinhaSolicitacaoPendenteResponse[]>([]);
   const geracaoCarregamentoRef = useRef(0);
   const carregandoRef = useRef(false);
   const familiaCarregandoRef = useRef<string | null>(null);
@@ -141,6 +140,14 @@ export function InicioPage() {
       } else {
         setSolicitacoes([]);
       }
+      void buscarMinhasSolicitacoesPendentes(auth.token)
+        .then((resultado) => {
+          if (geracao === geracaoCarregamentoRef.current) setMinhasSolicitacoesPendentes(resultado.data || []);
+        })
+        .catch((erro) => {
+          if ((erro as ApiRequestError).status === 401) logout();
+          else if (geracao === geracaoCarregamentoRef.current) setMinhasSolicitacoesPendentes([]);
+        });
     } catch (err) {
       if (geracao !== geracaoCarregamentoRef.current) return;
       if ((err as ApiRequestError).status === 401) logout();
@@ -190,24 +197,6 @@ export function InicioPage() {
   const compraEmAndamentoVisivel = familiaCompraEmAndamentoId === familiaSelecionada.id && !erroCompraEmAndamento
     ? compraEmAndamento
     : null;
-  async function decidirSolicitacao(acao: 'aprovar' | 'rejeitar') {
-    if (!auth || !familiaSelecionada || !solicitacaoEmAnalise || !podeGerenciarSolicitacoes || decidindoSolicitacao) return;
-    setDecidindoSolicitacao(true); setErroSolicitacao(null);
-    try {
-      if (acao === 'aprovar') await aprovarSolicitacaoFamilia(auth.token, familiaSelecionada.id, solicitacaoEmAnalise.id);
-      else await rejeitarSolicitacaoFamilia(auth.token, familiaSelecionada.id, solicitacaoEmAnalise.id);
-      setSolicitacaoEmAnalise(null);
-      await recarregarFamilias(familiaSelecionada.id);
-      await carregar();
-    } catch (error) {
-      const apiError = error as ApiRequestError;
-      if (apiError.status === 401) { logout(); return; }
-      if (apiError.status === 404 || apiError.status === 409) {
-        setSolicitacaoEmAnalise(null);
-        await carregar();
-      } else setErroSolicitacao(apiError.message || 'Não foi possível concluir a solicitação.');
-    } finally { setDecidindoSolicitacao(false); }
-  }
   const formatarFinalizacao = (valor: string) => {
     const data = new Date(valor);
     const dataFormatada = data.toLocaleDateString("pt-BR");
@@ -287,7 +276,14 @@ export function InicioPage() {
       {podeGerenciarSolicitacoes && solicitacoes.length > 0 && (
         <section className="space-y-gutter rounded-card border border-amber-300 bg-amber-50 p-page shadow-soft" aria-label="Solicitações de ingresso">
           <div><h2 className="text-headline-md font-semibold">{solicitacoes.length === 1 ? 'Solicitação de ingresso' : `${solicitacoes.length} solicitações de ingresso pendentes`}</h2><p className="mt-1 text-body-md text-foreground-muted">{solicitacoes.length === 1 ? `${solicitacoes[0].solicitante.nome} quer entrar na família.` : 'Há solicitações aguardando sua análise.'}</p></div>
-          <button type="button" onClick={() => { setErroSolicitacao(null); setSolicitacaoEmAnalise(solicitacoes[0]); }} className="min-h-touch rounded-control border border-amber-600 px-page font-semibold text-amber-900">{solicitacoes.length === 1 ? 'Analisar solicitação' : 'Analisar solicitações'}</button>
+          <button type="button" onClick={() => navigate('/familia')} className="min-h-touch rounded-control border border-amber-600 px-page font-semibold text-amber-900">{solicitacoes.length === 1 ? 'Ver solicitação' : 'Ver solicitações'}</button>
+        </section>
+      )}
+
+      {minhasSolicitacoesPendentes.length > 0 && (
+        <section className="flex flex-wrap items-center justify-between gap-gutter rounded-card border border-amber-200 bg-amber-50/60 p-page" aria-label="Sua solicitação de ingresso pendente">
+          <p className="text-body-md text-foreground-muted">Você possui {minhasSolicitacoesPendentes.length === 1 ? 'uma solicitação' : `${minhasSolicitacoesPendentes.length} solicitações`} de ingresso aguardando aprovação.</p>
+          <button type="button" onClick={() => navigate('/familia/selecionar')} className="min-h-touch rounded-control border border-amber-600 px-page font-semibold text-amber-900">Ver solicitação</button>
         </section>
       )}
 
@@ -359,7 +355,6 @@ export function InicioPage() {
         </section>
       )}
 
-      {solicitacaoEmAnalise && <div role="dialog" aria-modal="true" aria-label="Analisar solicitação" className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-page"><section className="w-full max-w-md space-y-gutter rounded-card bg-surface p-page shadow-lg"><div><h2 className="text-headline-md font-semibold">Solicitação de ingresso</h2><p className="mt-2 font-semibold">{solicitacaoEmAnalise.solicitante.nome}</p><p className="text-body-md text-foreground-muted">{solicitacaoEmAnalise.solicitante.email}</p></div>{erroSolicitacao && <p role="alert" className="text-error">{erroSolicitacao}</p>}<div className="grid gap-gutter sm:grid-cols-3"><button type="button" disabled={decidindoSolicitacao} onClick={() => void decidirSolicitacao('aprovar')} className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60">{decidindoSolicitacao ? 'Processando...' : 'Aprovar'}</button><button type="button" disabled={decidindoSolicitacao} onClick={() => void decidirSolicitacao('rejeitar')} className="min-h-touch rounded-control border border-error px-page font-semibold text-error disabled:opacity-60">Recusar</button><button type="button" disabled={decidindoSolicitacao} onClick={() => setSolicitacaoEmAnalise(null)} className="min-h-touch rounded-control border border-foreground/20 px-page font-semibold">Cancelar</button></div></section></div>}
 
     </section>
   );

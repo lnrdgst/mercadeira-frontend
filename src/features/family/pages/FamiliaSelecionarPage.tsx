@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import type { ApiRequestError } from '../../../shared/api/apiClient'
 import { useSession } from '../../auth/session/sessionContext'
-import { criarFamilia, solicitarEntrada } from '../api/familyApi'
+import { buscarMinhasSolicitacoesPendentes, criarFamilia, solicitarEntrada } from '../api/familyApi'
 import { useFamilyContext } from '../session/familyContext'
+import type { MinhaSolicitacaoPendenteResponse } from '../types/family'
 import trocaFamilia from '../../../assets/branding/mercadeira/troca-familia.png'
 
 const papelLabel = {
@@ -21,6 +22,35 @@ export function FamiliaSelecionarPage() {
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
+  const [solicitacoesPendentes, setSolicitacoesPendentes] = useState<MinhaSolicitacaoPendenteResponse[]>([])
+
+  const carregarSolicitacoesPendentes = useCallback(async () => {
+    if (!auth) return
+    try {
+      const response = await buscarMinhasSolicitacoesPendentes(auth.token)
+      setSolicitacoesPendentes(response.data || [])
+    } catch (error) {
+      if ((error as ApiRequestError).status === 401) logout()
+    }
+  }, [auth, logout])
+
+  useEffect(() => {
+    void Promise.resolve().then(carregarSolicitacoesPendentes)
+  }, [carregarSolicitacoesPendentes])
+
+  useEffect(() => {
+    const atualizar = () => {
+      if (!document.hidden && navigator.onLine) void carregarSolicitacoesPendentes()
+    }
+    window.addEventListener('focus', atualizar)
+    window.addEventListener('online', atualizar)
+    document.addEventListener('visibilitychange', atualizar)
+    return () => {
+      window.removeEventListener('focus', atualizar)
+      window.removeEventListener('online', atualizar)
+      document.removeEventListener('visibilitychange', atualizar)
+    }
+  }, [carregarSolicitacoesPendentes])
 
   function handleSelect(familiaId: string) {
     selecionarFamilia(familiaId)
@@ -65,6 +95,7 @@ export function FamiliaSelecionarPage() {
     setErro(null)
     try {
       await solicitarEntrada(auth.token, { codigoIngresso })
+      await carregarSolicitacoesPendentes()
       setFeedback('Solicitação enviada. Aguarde a aprovação de um administrador.')
       setCodigo('')
       setAcaoAberta(null)
@@ -140,6 +171,23 @@ export function FamiliaSelecionarPage() {
         ))}
       </ul>
 
+      {solicitacoesPendentes.length > 0 && (
+        <section className="space-y-gutter rounded-card border border-amber-200 bg-amber-50/60 p-page" aria-labelledby="solicitacoes-pendentes-titulo">
+          <div>
+            <h2 id="solicitacoes-pendentes-titulo" className="text-headline-md font-semibold text-amber-900">Solicitações aguardando aprovação</h2>
+            <p className="text-body-md text-foreground-muted">Aguarde a decisão de um administrador para acompanhar a família.</p>
+          </div>
+          <ul className="space-y-2">
+            {solicitacoesPendentes.map((solicitacao) => (
+              <li key={solicitacao.id} className="rounded-card border border-amber-100 bg-surface p-gutter">
+                <p className="font-semibold">{solicitacao.familia.nome}</p>
+                <p className="text-label-lg text-foreground-muted">Aguardando aprovação</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {feedback && <p role="status" className="rounded-card bg-primary/10 p-gutter text-body-md text-primary">{feedback}</p>}
 
       <section className="grid gap-gutter border-t border-foreground/10 pt-page sm:grid-cols-2">
@@ -156,11 +204,14 @@ export function FamiliaSelecionarPage() {
           <form onSubmit={acaoAberta === 'criar' ? criar : ingressar} className="w-full max-w-md space-y-gutter rounded-card bg-surface p-page shadow-soft">
             <div>
               <h2 id="acao-familia-titulo" className="text-headline-md font-semibold">{acaoAberta === 'criar' ? 'Criar nova família' : 'Ingressar com código'}</h2>
-              <p className="mt-1 text-body-md text-foreground-muted">{acaoAberta === 'criar' ? 'Digite apenas o nome, sem a palavra “família”.' : 'Informe o código de ingresso compartilhado pela família.'}</p>
+              <p id={acaoAberta === 'criar' ? 'orientacao-nome-familia' : undefined} className="mt-1 text-body-md text-foreground-muted">{acaoAberta === 'criar' ? 'Digite apenas o nome, sem a palavra “família”. Ex.: Silva.' : 'Informe o código de ingresso compartilhado pela família.'}</p>
             </div>
             {acaoAberta === 'criar' ? (
               <label className="block text-label-lg font-semibold" htmlFor="nome-familia">Nome da família
-                <input id="nome-familia" value={nome} onChange={(event) => setNome(event.target.value)} maxLength={120} autoFocus disabled={enviando} className="mt-1 min-h-touch w-full rounded-control border border-foreground/20 bg-surface px-gutter" />
+                <div className="mt-1 flex min-h-touch w-full items-center rounded-card border border-foreground/20">
+                  <span className="pl-gutter font-medium text-foreground-muted">Família</span>
+                  <input id="nome-familia" aria-label="Nome da família" value={nome} onChange={(event) => { setNome(event.target.value); setErro(null) }} placeholder="Silva" aria-describedby="orientacao-nome-familia" maxLength={120} autoFocus disabled={enviando} className="min-w-0 flex-1 bg-transparent px-2 outline-none" />
+                </div>
               </label>
             ) : (
               <label className="block text-label-lg font-semibold" htmlFor="codigo-ingresso">Código de ingresso

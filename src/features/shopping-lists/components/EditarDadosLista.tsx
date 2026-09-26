@@ -256,7 +256,7 @@ export function EditarDadosLista({
               </div>
             </fieldset>
 
-            <div className="border-t border-foreground/15 pt-gutter">
+            <div className="sticky bottom-0 -mx-page border-t border-foreground/15 bg-surface px-page pt-gutter pb-[max(env(safe-area-inset-bottom),1rem)]">
               <div className="flex flex-wrap items-center justify-end gap-2">
                 <button
                   type="button"

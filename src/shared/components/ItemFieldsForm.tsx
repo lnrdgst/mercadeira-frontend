@@ -28,7 +28,8 @@ export function ItemFieldsForm({ item, submitting, stickyActions = false, onCanc
   const [marca, setMarca] = useState(item?.marca || '')
   const [observacoes, setObservacoes] = useState(item?.observacoes || '')
 
-  const [quantidade, setQuantidade] = useState("")
+  const [quantidade, setQuantidade] = useState(item?.quantidade?.toString() ?? '')
+
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()

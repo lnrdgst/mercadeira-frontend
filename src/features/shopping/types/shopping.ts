@@ -5,7 +5,7 @@ export type DeclaracaoPresenca = 'NAO_PRESENTE'
 export const presencaLabels: Record<PresencaOperacional, string> = {
   NAO_INFORMADA: 'Presença não informada',
   PRESENTE: 'No mercado',
-  NAO_PRESENTE: 'Não está no mercado',
+  NAO_PRESENTE: 'Remoto',
 }
 
 export interface ParticipanteCompraResponse {

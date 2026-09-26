@@ -107,3 +107,15 @@ test('preferência desligada permanece desligada ao navegar entre as rotas trans
   expect(screen.getByRole('button', { name: 'Ligar' })).toBeVisible()
   expect(request).toHaveBeenCalledOnce()
 })
+
+test('a ajuda contextual abre e fecha uma única vez no shell transacional', async () => {
+  renderFluxo()
+  await act(async () => { screen.getByRole('button', { name: 'Ajuda' }).click() })
+  const dialogo = screen.getByRole('dialog', { name: 'Como funciona esta compra' })
+  expect(dialogo).toHaveTextContent('Responsável operacional')
+  expect(dialogo).toHaveTextContent('No mercado')
+  expect(dialogo).toHaveTextContent('Remoto')
+  expect(dialogo).toHaveTextContent('Administrador da família')
+  await act(async () => { screen.getByRole('button', { name: 'Fechar' }).click() })
+  expect(screen.queryByRole('dialog', { name: 'Como funciona esta compra' })).not.toBeInTheDocument()
+})

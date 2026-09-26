@@ -567,7 +567,7 @@ export function ListasPage() {
                                     final.
                                 </p>
                             )}
-                        <footer className="flex flex-col-reverse gap-gutter border-t border-foreground/10 pt-page sm:flex-row sm:items-center">
+                        <footer className="sticky bottom-0 -mx-page flex flex-col-reverse gap-gutter border-t border-foreground/10 bg-surface px-page pt-gutter pb-[max(env(safe-area-inset-bottom),1rem)] sm:flex-row sm:items-center">
                             <button
                                 type="button"
                                 onClick={() => setModalFiltrosAberto(false)}

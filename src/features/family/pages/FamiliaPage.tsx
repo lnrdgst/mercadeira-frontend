@@ -328,9 +328,9 @@ export function FamiliaPage() {
       )}
 
       {((isAdministrador) && (solicitacoesVisiveis.length > 0)) && (
-        <section className="space-y-gutter">
+        <section className="space-y-gutter rounded-card border border-amber-200 bg-amber-50/60 p-page">
           <div>
-            <h2 className="text-headline-md font-semibold">Solicitações pendentes</h2>
+            <h2 className="text-headline-md font-semibold text-amber-900">Solicitações pendentes</h2>
             <p className="mt-1 text-body-md text-foreground-muted">
               Aprove ou rejeite os pedidos de entrada nesta família.
             </p>
@@ -368,7 +368,7 @@ export function FamiliaPage() {
                 const dataFormatada = formatarData(solicitacao.solicitadaEm)
 
                 return (
-                  <li key={solicitacao.id} className="space-y-gutter rounded-card border border-foreground/10 bg-surface p-page shadow-soft">
+                  <li key={solicitacao.id} className="space-y-gutter rounded-card border border-amber-100 bg-surface p-page shadow-soft">
                     <div>
                       <p className="text-label-lg font-semibold">{solicitacao.solicitante.nome}</p>
                       <p className="text-body-md text-foreground-muted">{solicitacao.solicitante.email}</p>
@@ -383,7 +383,7 @@ export function FamiliaPage() {
                         type="button"
                         disabled={emProcessamento}
                         onClick={() => void atualizarSolicitacao(solicitacao.id, 'aprovar')}
-                        className="min-h-touch rounded-control bg-primary px-page text-label-lg font-semibold text-surface transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60"
+                        className="min-h-touch rounded-control bg-blue-600 px-page text-label-lg font-semibold text-surface transition-opacity hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {emProcessamento ? 'Processando...' : 'Aprovar'}
                       </button>

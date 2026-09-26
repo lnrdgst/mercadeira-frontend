@@ -1289,7 +1289,7 @@ export function ListaDetalhePage() {
                           onClick={() => setItemEditando(item)}
                           aria-label={`Editar ${item.descricao}`}
                           title="Alterar item"
-                          className="flex size-10 items-center justify-center rounded-control text-blue-700 transition-colors hover:bg-blue-50"
+                          className="flex size-10 items-center justify-center rounded-control text-primary transition-colors hover:bg-primary"
                         >
                           <svg
                             aria-hidden="true"

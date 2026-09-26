@@ -115,6 +115,7 @@ test('a ajuda contextual abre e fecha uma única vez no shell transacional', asy
   expect(dialogo).toHaveTextContent('Responsável operacional')
   expect(dialogo).toHaveTextContent('No mercado')
   expect(dialogo).toHaveTextContent('Remoto')
+  expect(dialogo).toHaveTextContent('Presença não informada')
   expect(dialogo).toHaveTextContent('Administrador da família')
   await act(async () => { screen.getByRole('button', { name: 'Fechar' }).click() })
   expect(screen.queryByRole('dialog', { name: 'Como funciona esta compra' })).not.toBeInTheDocument()

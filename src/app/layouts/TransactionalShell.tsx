@@ -78,8 +78,9 @@ export function TransactionalShell() {
               </div>
               <dl className="space-y-gutter text-body-md">
                 <div><dt className="font-semibold text-blue-700">Responsável operacional</dt><dd className="text-foreground-muted">É a pessoa de referência operacional desta compra e assume as responsabilidades previstas para essa função.</dd></div>
-                <div><dt className="font-semibold text-primary">No mercado</dt><dd className="text-foreground-muted">Indica quem está participando presencialmente da compra.</dd></div>
-                <div><dt className="font-semibold text-foreground-muted">Remoto</dt><dd className="text-foreground-muted">Indica quem está acompanhando a compra sem estar fisicamente no mercado.</dd></div>
+              <div><dt className="font-semibold text-primary">No mercado</dt><dd className="text-foreground-muted">Indica que o participante confirmou que está fisicamente no mercado.</dd></div>
+              <div><dt className="font-semibold text-foreground-muted">Remoto</dt><dd className="text-foreground-muted">Indica que o participante informou que não está fisicamente no mercado, mas continua acompanhando a compra.</dd></div>
+              <div><dt className="font-semibold text-foreground-muted">Presença não informada</dt><dd className="text-foreground-muted">Indica que o participante ainda não informou se está ou não no mercado.</dd></div>
                 <div><dt className="font-semibold">Administrador da família</dt><dd className="text-foreground-muted">Administra a família, mas não recebe automaticamente poderes operacionais na compra.</dd></div>
               </dl>
             </section>

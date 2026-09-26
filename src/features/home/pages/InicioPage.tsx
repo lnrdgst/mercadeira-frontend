@@ -294,10 +294,31 @@ export function InicioPage() {
       <hr style={{ border: '0', borderTop: '1px solid #e0e0e0', margin: '16px 0' }} />
 
       <Link
+
         to="/listas/nova"
-        className="flex min-h-touch w-full items-center justify-center rounded-control border-2 border-primary bg-surface px-page font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        className="flex min-h-touch w-full items-center justify-center gap-2 rounded-control border-2 border-primary bg-surface px-page font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
-        Preparar nova lista de compras
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          className="size-5 fill-none stroke-current"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M8 6h8" />
+          <path d="M8 12h5" />
+          <path d="M8 18h4" />
+
+          <circle cx="4" cy="6" r="1" />
+          <circle cx="4" cy="12" r="1" />
+          <circle cx="4" cy="18" r="1" />
+
+          <path d="M18 14v6" />
+          <path d="M15 17h6" />
+        </svg>
+
+        <span>Preparar nova lista de compras</span>
       </Link>
 
       {!loading && !error && (compraEmAndamentoVisivel || listaEmPreparacao) && (

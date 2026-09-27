@@ -20,11 +20,11 @@ afterEach(() => {
   if (closeOriginal) Object.defineProperty(HTMLDialogElement.prototype, 'close', closeOriginal)
 })
 
-function compra(podeEncerrarCompraAdministrativamente = true): CompraResponse {
+function compra(podeEncerrarCompraAdministrativamente = true, podeFinalizarCompra = false): CompraResponse {
   return {
     id: 'compra-a', listaId: 'lista-a', nomeLista: 'Semana', categoria: 'SUPERMERCADO', estabelecimento: null,
     status: 'EM_ANDAMENTO', iniciadaEm: '2026-09-21T12:00:00Z', finalizadaEm: null, finalizadaPor: null,
-    contextoUsuario: { participanteCompra: false, podeAlterarPresenca: false, podeFinalizarCompra: false, podeReutilizarLista: false, podeEncerrarCompraAdministrativamente },
+    contextoUsuario: { participanteCompra: false, podeAlterarPresenca: false, podeFinalizarCompra, podeReutilizarLista: false, podeEncerrarCompraAdministrativamente },
     responsabilidadeOperacional: { responsavel: { participanteCompraId: 'p-outra', membroFamiliaId: 'm-outra', usuarioId: 'u-outra', nome: 'Bia' }, ciclo: 1, cicloAtivo: true, revisao: 2, responsavelAnteriorId: null, alteradaPorParticipanteCompraId: 'p-outra', alteradaEm: '2026-09-21T12:00:00Z', motivo: 'INICIO_COMPRA' },
     participantes: [{ id: 'p-outra', membroFamiliaId: 'm-outra', usuarioId: 'u-outra', nome: 'Bia', papel: 'MEMBRO', geradoEm: '2026-09-21T12:00:00Z', presencaOperacional: { estado: 'PRESENTE', alteradaEm: '2026-09-21T12:00:00Z' } }],
     itens: [{ id: 'item-a', descricao: 'Arroz', quantidade: null, unidadeMedida: null, marca: null, observacoes: null, ordemExibicao: 0, status: 'PENDENTE', adicionadoDuranteCompra: false, adicionadoPor: null, adicionadoEm: null, colocadoNoCarrinhoPor: null, colocadoNoCarrinhoEm: null, remocao: null, restauracao: null, acoes: { podeColocarNoCarrinho: false, podeSolicitarRemocao: false, podeDecidirRemocao: false, podeRestaurarNoCarrinho: false } }],
@@ -69,6 +69,12 @@ test('capability verdadeira expõe a ação ao(à) administrador(a) que não par
   await screen.findByRole('button', { name: 'Encerrar compra' })
   expect(screen.getByText('Como administrador(a) da família, você pode encerrar esta compra caso ela não esteja mais sendo realizada.')).toBeVisible()
   expect(screen.getByText('Você pode acompanhar esta compra, mas não participa dela.')).toBeVisible()
+})
+
+test('capability operacional normal oculta o encerramento administrativo, mesmo quando a capability administrativa existe', async () => {
+  preparar({ inicial: compra(true, true) })
+  await screen.findByRole('heading', { name: 'Semana' })
+  expect(screen.queryByRole('button', { name: 'Encerrar compra' })).not.toBeInTheDocument()
 })
 
 test('abrir, cancelar ou informar código incorreto não chama o endpoint', async () => {

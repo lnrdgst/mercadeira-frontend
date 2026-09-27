@@ -22,7 +22,7 @@ export function EncerramentoAdministrativoCompra({ compra, token, familiaId, lis
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const enviandoRef = useRef(false)
-  if (compra.status !== 'EM_ANDAMENTO' || compra.contextoUsuario.podeEncerrarCompraAdministrativamente !== true) return null
+  if (compra.status !== 'EM_ANDAMENTO' || compra.contextoUsuario.podeFinalizarCompra === true || compra.contextoUsuario.podeEncerrarCompraAdministrativamente !== true) return null
 
   async function confirmar() {
     if (enviandoRef.current || bloqueada || compra.contextoUsuario.podeEncerrarCompraAdministrativamente !== true) return

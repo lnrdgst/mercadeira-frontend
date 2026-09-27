@@ -1092,15 +1092,27 @@ export function ListaDetalhePage() {
           )}
 
           {lista.status === "EM_COMPRA" && (
-            <div className="space-y-gutter rounded-card border border-primary/20 bg-primary/5 p-page">
+            <div className="space-y-gutter rounded-card border border-primary/20 bg-primary/5 p-page w-full [&>button]:w-full text-center items-center">
               <p>
                 A lista saiu do modo de preparação. Acompanhe os
                 participantes e itens registrados na compra.
               </p>
               <Link
                 to={`/listas/${listaId}/compra`}
-                className="inline-flex min-h-touch items-center rounded-control bg-primary px-page font-semibold text-surface"
+                className="inline-flex min-h-touch text-center items-center justify-center gap-2 rounded-control bg-primary px-page font-semibold text-surface"
               >
+                <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                className="size-5 fill-none stroke-current"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="9" cy="20" r="1" />
+                <circle cx="19" cy="20" r="1" />
+                <path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6L22 8H7" />
+              </svg>
                 Ver compra em andamento
               </Link>
             </div>

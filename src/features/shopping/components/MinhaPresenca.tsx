@@ -420,12 +420,27 @@ export function MinhaPresenca({
                       <button
                         type="button"
                         disabled={ocupada || precisaAtualizar}
-                        onClick={() =>
-                          setConfirmacao("sair")
-                        }
-                        className="py-1 font-semibold text-accent hover:underline disabled:opacity-60"
+                        onClick={() => setConfirmacao("sair")}
+                        className="inline-flex min-h-touch items-center justify-center gap-2 rounded-control border border-[#f6d0c9] bg-[#fff1ee] px-gutter font-semibold text-[#8a3f34] transition-colors hover:bg-[#ffd8d1] disabled:opacity-60"
                       >
-                        Não estou no mercado
+                        <svg
+                          aria-hidden="true"
+                          viewBox="0 0 24 24"
+                          className="size-5 fill-none stroke-current"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          {/* celular */}
+                          <rect x="6" y="3" width="9" height="18" rx="2" />
+                          <path d="M9 18h3" />
+
+                          {/* conexão/remoto */}
+                          <path d="M18 8a3 3 0 0 1 3 3" />
+                          <path d="M18 4a7 7 0 0 1 7 7" />
+                        </svg>
+
+                        <span>Vou participar desta compra à distância</span>
                       </button>
                     )}
 
@@ -458,39 +473,89 @@ export function MinhaPresenca({
 
               {confirmacao === "sair" && (
                 <div
-                  className="mt-gutter w-full space-y-gutter border border-foreground/10 border-t bg-foreground/5 p-page pt-gutter"
+                  className="mt-gutter w-full space-y-gutter rounded-card border border-[#f6d0c9] bg-[#fff1ee] p-page"
                   role="dialog"
-                  aria-label="Confirmar saída do mercado"
+                  aria-label="Confirmar participação à distância"
                 >
                   <div className="space-y-2 text-center">
-                    <h3 className="text-headline-md font-semibold">
-                      Confirmar saída do mercado?
+                    <h3 className="text-headline-md font-semibold text-[#8a3f34]">
+                      Confirma sua participação nesta compra à distância?
                     </h3>
+
                     <p className="text-foreground-muted">
-                      Ao confirmar, você deixará de constar como presente. Para retornar,
-                      poderá ser necessário solicitar presença novamente e aguardar a
-                      aprovação do responsável operacional.
+                      Ao confirmar, você só poderá atuar nesta compra à distância.
+                      Se quiser participar no mercado, será necessário solicitar
+                      presença e aguardar a aprovação do responsável operacional
+                      da compra.
                     </p>
                   </div>
+
                   <div className="flex flex-col items-center gap-2">
-                    {podeTransferir && <><p className="rounded-control bg-warning/10 p-gutter text-warning">Transfira a responsabilidade antes de informar que está remoto.</p><button type="button" disabled={ocupada || precisaAtualizar} onClick={() => { setConfirmacao(null); setTransferindo(true); }} className="min-h-touch rounded-control bg-blue-700 px-page font-semibold text-white">Transferir responsabilidade</button></>}
+                    {podeTransferir && (
+                      <>
+                        <p className="rounded-control bg-warning/10 p-gutter text-warning">
+                          Transfira a responsabilidade antes de informar que está remoto.
+                        </p>
+
+                        <button
+                          type="button"
+                          disabled={ocupada || precisaAtualizar}
+                          onClick={() => {
+                            setConfirmacao(null)
+                            setTransferindo(true)
+                          }}
+                          className="min-h-touch rounded-control bg-blue-700 px-page font-semibold text-white"
+                        >
+                          Transferir responsabilidade
+                        </button>
+                      </>
+                    )}
+
                     <button
                       type="button"
                       disabled={ocupada || precisaAtualizar || podeTransferir}
                       onClick={() =>
                         void executar("Declarando saída...", onSair)
                       }
-                      className="min-h-touch rounded-control border border-foreground/30 bg-foreground/5 px-page font-semibold text-foreground disabled:opacity-60"
+                      className="inline-flex min-h-touch items-center justify-center gap-2 rounded-control border border-[#f6d0c9] bg-[#ffd8d1] px-page font-semibold text-[#8a3f34] transition-colors hover:bg-[#f7c7bd] disabled:opacity-60"
                     >
-                      Confirmar que não estou no mercado
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        className="size-5 fill-none stroke-current"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect x="6" y="3" width="9" height="18" rx="2" />
+                        <path d="M9 18h3" />
+
+                        <path d="M18 8a3 3 0 0 1 3 3" />
+                        <path d="M18 4a7 7 0 0 1 7 7" />
+                      </svg>
+
+                      <span>Confirmar participação à distância</span>
                     </button>
+
                     <button
                       type="button"
                       disabled={ocupada || precisaAtualizar}
                       onClick={() => setConfirmacao(null)}
-                      className="min-h-touch rounded-control border border-foreground/20 px-page font-semibold text-foreground-muted disabled:opacity-60"
+                      className="inline-flex min-h-touch min-w-[180px] items-center justify-center gap-2 whitespace-nowrap rounded-control border border-[#f6d0c9] bg-surface px-10 font-semibold text-[#8a3f34] disabled:opacity-60"
                     >
-                      Voltar
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        className="size-5 shrink-0 fill-none stroke-current"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M19 12H5" />
+                        <path d="m12 19-7-7 7-7" />
+                      </svg>
+
+                      <span>Voltar</span>
                     </button>
                   </div>
                 </div>

@@ -91,8 +91,8 @@ export function TransactionalShell() {
                 </div>
 
                 <div className="min-h-0 flex-1 overflow-y-auto py-gutter">
-                  <dl className="space-y-gutter text-body-md">
-                    <div>
+                  <dl className="text-body-md">
+                    <div className="border-b border-foreground/10 py-gutter">
                       <dt className="font-semibold text-blue-700">
                         Responsável operacional
                       </dt>
@@ -102,7 +102,7 @@ export function TransactionalShell() {
                       </dd>
                     </div>
 
-                    <div>
+                    <div className="border-b border-foreground/10 py-gutter">
                       <dt className="font-semibold text-primary">
                         No mercado
                       </dt>
@@ -112,9 +112,9 @@ export function TransactionalShell() {
                       </dd>
                     </div>
 
-                    <div>
+                    <div className="border-b border-foreground/10 py-gutter">
                       <dt className="font-semibold text-orange-800">
-                        Remoto
+                        À distância / Remoto
                       </dt>
                       <dd className="text-foreground-muted">
                         Indica que o participante informou que não está fisicamente no mercado.
@@ -123,7 +123,7 @@ export function TransactionalShell() {
                       </dd>
                     </div>
 
-                    <div>
+                    <div className="border-b border-foreground/10 py-gutter">
                       <dt className="font-semibold text-foreground-muted">
                         Presença não informada
                       </dt>
@@ -134,7 +134,7 @@ export function TransactionalShell() {
                       </dd>
                     </div>
 
-                    <div>
+                    <div className="pt-gutter">
                       <dt className="font-semibold">
                         Administrador da família
                       </dt>

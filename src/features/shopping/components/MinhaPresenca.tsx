@@ -149,6 +149,7 @@ export function MinhaPresenca({
   const podeSolicitar =
     contexto.podeSolicitarPresenca === true && !aguardando;
   const podeSair = contexto.podeDeclararSaida === true;
+  const podeFicarRemoto = podeSair && compra.participantes.length > 1;
   const solicitacaoResponsabilidade = compra.minhaSolicitacaoResponsabilidade;
   const podeSolicitarResponsabilidade =
     contexto.podeSolicitarResponsabilidade === true &&
@@ -159,7 +160,7 @@ export function MinhaPresenca({
 
   const semPresentes = responsabilidade?.responsavel == null;
   const podeExibirAcoesDiretas =
-    (podeSair &&
+    (podeFicarRemoto &&
       !temSolicitacaoPresencaParaDecidir &&
       !temSolicitacaoResponsabilidadeParaDecidir) ||
     podeSolicitarResponsabilidade;
@@ -427,7 +428,7 @@ export function MinhaPresenca({
 
               {confirmacao === null && podeExibirAcoesDiretas && (
                 <div className="mt-gutter flex w-full flex-col items-center gap-1 border-t border-foreground/10 pt-gutter text-center">
-                  {podeSair &&
+                  {podeFicarRemoto &&
                     !temSolicitacaoPresencaParaDecidir &&
                     !temSolicitacaoResponsabilidadeParaDecidir && (
                       <button
@@ -472,7 +473,7 @@ export function MinhaPresenca({
                 </div>
               )}
 
-              {confirmacao === "sair" && (
+              {confirmacao === "sair" && podeFicarRemoto && (
                 <div
                   className="mt-gutter w-full space-y-gutter rounded-card border border-[#f6d0c9] bg-[#fff1ee] p-page"
                   role="dialog"

@@ -30,6 +30,7 @@ export function IniciarCompraButton({
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [selecionados, setSelecionados] = useState<string[]>([]);
+  const participanteUnico = participantes.length === 1;
 
   const participantesOrdenados = [...participantes].sort((a, b) => {
     const aEhIniciador =
@@ -43,14 +44,14 @@ export function IniciarCompraButton({
     return a.nome.localeCompare(b.nome, "pt-BR");
   });
 
-  async function confirmar() {
+  async function confirmar(participantesPresentesIds = selecionados) {
     if (!auth || enviandoRef.current || disabled) return;
     enviandoRef.current = true;
     onMutacao?.(true);
     setEnviando(true);
     setErro(null);
     try {
-      await iniciarCompra(auth.token, familiaId, listaId, selecionados);
+      await iniciarCompra(auth.token, familiaId, listaId, participantesPresentesIds);
       dialogRef.current?.close();
       setSelecionados([]);
       navigate(`/listas/${listaId}/compra`);
@@ -77,6 +78,10 @@ export function IniciarCompraButton({
         onClick={() => {
           setErro(null);
           setSelecionados([]);
+          if (participanteUnico) {
+            void confirmar([]);
+            return;
+          }
           dialogRef.current?.showModal();
         }}
         className="inline-flex min-h-touch text-center items-center justify-center gap-2 rounded-control bg-primary px-page font-semibold text-surface"
@@ -95,7 +100,13 @@ export function IniciarCompraButton({
         </svg>
         Iniciar compra
       </button>
-      <dialog
+      {participanteUnico && erro && (
+        <p role="alert" className="mt-gutter rounded-control bg-error/10 p-gutter text-error">
+          {erro}
+        </p>
+      )}
+      {!participanteUnico && (
+        <dialog
         ref={dialogRef}
         aria-labelledby="iniciar-compra-titulo"
         aria-describedby="iniciar-compra-descricao"
@@ -236,7 +247,8 @@ export function IniciarCompraButton({
             </button>
           </div>
         </div>
-      </dialog>
+        </dialog>
+      )}
     </>
   );
 }

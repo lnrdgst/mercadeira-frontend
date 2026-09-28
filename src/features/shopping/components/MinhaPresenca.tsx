@@ -411,6 +411,19 @@ export function MinhaPresenca({
                 </div>
               )}
 
+              {podeSolicitarResponsabilidade && (
+                    <button
+                      type="button"
+                      disabled={ocupada || precisaAtualizar}
+                      onClick={() =>
+                        setConfirmacao("responsabilidade")
+                      }
+                      className="py-1 font-semibold text-blue-700 hover:underline disabled:opacity-60"
+                    >
+                      Solicitar responsabilidade operacional
+                    </button>
+                  )}
+
 
               {confirmacao === null && podeExibirAcoesDiretas && (
                 <div className="mt-gutter flex w-full flex-col items-center gap-1 border-t border-foreground/10 pt-gutter text-center">
@@ -444,18 +457,6 @@ export function MinhaPresenca({
                       </button>
                     )}
 
-                  {podeSolicitarResponsabilidade && (
-                    <button
-                      type="button"
-                      disabled={ocupada || precisaAtualizar}
-                      onClick={() =>
-                        setConfirmacao("responsabilidade")
-                      }
-                      className="py-1 font-semibold text-blue-700 hover:underline disabled:opacity-60"
-                    >
-                      Solicitar responsabilidade operacional
-                    </button>
-                  )}
                 </div>
               )}
 

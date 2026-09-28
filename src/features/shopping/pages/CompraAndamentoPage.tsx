@@ -305,11 +305,13 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
               </p>
             </div>
 
-            <p className="rounded-card bg-primary/5 p-gutter text-body-md text-foreground-muted">
-              {compra.contextoUsuario.participanteCompra
-                ? 'Você participa desta compra.'
-                : 'Você pode acompanhar esta compra, mas não participa dela.'}
-            </p>
+            {!compra.contextoUsuario.participanteCompra && (
+              <div className="rounded-card border border-error/20 bg-error/10 p-gutter text-body-md text-foreground">
+                <p>
+                  Você pode acompanhar esta compra, mas não participa dela.
+                </p>
+              </div>
+            )}
 
             <MinhaPresenca
               compra={compra}
@@ -380,16 +382,17 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
             </ul>
           </fieldset>
 
-          <div className="pt-page">
+          {compra.contextoUsuario.participanteCompra && <div className="pt-page">
             <Link
               to={`/listas/${listaId}/compra/revisao`}
               className="flex min-h-touch w-full items-center justify-center rounded-control bg-primary px-page font-semibold text-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               Revisar compra
             </Link>
-          </div>
+          </div>}
         </>
-      )}
-    </section>
+      )
+      }
+    </section >
   )
 }

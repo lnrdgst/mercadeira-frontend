@@ -1,0 +1,37 @@
+{
+  "name": "Mercadeira",
+  "short_name": "Mercadeira",
+  "description": "Mercadeira — Listas que aproximam",
+  "lang": "pt-BR",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#006e2f",
+  "background_color": "#f8fafc",
+  "icons": [
+    {
+      "src": "/icons/mercadeira-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/mercadeira-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/mercadeira-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/mercadeira-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

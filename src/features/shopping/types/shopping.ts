@@ -88,6 +88,7 @@ export interface SolicitacaoResponsabilidadeResponse {
 export interface AcoesItemCompraResponse {
   podeColocarNoCarrinho: boolean
   podeSolicitarRemocao: boolean
+  podeRemoverDiretamente?: boolean
   podeDecidirRemocao: boolean
   podeRestaurarNoCarrinho: boolean
 }

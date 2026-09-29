@@ -7,7 +7,7 @@ import { renderApp } from './helpers'
 const itemBase: ItemCompraResponse = {
   id: 'item-a', descricao: 'Arroz', quantidade: null, unidadeMedida: null, marca: null, observacoes: null, ordemExibicao: 1,
   status: 'NO_CARRINHO', adicionadoDuranteCompra: false, adicionadoPor: null, adicionadoEm: null, colocadoNoCarrinhoPor: null, colocadoNoCarrinhoEm: null, remocao: null, restauracao: null,
-  acoes: { podeColocarNoCarrinho: false, podeRestaurarNoCarrinho: false, podeSolicitarRemocao: true, podeDecidirRemocao: true },
+  acoes: { podeColocarNoCarrinho: false, podeRestaurarNoCarrinho: false, podeSolicitarRemocao: true, podeRemoverDiretamente: true, podeDecidirRemocao: false },
 }
 
 test('a remoção direta reutiliza o fluxo de solicitação autoaprovável', async () => {
@@ -21,7 +21,7 @@ test('a remoção direta reutiliza o fluxo de solicitação autoaprovável', asy
 })
 
 test('sem capability de decisão ou solicitação não há ação de remoção', () => {
-  renderApp(<ItemCompraCard item={{ ...itemBase, acoes: { ...itemBase.acoes, podeSolicitarRemocao: false, podeDecidirRemocao: false } }} participante onColocar={vi.fn(async () => {})} onRestaurar={vi.fn(async () => {})} onRemover={vi.fn(async () => {})} onReconciliar={vi.fn(async () => {})} />)
+  renderApp(<ItemCompraCard item={{ ...itemBase, acoes: { ...itemBase.acoes, podeSolicitarRemocao: false, podeRemoverDiretamente: false, podeDecidirRemocao: false } }} participante onColocar={vi.fn(async () => {})} onRestaurar={vi.fn(async () => {})} onRemover={vi.fn(async () => {})} onReconciliar={vi.fn(async () => {})} />)
 
   expect(screen.queryByRole('button', { name: /remoção|remover/i })).not.toBeInTheDocument()
 })

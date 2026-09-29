@@ -53,7 +53,7 @@ export function ItemCompraCard({ item, somenteLeitura, onColocar, onRestaurar, o
   if (!somenteLeitura) {
     if (item.acoes.podeColocarNoCarrinho === true) acoes.push('colocar')
     if (item.acoes.podeRestaurarNoCarrinho === true) acoes.push('restaurar')
-    if (noCarrinho && item.acoes.podeDecidirRemocao === true) acoes.push('remover-diretamente')
+    if (noCarrinho && item.acoes.podeRemoverDiretamente === true) acoes.push('remover-diretamente')
     else if (noCarrinho && item.acoes.podeSolicitarRemocao === true) acoes.push('solicitar-remocao')
     if (remocaoPendente && item.acoes.podeDecidirRemocao === true) acoes.push('aprovar-remocao', 'rejeitar-remocao')
   }

@@ -64,14 +64,14 @@ test('solicitação depende exclusivamente da capability, inclusive após rejei�
 })
 
 test('decisão direta no carrinho substitui solicitação pelo CTA destrutivo, sem usar autoria', () => {
-  const html = render({ ...base, acoes: { podeSolicitarRemocao: true, podeDecidirRemocao: true } })
+  const html = render({ ...base, acoes: { podeSolicitarRemocao: true, podeRemoverDiretamente: true, podeDecidirRemocao: false } })
   assert.match(html, /Remover do carrinho/)
   assert.doesNotMatch(html, /Solicitar remoção/)
   assert.match(html, /border-error text-error[^>]*>Remover do carrinho/)
 })
 
 test('capability de solicitação mantém o CTA de pedido quando não há decisão direta', () => {
-  const html = render({ ...base, acoes: { podeSolicitarRemocao: true, podeDecidirRemocao: false } })
+  const html = render({ ...base, acoes: { podeSolicitarRemocao: true, podeRemoverDiretamente: false, podeDecidirRemocao: false } })
   assert.match(html, /Solicitar remoção/)
   assert.doesNotMatch(html, /Remover do carrinho/)
 })

@@ -1347,15 +1347,10 @@ export function ListaDetalhePage() {
           </section>
 
           {emPreparacao &&
-            lista.contextoUsuario.participanteAtivo && (
+            lista.contextoUsuario.participanteAtivo &&
+            itensProntos &&
+            listaItens.length > 0 && (
               <div className="space-y-gutter pt-page">
-                {itensProntos && listaItens.length === 0 && (
-                  <p className="rounded-card bg-error/10 p-gutter text-body-md font-normal text-error">
-                    Adicione pelo menos um item para iniciar
-                    a compra.
-                  </p>
-                )}
-
                 <div className="w-full [&>button]:w-full">
                   <IniciarCompraButton
                     key={chave}
@@ -1365,8 +1360,6 @@ export function ListaDetalhePage() {
                     iniciadorMembroFamiliaId={lista.contextoUsuario.membroFamiliaId}
                     onMutacao={atualizarEstadoMutacao}
                     disabled={
-                      !itensProntos ||
-                      listaItens.length === 0 ||
                       operacaoParticipante !== null ||
                       operacaoItem !== null ||
                       reordenando ||

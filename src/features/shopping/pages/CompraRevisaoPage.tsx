@@ -35,6 +35,7 @@ function RevisaoCompra({ token, familiaId, listaId }: { token: string; familiaId
   const botaoRef = useRef<HTMLButtonElement>(null)
   const tituloRef = useRef<HTMLHeadingElement>(null)
   const ativoRef = useRef(true)
+  const temItensNaoComprados = compra?.itens.some((item) => item.status === 'PENDENTE' || item.status === 'REMOVIDO') === true
 
   useEffect(() => {
     ativoRef.current = true
@@ -151,7 +152,9 @@ function RevisaoCompra({ token, familiaId, listaId }: { token: string; familiaId
     <dialog ref={dialogRef} aria-labelledby="finalizar-titulo" aria-describedby="finalizar-descricao" onCancel={(event) => { if (enviandoRef.current) event.preventDefault() }} onClose={() => (botaoRef.current || tituloRef.current)?.focus({ preventScroll: true })} className="m-auto max-h-[calc(100svh-2rem)] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-card bg-surface p-page text-foreground shadow-soft backdrop:bg-foreground/40">
       <div className="space-y-page">
         <h2 id="finalizar-titulo" className="text-headline-md font-semibold">Finalizar compra?</h2>
-        <p id="finalizar-descricao">A compra será encerrada. Itens pendentes permanecerão registrados como não comprados. Após finalizar, os itens não poderão mais ser alterados.</p>
+        <p id="finalizar-descricao">{temItensNaoComprados
+          ? 'A compra será encerrada. Itens pendentes permanecerão registrados como não comprados. Após finalizar, os itens não poderão mais ser alterados.'
+          : 'A compra será encerrada. Após finalizar, os itens não poderão mais ser alterados.'}</p>
         {erro && <p role="alert" className="rounded-card bg-error/10 p-gutter text-error">{erro}</p>}
         <div className="flex flex-col gap-2">
           <button type="button" disabled={enviando || carregando || precisaAtualizar || compra?.status !== 'EM_ANDAMENTO' || compra.contextoUsuario.podeFinalizarCompra !== true} onClick={() => void confirmar()} className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60">{enviando ? 'Finalizando compra...' : 'Confirmar finalização'}</button>

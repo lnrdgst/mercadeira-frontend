@@ -617,6 +617,7 @@ export function ListasPage() {
             {!mostrandoCarregamento && !erro && listasVisiveis.length > 0 && (
                 <ul className="grid gap-gutter sm:grid-cols-2">
                     {listasVisiveis.map((lista) => {
+                        const emPreparacao = lista.status === "EM_PREPARACAO";
                         const emAndamento = lista.status === "EM_COMPRA";
                         const finalizada = lista.status === "FINALIZADA";
                         const labelStatus = emAndamento
@@ -639,7 +640,9 @@ export function ListasPage() {
                                         ? "border-blue-300 bg-blue-50"
                                         : emAndamento
                                             ? "border-primary/20 bg-primary/5"
-                                            : "border-foreground/10 bg-surface"
+                                            : emPreparacao
+                                                ? "border-2 border-foreground bg-surface"
+                                                : "border-foreground/10 bg-surface"
                                         }`}
                                 >
                                     <div className="flex flex-wrap gap-2">

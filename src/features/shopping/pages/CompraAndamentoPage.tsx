@@ -8,6 +8,7 @@ import { categoriaCompraLabels } from '../../shopping-lists/types/shoppingList'
 import { adicionarItemCompra, alterarMinhaPresenca, buscarCompra, cancelarSolicitacaoPresenca, cancelarSolicitacaoResponsabilidade, colocarItemNoCarrinho, decidirSolicitacaoPresenca, decidirSolicitacaoResponsabilidade, removerItemCompra, restaurarItemNoCarrinho, solicitarMinhaPresenca, solicitarResponsabilidade, transferirResponsabilidade } from '../api/shoppingApi'
 import { AdicionarItemCompraDialog } from '../components/AdicionarItemCompraDialog'
 import { ItemCompraCard } from '../components/ItemCompraCard'
+import { CompraProgresso } from '../components/CompraProgresso'
 import { MinhaPresenca } from '../components/MinhaPresenca'
 import { EncerramentoAdministrativoCompra } from '../components/EncerramentoAdministrativoCompra'
 import { useCompraTransacional } from '../session/CompraTransacionalContext'
@@ -328,6 +329,8 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
               onAtualizar={reconciliarCompra}
             />
           </header>
+
+          <CompraProgresso itens={compra.itens} />
 
           <EncerramentoAdministrativoCompra compra={compra} token={token} familiaId={familiaId} listaId={listaId} bloqueada={ocupada} executar={executar} onSucesso={() => navigate('/inicio', { replace: true })} onReconciliar={reconciliarCompra} onNaoAutorizado={logout} />
 

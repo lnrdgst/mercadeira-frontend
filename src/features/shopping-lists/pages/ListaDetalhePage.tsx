@@ -1364,12 +1364,12 @@ export function ListaDetalhePage() {
                     }
                   />
                 </div>
-                {!podeIniciarCompra && (
-                  <p className="text-body-md text-foreground-muted">
-                    Parece que você não tem permissão para iniciar compras ainda.
-                  </p>
-                )}
               </div>
+            )}
+            {!podeIniciarCompra && (
+              <p className="text-body-md text-foreground-muted">
+                Parece que você não tem permissão para iniciar compras ainda.
+              </p>
             )}
         </>
       )}

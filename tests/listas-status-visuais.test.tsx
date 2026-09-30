@@ -35,3 +35,19 @@ test('apresenta datas ISO dos filtros ativos em PT-BR', async () => {
   expect(await screen.findByText('De: 18/09/2026')).toBeVisible()
   expect(screen.getByText('Até: 20/09/2026')).toBeVisible()
 })
+
+test('ações compactas dos filtros preservam nomes acessíveis e comportamento', async () => {
+  vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json([]))
+  const { user } = renderApp(<ListasPage />)
+  await user.click(await screen.findByRole('button', { name: /Toque para buscar listas/ }))
+
+  const dialog = screen.getByRole('dialog', { name: 'Filtrar listas' })
+  const limpar = within(dialog).getByRole('button', { name: 'Limpar filtros' })
+  expect(within(dialog).getByRole('button', { name: 'Cancelar' })).toHaveAttribute('title', 'Cancelar')
+  expect(limpar).toHaveAttribute('title', 'Limpar filtros')
+  expect(within(dialog).getByRole('button', { name: 'Buscar' })).toHaveAttribute('title', 'Buscar')
+
+  await user.click(limpar)
+  await user.click(within(dialog).getByRole('button', { name: 'Buscar' }))
+  expect(screen.queryByRole('dialog', { name: 'Filtrar listas' })).not.toBeInTheDocument()
+})

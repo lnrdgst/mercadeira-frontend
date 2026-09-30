@@ -561,28 +561,37 @@ export function ListasPage() {
                                     final.
                                 </p>
                             )}
-                        <footer className="sticky bottom-0 -mx-page flex flex-col-reverse gap-gutter border-t border-foreground/10 bg-surface px-page pt-gutter pb-[max(env(safe-area-inset-bottom),1rem)] sm:flex-row sm:items-center">
+                        <footer className="sticky bottom-0 -mx-page flex items-center gap-2 border-t border-foreground/10 bg-surface px-gutter py-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] sm:gap-gutter sm:px-page sm:pt-gutter sm:pb-[max(env(safe-area-inset-bottom),1rem)]">
                             <button
                                 type="button"
                                 onClick={() => setModalFiltrosAberto(false)}
-                                className="min-h-touch rounded-control px-page font-semibold text-foreground-muted"
+                                aria-label="Cancelar"
+                                title="Cancelar"
+                                className="inline-flex min-h-touch min-w-touch items-center justify-center rounded-control px-2 font-semibold text-foreground-muted"
                             >
-                                Cancelar
+                                <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5 fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                                <span className="hidden sm:inline">Cancelar</span>
                             </button>
                             <button
                                 type="button"
                                 onClick={limparFiltros}
-                                className="min-h-touch rounded-control border border-foreground/20 px-page font-semibold"
+                                aria-label="Limpar filtros"
+                                title="Limpar filtros"
+                                className="inline-flex min-h-touch min-w-touch items-center justify-center rounded-control border border-foreground/20 px-2 font-semibold sm:px-page"
                             >
-                                Limpar filtros
+                                <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5 fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                                <span className="hidden sm:inline">Limpar filtros</span>
                             </button>
                             <button
                                 type="button"
                                 disabled={datasTemporariasInvalidas}
                                 onClick={aplicarFiltros}
-                                className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60 sm:ml-auto"
+                                aria-label="Buscar"
+                                title="Buscar"
+                                className="ml-auto inline-flex min-h-touch min-w-touch items-center justify-center rounded-control bg-primary px-2 font-semibold text-surface disabled:opacity-60 sm:px-page"
                             >
-                                Aplicar filtros
+                                <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5 fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="6" /><path d="m16 16 4 4" /></svg>
+                                <span className="hidden sm:inline">Buscar</span>
                             </button>
                         </footer>
             </Modal>

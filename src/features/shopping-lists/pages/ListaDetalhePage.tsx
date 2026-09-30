@@ -1016,65 +1016,65 @@ export function ListaDetalhePage() {
           )}
 
           <Modal open={adicionandoParticipante} onClose={() => setAdicionandoParticipante(false)} closeDisabled={operacaoParticipante !== null} ariaLabelledBy="adicionar-participante-titulo" panelClassName="max-w-md space-y-gutter p-page">
-                <h2
-                  id="adicionar-participante-titulo"
-                  className="text-headline-md font-semibold"
-                >
-                  Adicionar participante
-                </h2>
-                <label className="block space-y-1">
-                  <span>Participante</span>
-                  <select
-                    autoFocus
-                    value={membroParaAdicionar}
-                    onChange={(event) =>
-                      setMembroParaAdicionar(
-                        event.target.value,
-                      )
-                    }
-                    className="min-h-touch w-full rounded-control border border-foreground/20 bg-background px-gutter"
+            <h2
+              id="adicionar-participante-titulo"
+              className="text-headline-md font-semibold"
+            >
+              Adicionar participante
+            </h2>
+            <label className="block space-y-1">
+              <span>Participante</span>
+              <select
+                autoFocus
+                value={membroParaAdicionar}
+                onChange={(event) =>
+                  setMembroParaAdicionar(
+                    event.target.value,
+                  )
+                }
+                className="min-h-touch w-full rounded-control border border-foreground/20 bg-background px-gutter"
+              >
+                <option value="">
+                  Selecione uma pessoa
+                </option>
+                {candidatos.map((membro) => (
+                  <option
+                    key={membro.membroFamiliaId}
+                    value={membro.membroFamiliaId}
                   >
-                    <option value="">
-                      Selecione uma pessoa
-                    </option>
-                    {candidatos.map((membro) => (
-                      <option
-                        key={membro.membroFamiliaId}
-                        value={membro.membroFamiliaId}
-                      >
-                        {membro.nome}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <div className="flex flex-wrap gap-gutter">
-                  <button
-                    type="button"
-                    disabled={
-                      !membroParaAdicionar ||
-                      operacaoParticipante !== null
-                    }
-                    onClick={() =>
-                      void atualizarParticipante(
-                        membroParaAdicionar,
-                      )
-                    }
-                    className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60"
-                  >
-                    Adicionar
-                  </button>
-                  <button
-                    type="button"
-                    disabled={operacaoParticipante !== null}
-                    onClick={() => {
-                      setMembroParaAdicionar("");
-                      setAdicionandoParticipante(false);
-                    }}
-                    className="min-h-touch rounded-control border border-foreground/20 px-page font-semibold"
-                  >
-                    Cancelar
-                  </button>
-                </div>
+                    {membro.nome}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="flex flex-wrap gap-gutter">
+              <button
+                type="button"
+                disabled={
+                  !membroParaAdicionar ||
+                  operacaoParticipante !== null
+                }
+                onClick={() =>
+                  void atualizarParticipante(
+                    membroParaAdicionar,
+                  )
+                }
+                className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60"
+              >
+                Adicionar
+              </button>
+              <button
+                type="button"
+                disabled={operacaoParticipante !== null}
+                onClick={() => {
+                  setMembroParaAdicionar("");
+                  setAdicionandoParticipante(false);
+                }}
+                className="min-h-touch rounded-control border border-foreground/20 px-page font-semibold"
+              >
+                Cancelar
+              </button>
+            </div>
           </Modal>
 
           {lista.status === "EM_COMPRA" && (
@@ -1088,17 +1088,17 @@ export function ListaDetalhePage() {
                 className="inline-flex min-h-touch text-center items-center justify-center gap-2 rounded-control bg-primary px-page font-semibold text-surface"
               >
                 <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                className="size-5 fill-none stroke-current"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="9" cy="20" r="1" />
-                <circle cx="19" cy="20" r="1" />
-                <path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6L22 8H7" />
-              </svg>
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  className="size-5 fill-none stroke-current"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="9" cy="20" r="1" />
+                  <circle cx="19" cy="20" r="1" />
+                  <path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6L22 8H7" />
+                </svg>
                 Ver compra em andamento
               </Link>
             </div>
@@ -1343,7 +1343,7 @@ export function ListaDetalhePage() {
           {emPreparacao &&
             lista.contextoUsuario.participanteAtivo &&
             itensProntos &&
-            listaItens.length > 0 && podeIniciarCompra 
+            listaItens.length > 0 && podeIniciarCompra
             && (
               <div className="space-y-gutter pt-page">
                 <div className="w-full [&>button]:w-full">
@@ -1366,11 +1366,11 @@ export function ListaDetalhePage() {
                 </div>
               </div>
             )}
-            {!podeIniciarCompra && (
-              <p className="text-body-md text-foreground-muted">
-                Parece que você não tem permissão para iniciar compras ainda.
-              </p>
-            )}
+          {!podeIniciarCompra && (
+            <p className="text-center text-body-md text-foreground-muted">
+              Você ainda não tem permissão para iniciar esta compra.
+            </p>
+          )}
         </>
       )}
     </section>

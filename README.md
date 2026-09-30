@@ -324,6 +324,8 @@ Esse contrato já é utilizado no fluxo de participantes das listas e na Guia Fa
 
 Quando o backend disponibiliza `acoes.podeTransferirAdministracao`, o administrador(a) atual pode transferir a administração para outro membro ativo. A interface exige confirmar um código numérico local de quatro dígitos para evitar ações acidentais; o código não é enviado à API e não substitui a autorização do backend.
 
+Cada vínculo de integrante também possui `podeIniciarCompra`, inicialmente verdadeiro. Administradores(as) ativos(as) podem alterar esse estado pelo switch “Pode iniciar compras”, usando `PATCH /api/familias/{familiaId}/membros/{membroId}/permissao-iniciar-compra` com `{ "podeIniciarCompra": boolean }`. A permissão é independente do papel familiar e afeta somente futuros inícios de Compra.
+
 ## Dashboard
 
 A rota /inicio já utiliza dados reais.
@@ -576,7 +578,7 @@ A rota `/listas/:listaId/compra` apresenta nome da lista, categoria, estabelecim
 
 `POST /api/familias/{familiaId}/listas/{listaId}/compra`
 
-Sem body. Iniciar compra aparece somente quando a ListaCompra está `EM_PREPARACAO` e `contextoUsuario.participanteAtivo = true`. Ser `ADMINISTRADOR` não concede essa permissão: administrador(a) não participante não pode iniciar.
+Sem body. Iniciar compra aparece somente quando a ListaCompra está `EM_PREPARACAO` e `contextoUsuario.participanteAtivo = true`. Ser `ADMINISTRADOR` não concede essa permissão: administrador(a) não participante não pode iniciar. A capability `contextoUsuario.podeIniciarCompra` também precisa estar verdadeira; quando estiver falsa, a ação permanece visível, mas desabilitada com uma explicação.
 
 O botão fica desabilitado até a consulta dos itens concluir com sucesso e retornar pelo menos um item. Lista vazia apresenta “Adicione pelo menos um item para iniciar a compra.” junto à ação, sem abrir o dialog. O GET de itens e o início da Compra usam no backend a mesma coleção de itens ativos (`removidoEm IS NULL`); não há filtro adicional de quantidade ou descrição no frontend. Remover o último item volta a bloquear o início. A validação backend permanece responsável por alterações concorrentes e seus erros continuam no dialog.
 

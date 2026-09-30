@@ -27,6 +27,7 @@ export interface MembroFamiliaResponse {
   email: string
   papel: PapelFamilia
   usuarioAtual: boolean
+  podeIniciarCompra: boolean
   acoes?: {
     podeTransferirAdministracao: boolean
     podeRemoverIntegrante: boolean

@@ -357,6 +357,7 @@ export function ListaDetalhePage() {
   const listaItens = itensKey === chave ? itens : [];
   const itensProntos = itensKey === chave && !carregandoItens && !erroItens;
   const emPreparacao = lista?.status === "EM_PREPARACAO";
+  const podeIniciarCompra = lista?.contextoUsuario.podeIniciarCompra !== false;
   const podeGerenciar =
     emPreparacao &&
     lista?.contextoUsuario.podeGerenciarParticipantes === true;
@@ -1353,6 +1354,7 @@ export function ListaDetalhePage() {
                     iniciadorMembroFamiliaId={lista.contextoUsuario.membroFamiliaId}
                     onMutacao={atualizarEstadoMutacao}
                     disabled={
+                      !podeIniciarCompra ||
                       operacaoParticipante !== null ||
                       operacaoItem !== null ||
                       reordenando ||
@@ -1361,6 +1363,11 @@ export function ListaDetalhePage() {
                     }
                   />
                 </div>
+                {!podeIniciarCompra && (
+                  <p className="text-body-md text-foreground-muted">
+                    Você não possui permissão para iniciar compras nesta família.
+                  </p>
+                )}
               </div>
             )}
         </>

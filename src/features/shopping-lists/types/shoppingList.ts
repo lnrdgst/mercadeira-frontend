@@ -55,6 +55,7 @@ export interface ContextoUsuarioListaResponse {
   podeEditarDadosBasicos: boolean
   podeSairDaLista: boolean
   podeExcluirLista: boolean
+  podeIniciarCompra?: boolean
 }
 
 export interface ListaCompraDetalheResponse extends ListaCompraResumoResponse {

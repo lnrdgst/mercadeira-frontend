@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ApiRequestError } from "../../../shared/api/apiClient";
 import { useSession } from "../../auth/session/sessionContext";
+import { Modal } from "../../../shared/components/Modal";
 import { atualizarDadosLista, buscarLista } from "../api/shoppingListsApi";
 import {
   categoriaCompraLabels,
@@ -147,27 +148,11 @@ export function EditarDadosLista({
       </button>
 
 
-      {editando && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="editar-lista-titulo"
-          className="fixed inset-0 z-50 flex items-end bg-foreground/40 p-gutter sm:items-center sm:justify-center"
-          onKeyDown={(event) => {
-            if (event.key === "Escape" && !enviando) {
-              event.preventDefault();
-              setEditando(false);
-            }
-          }}
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget && !enviando)
-              setEditando(false);
-          }}
-        >
+      <Modal open={editando} onClose={() => setEditando(false)} closeDisabled={enviando} ariaLabelledBy="editar-lista-titulo" panelClassName="max-w-xl p-page">
           <form
             aria-labelledby="editar-lista-titulo"
             onSubmit={(event) => void salvar(event)}
-            className="max-h-[calc(100svh-2rem)] w-full max-w-xl overflow-y-auto rounded-card bg-surface p-page shadow-soft space-y-gutter"
+            className="min-h-0 space-y-gutter overflow-y-auto"
             aria-busy={enviando}
           >
             <h2
@@ -307,8 +292,7 @@ export function EditarDadosLista({
               </div>
             </div>
           </form>
-        </div>
-      )}
+      </Modal>
     </>
   );
 }

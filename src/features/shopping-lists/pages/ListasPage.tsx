@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
+import { Modal } from "../../../shared/components/Modal";
 import type { ApiRequestError } from "../../../shared/api/apiClient";
 import { useSession } from "../../auth/session/sessionContext";
 import { useAuthenticatedUser } from "../../auth/user/AuthenticatedUserContext";
@@ -467,14 +468,7 @@ export function ListasPage() {
                 </Link>
             </header>
 
-            {modalFiltrosAberto && (
-                <div
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label="Filtrar listas"
-                    className="fixed inset-0 z-50 flex items-end bg-foreground/40 p-gutter sm:items-center sm:justify-center"
-                >
-                    <section className="max-h-[calc(100dvh-2rem)] w-full max-w-2xl space-y-page overflow-y-auto rounded-t-card bg-surface p-page shadow-soft sm:rounded-card sm:p-8">
+            <Modal open={modalFiltrosAberto} onClose={() => setModalFiltrosAberto(false)} ariaLabel="Filtrar listas" panelClassName="max-w-2xl space-y-page overflow-y-auto p-page sm:p-8">
                         <h2 className="text-headline-md font-semibold">
                             Buscar listas da família
                         </h2>
@@ -591,9 +585,7 @@ export function ListasPage() {
                                 Aplicar filtros
                             </button>
                         </footer>
-                    </section>
-                </div>
-            )}
+            </Modal>
 
             {mostrandoCarregamento && (
                 <p className="rounded-card bg-surface p-page text-body-md text-foreground-muted shadow-soft">

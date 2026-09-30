@@ -4,6 +4,7 @@ import mercadeiraLabel from '../../assets/branding/mercadeira/mercadeira-label.p
 import { useScreenWakeLock } from '../../features/shopping/hooks/useScreenWakeLock'
 import { CompraTransacionalContext } from '../../features/shopping/session/CompraTransacionalContext'
 import type { CompraResponse } from '../../features/shopping/types/shopping'
+import { Modal } from '../../shared/components/Modal'
 
 export function TransactionalShell() {
   const { listaId } = useParams()
@@ -69,9 +70,7 @@ export function TransactionalShell() {
           )}
           <Outlet />
         </main>
-        {ajudaAberta && (
-          <div role="dialog" aria-modal="true" aria-labelledby="ajuda-compra-titulo" className="fixed inset-0 z-50 flex items-end bg-foreground/40 sm:items-center sm:justify-center sm:p-page">
-            <section className="w-full max-w-lg space-y-gutter rounded-t-card bg-surface p-page pb-[calc(theme(spacing.page)+env(safe-area-inset-bottom))] shadow-soft sm:rounded-card sm:pb-page">
+        <Modal open={ajudaAberta} onClose={() => setAjudaAberta(false)} ariaLabelledBy="ajuda-compra-titulo" panelClassName="max-w-lg space-y-gutter p-page pb-[calc(var(--spacing-page)+env(safe-area-inset-bottom))] sm:pb-page">
               <div className="flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden">
                 <div className="flex shrink-0 items-start justify-between gap-gutter border-b border-border bg-surface pb-gutter">
                   <h2
@@ -146,9 +145,7 @@ export function TransactionalShell() {
                   </dl>
                 </div>
               </div>
-            </section>
-          </div>
-        )}
+        </Modal>
       </div>
     </CompraTransacionalContext>
   )

@@ -14,6 +14,7 @@ import {
   transferirAdministracaoFamilia,
 } from '../api/familyApi'
 import { ConfirmacaoSensivelDialog } from '../components/ConfirmacaoSensivelDialog'
+import { Modal } from '../../../shared/components/Modal'
 import { useFamilyContext } from '../session/familyContext'
 import type { MembroFamiliaResponse, SolicitacaoFamiliaResponse } from '../types/family'
 
@@ -663,9 +664,7 @@ export function FamiliaPage() {
           onCancelar={() => { if (!processandoConfirmacaoSensivel) setConfirmacaoSensivel(null) }} />
       )}
 
-      {saidaBloqueada && (
-        <div role="dialog" aria-modal="true" aria-labelledby="saida-bloqueada-titulo" className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-page">
-          <section className="w-full max-w-md space-y-gutter rounded-card bg-surface p-page shadow-soft">
+      {saidaBloqueada && <Modal open onClose={() => setSaidaBloqueada(null)} ariaLabelledBy="saida-bloqueada-titulo" panelClassName="max-w-md space-y-gutter p-page">
             <div>
               <h2 id="saida-bloqueada-titulo" className="text-headline-md font-semibold">
                 {saidaBloqueada.motivo === 'COMPRA_EM_ANDAMENTO' ? 'Não é possível sair da família' : 'Transfira a administração primeiro'}
@@ -686,13 +685,9 @@ export function FamiliaPage() {
                 {saidaBloqueada.motivo === 'COMPRA_EM_ANDAMENTO' ? 'Voltar' : 'Entendi'}
               </button>
             </div>
-          </section>
-        </div>
-      )}
+      </Modal>}
 
-      {remocaoBloqueada && (
-        <div role="dialog" aria-modal="true" aria-labelledby="remocao-bloqueada-titulo" className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-page">
-          <section className="w-full max-w-md space-y-gutter rounded-card bg-surface p-page shadow-soft">
+      {remocaoBloqueada && <Modal open onClose={() => setRemocaoBloqueada(null)} ariaLabelledBy="remocao-bloqueada-titulo" panelClassName="max-w-md space-y-gutter p-page">
             <div>
               <h2 id="remocao-bloqueada-titulo" className="text-headline-md font-semibold">Não é possível remover este integrante</h2>
               <p className="mt-1 text-body-md text-foreground-muted">Este integrante participa de uma compra em andamento e não pode ser removido enquanto ela estiver aberta.</p>
@@ -705,9 +700,7 @@ export function FamiliaPage() {
                 Voltar
               </button>
             </div>
-          </section>
-        </div>
-      )}
+      </Modal>}
     </section>
   )
 }

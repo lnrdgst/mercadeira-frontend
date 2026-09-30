@@ -33,6 +33,7 @@ import {
   unidadeMedidaLabels,
 } from "../types/shoppingList";
 import { ConfirmacaoSensivelDialog } from "../../family/components/ConfirmacaoSensivelDialog";
+import { Modal } from "../../../shared/components/Modal";
 
 function nomeCompacto(
   nome: string,
@@ -1013,21 +1014,7 @@ export function ListaDetalhePage() {
             />
           )}
 
-          {adicionandoParticipante && (
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="adicionar-participante-titulo"
-              className="fixed inset-0 z-50 flex items-end bg-foreground/40 p-gutter sm:items-center sm:justify-center"
-              onMouseDown={(event) => {
-                if (
-                  event.target === event.currentTarget &&
-                  operacaoParticipante === null
-                )
-                  setAdicionandoParticipante(false);
-              }}
-            >
-              <div className="w-full max-w-md space-y-gutter rounded-card bg-surface p-page shadow-soft">
+          <Modal open={adicionandoParticipante} onClose={() => setAdicionandoParticipante(false)} closeDisabled={operacaoParticipante !== null} ariaLabelledBy="adicionar-participante-titulo" panelClassName="max-w-md space-y-gutter p-page">
                 <h2
                   id="adicionar-participante-titulo"
                   className="text-headline-md font-semibold"
@@ -1087,9 +1074,7 @@ export function ListaDetalhePage() {
                     Cancelar
                   </button>
                 </div>
-              </div>
-            </div>
-          )}
+          </Modal>
 
           {lista.status === "EM_COMPRA" && (
             <div className="space-y-gutter rounded-card border border-primary/20 bg-primary/5 p-page w-full [&>button]:w-full text-center items-center">

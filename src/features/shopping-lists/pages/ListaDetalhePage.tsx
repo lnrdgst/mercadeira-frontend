@@ -1140,6 +1140,14 @@ export function ListaDetalhePage() {
                   </svg>
                 </button>
               )}
+
+              {emPreparacao && (
+                <p className="mt-2 text-label-lg text-foreground-muted">
+                  {listaItens.length === 1
+                    ? "1 item"
+                    : `${listaItens.length} itens`}
+                </p>
+              )}
             </div>
 
             <dialog

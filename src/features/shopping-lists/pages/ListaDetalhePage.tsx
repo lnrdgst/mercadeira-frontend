@@ -1343,7 +1343,8 @@ export function ListaDetalhePage() {
           {emPreparacao &&
             lista.contextoUsuario.participanteAtivo &&
             itensProntos &&
-            listaItens.length > 0 && (
+            listaItens.length > 0 && podeIniciarCompra 
+            && (
               <div className="space-y-gutter pt-page">
                 <div className="w-full [&>button]:w-full">
                   <IniciarCompraButton
@@ -1365,7 +1366,7 @@ export function ListaDetalhePage() {
                 </div>
                 {!podeIniciarCompra && (
                   <p className="text-body-md text-foreground-muted">
-                    Você não possui permissão para iniciar compras nesta família.
+                    Parece que você não tem permissão para iniciar compras ainda.
                   </p>
                 )}
               </div>

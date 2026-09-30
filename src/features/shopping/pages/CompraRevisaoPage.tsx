@@ -5,6 +5,7 @@ import { useSession } from '../../auth/session/sessionContext'
 import { useFamilyContext } from '../../family/session/familyContext'
 import { buscarCompra, finalizarCompra } from '../api/shoppingApi'
 import { CompraResumo } from '../components/CompraResumo'
+import { CompraFinalizadaAviso } from '../components/CompraFinalizadaAviso'
 import { ReutilizarListaButton } from '../components/ReutilizarListaButton'
 import { ReaproveitarItensForaButton } from '../components/ReaproveitarItensForaButton'
 import { EncerramentoAdministrativoCompra } from '../components/EncerramentoAdministrativoCompra'
@@ -143,6 +144,7 @@ function RevisaoCompra({ token, familiaId, listaId }: { token: string; familiaId
     {erro && <p role="alert" className="rounded-card bg-error/10 p-page text-error">{erro}</p>}
     {!carregando && (!compra || precisaAtualizar) && <button type="button" disabled={enviando} onClick={atualizar} className="min-h-touch rounded-control border border-primary px-page font-semibold text-primary disabled:opacity-60">Atualizar compra</button>}
     {compra && <>
+      {compra.status === 'FINALIZADA' && <CompraFinalizadaAviso />}
       <CompraResumo compra={compra} />
       {!carregando && compra.status === 'FINALIZADA' && <div className="space-y-2"><ReaproveitarItensForaButton compra={compra} familiaId={familiaId} abrirAoFinalizar={mostrarItensFora} onAgoraNao={mostrarItensFora ? () => navigate('/inicio', { replace: true }) : undefined} /><ReutilizarListaButton compra={compra} familiaId={familiaId} onAtualizada={setCompra} /></div>}
       {!carregando && compra.status === 'EM_ANDAMENTO' && compra.contextoUsuario.podeFinalizarCompra === true && <button ref={botaoRef} type="button" disabled={enviando || precisaAtualizar} onClick={() => { setErro(null); dialogRef.current?.showModal() }} className="min-h-touch w-full rounded-control bg-primary px-page font-semibold text-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60">{enviando ? 'Finalizando compra...' : 'Finalizar compra'}</button>}

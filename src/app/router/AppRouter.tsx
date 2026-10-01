@@ -3,6 +3,8 @@ import { AppShell } from '../layouts/AppShell'
 import { TransactionalShell } from '../layouts/TransactionalShell'
 import { CadastroPage } from '../../features/auth/pages/CadastroPage'
 import { LoginPage } from '../../features/auth/pages/LoginPage'
+import { EsqueciSenhaPage } from '../../features/auth/pages/EsqueciSenhaPage'
+import { RedefinirSenhaPage } from '../../features/auth/pages/RedefinirSenhaPage'
 import { FamiliaEntradaPage } from '../../features/family/pages/FamiliaEntradaPage'
 import { FamiliaPage } from '../../features/family/pages/FamiliaPage'
 import { FamiliaSelecionarPage } from '../../features/family/pages/FamiliaSelecionarPage'
@@ -32,6 +34,8 @@ export function AppRouter() {
 
       <Route element={<PublicOnlyRoute />}>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/esqueci-senha" element={<EsqueciSenhaPage />} />
+        <Route path="/redefinir-senha" element={<RedefinirSenhaPage />} />
         <Route path="/cadastro" element={<CadastroPage />} />
       </Route>
 

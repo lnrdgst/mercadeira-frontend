@@ -89,6 +89,7 @@ export function LoginPage() {
             required
             disabled={isSubmitting}
           />
+          <Link className="block text-right text-body-sm font-semibold text-primary" to="/esqueci-senha">Esqueci minha senha?</Link>
           <button
             className="min-h-touch w-full rounded-control bg-primary px-page text-label-lg font-semibold text-surface transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60"
             type="submit"

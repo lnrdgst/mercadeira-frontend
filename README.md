@@ -2,6 +2,12 @@
 
 Frontend do Mercadeira, uma aplicação colaborativa para organização de compras entre membros de famílias e grupos.
 
+## Registros financeiros da compra
+
+A revisão mostra os registros financeiros manuais e o total derivado. Durante a Compra, a capability `contextoUsuario.podeGerenciarRegistrosFinanceiros` permite adicionar ou remover múltiplos valores, com estabelecimento opcional. Após `FINALIZADA`, os valores continuam visíveis somente para leitura. Não há forma de pagamento, NFC-e, QR Code, câmera ou integração SEFAZ nesta entrega.
+
+Finalizar sem valor registrado continua permitido. Antes de confirmar, a revisão exibe um aviso e oferece voltar para adicionar valores.
+
 A aplicação segue abordagem mobile-first, priorizando smartphones, navegação simples, contexto familiar explícito e fluxos colaborativos.
 
 ## Stack

@@ -1,5 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import type { AcaoRemocaoItemCompra, AdicionarItemCompraRequest, CompraResponse, DeclaracaoPresenca, ItemCompraResponse } from '../types/shopping'
+import type { AcaoRemocaoItemCompra, AdicionarItemCompraRequest, AdicionarRegistroFinanceiroCompraRequest, CompraResponse, DeclaracaoPresenca, ItemCompraResponse } from '../types/shopping'
 
 export async function alterarMinhaPresenca(token: string, familiaId: string, listaId: string, estado: DeclaracaoPresenca) {
   const response = await apiRequest<CompraResponse>(
@@ -116,5 +116,23 @@ export async function adicionarItemCompra(token: string, familiaId: string, list
     { token, method: 'POST', body: { descricao, quantidade, unidadeMedida, marca, observacoes } },
   )
   if (!response.data) throw new Error('Não foi possível recuperar o item adicionado. Confira a compra antes de tentar novamente.')
+  return response.data
+}
+
+export async function adicionarRegistroFinanceiroCompra(token: string, familiaId: string, listaId: string, data: AdicionarRegistroFinanceiroCompraRequest) {
+  const response = await apiRequest<CompraResponse>(
+    `/familias/${familiaId}/listas/${listaId}/compra/registros-financeiros`,
+    { token, method: 'POST', body: data },
+  )
+  if (response.status !== 201 || !response.data) throw new Error('N\u00e3o foi poss\u00edvel adicionar o valor. Atualize a compra para conferir o resultado.')
+  return response.data
+}
+
+export async function removerRegistroFinanceiroCompra(token: string, familiaId: string, listaId: string, registroId: string) {
+  const response = await apiRequest<CompraResponse>(
+    `/familias/${familiaId}/listas/${listaId}/compra/registros-financeiros/${registroId}`,
+    { token, method: 'DELETE' },
+  )
+  if (response.status !== 200 || !response.data) throw new Error('N\u00e3o foi poss\u00edvel remover o valor. Atualize a compra para conferir o resultado.')
   return response.data
 }

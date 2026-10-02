@@ -33,6 +33,7 @@ export interface ContextoUsuarioCompraResponse {
   podeEncerrarCompraAdministrativamente?: boolean
   podeAdicionarItemDuranteCompra?: boolean
   podeTransferirResponsabilidade?: boolean
+  podeGerenciarRegistrosFinanceiros?: boolean
 }
 
 export interface ReferenciaParticipanteCompra {
@@ -153,5 +154,20 @@ export interface CompraResponse {
   solicitacoesResponsabilidadePendentes?: SolicitacaoResponsabilidadeResponse[]
   participantes: ParticipanteCompraResponse[]
   itens: ItemCompraResponse[]
+  registrosFinanceiros?: RegistroFinanceiroCompraResponse[]
+  totalRegistrado?: number
   contextoUsuario: ContextoUsuarioCompraResponse
+}
+
+export interface RegistroFinanceiroCompraResponse {
+  id: string
+  valor: number
+  tipo: 'MANUAL'
+  estabelecimentoNome: string | null
+  criadoEm: string
+}
+
+export interface AdicionarRegistroFinanceiroCompraRequest {
+  valor: number
+  estabelecimentoNome: string | null
 }

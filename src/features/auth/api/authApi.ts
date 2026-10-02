@@ -16,3 +16,15 @@ export function login(data: LoginRequest) {
     body: data,
   })
 }
+
+export function refresh(refreshToken: string) {
+  return apiRequest<LoginResponse>('/autenticacao/refresh', {
+    method: 'POST', body: { refreshToken },
+  })
+}
+
+export function logout(refreshToken: string) {
+  return apiRequest<void>('/autenticacao/logout', {
+    method: 'POST', body: { refreshToken },
+  })
+}

@@ -72,10 +72,7 @@ export function MinhaContaPage() {
                 token,
                 body: { senhaAtual, novaSenha },
             });
-            setSenhaAtual("");
-            setNovaSenha("");
-            setConfirmacao("");
-            setSucesso("Senha alterada com sucesso.");
+            logout();
         } catch (e) {
             const x = e as ApiRequestError;
             if (x.status === 401) logout();

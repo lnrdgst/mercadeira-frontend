@@ -13,7 +13,7 @@ type SessionValue = NonNullable<ComponentProps<typeof SessionContext>['value']>
 export function sessionFixture(overrides: Partial<SessionValue> = {}): SessionValue {
   return {
     status: 'authenticated',
-    auth: { token: 'token-teste', expiracao: '2099-01-01T00:00:00Z' },
+    auth: { token: 'token-teste', expiracao: '2099-01-01T00:00:00Z', refreshToken: 'refresh-teste' },
     authenticate: vi.fn(async () => {}),
     logout: vi.fn(),
     ...overrides,

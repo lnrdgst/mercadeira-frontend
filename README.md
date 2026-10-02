@@ -129,25 +129,13 @@ Também existe tratamento para rotas inexistentes.
 
 ## Autenticação
 
-A API utiliza Bearer JWT.
+A API utiliza Bearer JWT de curta duração e sessão persistente com refresh token rotativo.
 
-Após o login, o frontend persiste somente:
+Após o login, o frontend persiste o access token, sua expiração e o refresh token. A senha nunca é persistida. A sessão persistente expira definitivamente em 180 dias e cada renovação substitui o refresh token anterior.
 
-- token
+Na abertura, o frontend restaura a sessão sem exibir Login enquanto valida ou renova o access token. Próximo da expiração, ou após um `401`, a renovação é silenciosa e compartilhada por requisições concorrentes. Falhas de rede e `5xx` não fazem logout; somente refresh inválido, expirado ou revogado limpa a sessão.
 
-- instante de expiração.
-
-A senha nunca é persistida.
-
-A sessão:
-
-- é restaurada após atualização da página
-
-- valida a expiração antes de reutilizar o token
-
-- limpa credenciais expiradas ou inválidas
-
-- não utiliza refresh token atualmente.
+O refresh permanece em armazenamento local porque o frontend DSV Vercel e o backend Railway são cross-site e cookie `HttpOnly` cross-site não é confiável no Safari/iOS. Ele não é colocado em URL ou logs.
 
 O JWT contém somente o UUID do usuário no claim sub.
 

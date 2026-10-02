@@ -21,9 +21,11 @@ export interface LoginRequest {
 export interface LoginResponse {
   token: string
   expiracao: Instant
+  refreshToken: string
 }
 
 export interface AuthSession {
   token: string
   expiracao: Instant
+  refreshToken: string
 }

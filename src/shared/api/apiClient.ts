@@ -1,4 +1,5 @@
 import { environment } from '../../config/environment'
+import { recoverAccessToken } from './authRecovery'
 
 export interface ApiErrorResponse {
   timestamp: string
@@ -73,6 +74,14 @@ export async function apiRequestComHeaders<T>(
   path: string,
   { method = 'GET', body, token, signal }: ApiRequestOptions = {},
 ): Promise<ApiResponse<T>> {
+  return executarRequisicao<T>(path, { method, body, token, signal }, true)
+}
+
+async function executarRequisicao<T>(
+  path: string,
+  { method = 'GET', body, token, signal }: ApiRequestOptions,
+  podeRenovar: boolean,
+): Promise<ApiResponse<T>> {
   const headers = new Headers({ Accept: 'application/json' })
 
   if (body !== undefined) {
@@ -94,6 +103,14 @@ export async function apiRequestComHeaders<T>(
     })
   } catch {
     throw createApiError('Não foi possível conectar ao servidor.')
+  }
+
+  if (response.status === 401 && token && podeRenovar) {
+    const novoToken = await recoverAccessToken()
+
+    if (novoToken) {
+      return executarRequisicao<T>(path, { method, body, token: novoToken, signal }, false)
+    }
   }
 
   if (response.status === 204) {

@@ -2,7 +2,7 @@ import type { AuthSession } from '../types/auth'
 
 const authStorageKey = 'mercadeira.auth'
 
-function hasValidFutureExpiration(expiracao: string) {
+export function hasValidFutureExpiration(expiracao: string) {
   const timestamp = Date.parse(expiracao)
   return Number.isFinite(timestamp) && timestamp > Date.now()
 }
@@ -21,18 +21,14 @@ export function readStoredAuthSession(): AuthSession | null {
       typeof parsedValue !== 'object' ||
       parsedValue === null ||
       typeof (parsedValue as Record<string, unknown>).token !== 'string' ||
-      typeof (parsedValue as Record<string, unknown>).expiracao !== 'string'
+      typeof (parsedValue as Record<string, unknown>).expiracao !== 'string' ||
+      typeof (parsedValue as Record<string, unknown>).refreshToken !== 'string'
     ) {
       clearStoredAuthSession()
       return null
     }
 
     const authSession = parsedValue as AuthSession
-
-    if (!hasValidFutureExpiration(authSession.expiracao)) {
-      clearStoredAuthSession()
-      return null
-    }
 
     return authSession
   } catch {

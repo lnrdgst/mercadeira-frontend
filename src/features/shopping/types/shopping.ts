@@ -171,16 +171,6 @@ export interface RegistroFinanceiroCompraResponse {
   criadoEm: string
 }
 
-export interface NfceQrAnaliseResponse {
-  nfceReconhecida: boolean
-  chaveNfce: string | null
-  urlConsulta: string | null
-  valor: number | null
-  estabelecimentoNome: string | null
-  cnpjEmitente: string | null
-  dataHoraDocumento: string | null
-}
-
 export interface AdicionarRegistroFinanceiroCompraRequest {
   valor: number
   estabelecimentoNome: string | null

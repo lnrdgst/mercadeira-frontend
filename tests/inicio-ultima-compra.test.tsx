@@ -25,8 +25,8 @@ function lista(id: string, status: 'FINALIZADA' | 'EM_PREPARACAO' | 'EM_COMPRA' 
   return { id, nome: `Lista ${id}`, categoria: 'SUPERMERCADO', estabelecimento: null, status, criadaEm: '2026-09-01T08:00:00Z', atualizadaEm: '2026-09-01T08:00:00Z' }
 }
 
-function compra(id: string, finalizadaEm: string) {
-  return { id: `compra-${id}`, listaId: id, nomeLista: `Lista ${id}`, categoria: 'SUPERMERCADO', estabelecimento: null, status: 'FINALIZADA', iniciadaEm: '2026-09-01T09:00:00Z', finalizadaEm, finalizadaPor: null, contextoUsuario: { participanteCompra: true, podeAlterarPresenca: true, podeFinalizarCompra: false, podeReutilizarLista: false }, participantes: [], itens: [] }
+function compra(id: string, finalizadaEm: string, extras = {}) {
+  return { id: `compra-${id}`, listaId: id, nomeLista: `Lista ${id}`, categoria: 'SUPERMERCADO', estabelecimento: null, status: 'FINALIZADA', iniciadaEm: '2026-09-01T09:00:00Z', finalizadaEm, finalizadaPor: null, contextoUsuario: { participanteCompra: true, podeAlterarPresenca: true, podeFinalizarCompra: false, podeReutilizarLista: false }, participantes: [], itens: [], ...extras }
 }
 
 function compraEmAndamento(id: string, iniciadaEm: string) {
@@ -47,6 +47,36 @@ test('exibe a compra finalizada mais recente pela data real de finalização', a
   expect(await screen.findByText('Última compra finalizada:', { exact: false })).toHaveTextContent('21/09/2026 · Segunda-feira às 18:42')
   expect(screen.getByRole('link', { name: 'Ver compra' })).toHaveAttribute('href', '/listas/recente/compra/revisao')
   expect(http).toHaveBeenCalledTimes(4)
+})
+
+test('integra estabelecimento e valor ao nome da última compra, sem divisor financeiro', async () => {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+    const path = String(input)
+    if (path.endsWith('/solicitacoes/minhas-pendentes')) return Response.json([])
+    if (path.endsWith('/familias/familia-a/listas')) return Response.json([lista('recente')])
+    if (path.endsWith('/listas/recente/compra')) return Response.json(compra('recente', '2026-09-21T18:42:00', { totalRegistrado: 37.53, registrosFinanceiros: [{ id: 'registro', valor: 37.53, tipo: 'MANUAL', estabelecimentoNome: 'Supermaxi', criadoEm: '2026-09-21T18:42:00' }] }))
+    throw new Error(`Endpoint inesperado: ${path}`)
+  })
+  renderizarInicio()
+  const linhaCompra = await screen.findByText((_, elemento) => elemento?.tagName === 'P' && elemento.textContent?.includes('Lista recente · Supermaxi') === true)
+  expect(linhaCompra).toHaveTextContent('Lista recente · Supermaxi')
+  expect(screen.getByText(/R\$\s*37,53/)).toBeVisible()
+  expect(linhaCompra.nextElementSibling).toHaveTextContent(/R\$\s*37,53/)
+})
+
+test('omite o valor quando não há registros e resume vários estabelecimentos junto ao nome', async () => {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+    const path = String(input)
+    if (path.endsWith('/solicitacoes/minhas-pendentes')) return Response.json([])
+    if (path.endsWith('/familias/familia-a/listas')) return Response.json([lista('recente')])
+    if (path.endsWith('/listas/recente/compra')) return Response.json(compra('recente', '2026-09-21T18:42:00', { registrosFinanceiros: [] }))
+    throw new Error(`Endpoint inesperado: ${path}`)
+  })
+  renderizarInicio()
+  const titulo = await screen.findByText('Lista recente', { exact: false })
+  expect(titulo).toHaveTextContent('Lista recente')
+  expect(titulo).not.toHaveTextContent('·')
+  expect(screen.queryByText(/R\$/)).not.toBeInTheDocument()
 })
 
 test('exibe somente a Compra em andamento mais recente e a Lista em preparação mais atual', async () => {

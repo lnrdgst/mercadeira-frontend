@@ -7,8 +7,8 @@ import { useFamilyContext } from "../../family/session/familyContext";
 import { buscarMinhasSolicitacoesPendentes, buscarSolicitacoesFamilia } from "../../family/api/familyApi";
 import type { MinhaSolicitacaoPendenteResponse, SolicitacaoFamiliaResponse } from "../../family/types/family";
 import { buscarListas } from "../../shopping-lists/api/shoppingListsApi";
-import { ResumoFinanceiroCompraCard } from "../../shopping-lists/components/ResumoFinanceiroCompraCard";
 import { resumirRegistrosFinanceiros } from "../../shopping-lists/components/resumoFinanceiroCompra";
+import { formatarValorMonetario } from "../../../shared/formatarValorMonetario";
 import { buscarCompra } from "../../shopping/api/shoppingApi";
 import type { CompraResponse } from "../../shopping/types/shopping";
 import {
@@ -215,6 +215,14 @@ export function InicioPage() {
       return `${dataFormatada} às ${horaFormatada}`;
     }
   };
+  const resumoFinanceiroUltimaCompra = ultimaCompraFinalizada
+    ? resumirRegistrosFinanceiros(ultimaCompraFinalizada.registrosFinanceiros, ultimaCompraFinalizada.totalRegistrado)
+    : null;
+  const estabelecimentoUltimaCompra = resumoFinanceiroUltimaCompra?.quantidadeEstabelecimentos === 1
+    ? resumoFinanceiroUltimaCompra.estabelecimentoResumo
+    : resumoFinanceiroUltimaCompra && resumoFinanceiroUltimaCompra.quantidadeEstabelecimentos > 1
+      ? `${resumoFinanceiroUltimaCompra.quantidadeEstabelecimentos} estabelecimentos`
+      : null;
   return (
     <section className="mx-auto max-w-3xl space-y-page py-page">
       <header className="space-y-gutter">
@@ -263,11 +271,9 @@ export function InicioPage() {
                     <span className="font-normal">
                       {ultimaCompraFinalizada.nomeLista}
                     </span>
+                    {estabelecimentoUltimaCompra && <span className="font-normal text-foreground-muted"> · {estabelecimentoUltimaCompra}</span>}
                   </p>
-                  <ResumoFinanceiroCompraCard
-                    status="FINALIZADA"
-                    resumoFinanceiro={resumirRegistrosFinanceiros(ultimaCompraFinalizada.registrosFinanceiros, ultimaCompraFinalizada.totalRegistrado)}
-                  />
+                  {resumoFinanceiroUltimaCompra && <p className="mt-1 text-body-md font-semibold">{formatarValorMonetario(resumoFinanceiroUltimaCompra.totalRegistrado)}</p>}
                   <Link
                     to={`/listas/${ultimaCompraFinalizada.listaId}/compra/revisao`}
                     className="mt-1 inline-flex items-center py-1 text-label-lg font-semibold text-primary"

@@ -31,7 +31,7 @@ test('envia valor manual e estabelecimento para o endpoint da compra', async () 
   const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json(atualizada, { status: 201 }))
   const view = renderApp(<RegistrosFinanceirosCompra compra={atualizada} token="token" familiaId="familia-a" listaId="lista-a" onAtualizar={onAtualizar} onNaoAutorizado={vi.fn()} />)
 
-  await view.user.click(screen.getByRole('button', { name: 'Adicionar valor' }))
+  await view.user.click(screen.getByRole('button', { name: 'Informar valor' }))
   await view.user.type(screen.getByLabelText('Valor'), '82,40')
   await view.user.type(screen.getByLabelText(/Estabelecimento/), 'Mercado Central')
   await view.user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Adicionar valor' }))

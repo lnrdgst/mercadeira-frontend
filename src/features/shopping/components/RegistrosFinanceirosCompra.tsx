@@ -29,7 +29,7 @@ export function RegistrosFinanceirosCompra({ compra, token, familiaId, listaId, 
   const [estabelecimentoNome, setEstabelecimentoNome] = useState('')
   const [erro, setErro] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
-  const podeGerenciar = compra.status === 'EM_ANDAMENTO' && compra.contextoUsuario.podeGerenciarRegistrosFinanceiros === true
+  const podeGerenciar = compra.contextoUsuario.podeGerenciarRegistrosFinanceiros === true
   const registros = compra.registrosFinanceiros ?? []
   const valorTotal = compra.totalRegistrado ?? registros.reduce((total, registro) => total + registro.valor, 0)
   const total = useMemo(() => formatarValorMonetario(valorTotal), [valorTotal])
@@ -66,6 +66,7 @@ export function RegistrosFinanceirosCompra({ compra, token, familiaId, listaId, 
 
   async function remover(registroId: string) {
     if (enviando) return
+    if (!window.confirm('Remover este valor da compra?')) return
     setEnviando(true)
     setErro(null)
     try {
@@ -85,7 +86,7 @@ export function RegistrosFinanceirosCompra({ compra, token, familiaId, listaId, 
         <h2 id="registros-financeiros-titulo" className="text-headline-sm font-semibold">Valores da compra</h2>
         <p className="text-body-md text-foreground-muted">Total registrado: <strong className="text-foreground">{total}</strong></p>
       </div>
-      {podeGerenciar && <button type="button" onClick={abrir} className="min-h-touch rounded-control border border-primary px-page font-semibold text-primary">Adicionar valor</button>}
+      {podeGerenciar && <button type="button" onClick={abrir} className="min-h-touch rounded-control border border-primary px-page font-semibold text-primary">{registros.length ? 'Adicionar outro valor' : 'Informar valor'}</button>}
     </div>
     {erro && !aberto && <p role="alert" className="rounded-card bg-error/10 p-gutter text-error">{erro}</p>}
     {registros.length === 0
@@ -103,7 +104,7 @@ export function RegistrosFinanceirosCompra({ compra, token, familiaId, listaId, 
       <div className="space-y-page overflow-y-auto p-page">
         <div>
           <h2 id="adicionar-valor-titulo" className="text-headline-md font-semibold">Adicionar valor</h2>
-          <p className="text-body-md text-foreground-muted">Registre um valor pago nesta compra. Este registro pode ser removido enquanto a compra estiver em andamento.</p>
+          <p className="text-body-md text-foreground-muted">Registre um valor pago nesta compra.</p>
         </div>
         {erro && <p role="alert" className="rounded-card bg-error/10 p-gutter text-error">{erro}</p>}
         <label className="block space-y-1">

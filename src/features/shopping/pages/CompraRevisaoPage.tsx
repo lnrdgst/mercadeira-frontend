@@ -119,9 +119,9 @@ function RevisaoCompra({ token, familiaId, listaId }: { token: string; familiaId
   }
 
   return <section className="mx-auto max-w-3xl space-y-page">
-    {compra && <nav className="flex flex-wrap gap-gutter" aria-label="Navegação da revisão">
+    {compra?.status === 'EM_ANDAMENTO' && <nav className="flex flex-wrap gap-gutter" aria-label="Navegação da revisão">
       <Link
-        to={compra?.status === 'FINALIZADA' ? '/listas' : `/listas/${listaId}/compra`}
+        to={`/listas/${listaId}/compra`}
         className="inline-flex min-h-touch items-center gap-2 font-semibold text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
         <svg
@@ -135,7 +135,7 @@ function RevisaoCompra({ token, familiaId, listaId }: { token: string; familiaId
           <path d="m15 18-6-6 6-6" />
         </svg>
 
-        {compra?.status === 'FINALIZADA' ? 'Voltar para listas' : 'Voltar à compra'}
+        Voltar à compra
       </Link>
     </nav>}
     <header className="space-y-1">

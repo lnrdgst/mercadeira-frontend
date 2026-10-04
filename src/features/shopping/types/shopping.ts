@@ -162,9 +162,23 @@ export interface CompraResponse {
 export interface RegistroFinanceiroCompraResponse {
   id: string
   valor: number
-  tipo: 'MANUAL'
+  tipo: 'MANUAL' | 'NFCE'
   estabelecimentoNome: string | null
+  chaveNfce?: string | null
+  urlConsulta?: string | null
+  cnpjEmitente?: string | null
+  dataHoraDocumento?: string | null
   criadoEm: string
+}
+
+export interface NfceQrAnaliseResponse {
+  nfceReconhecida: boolean
+  chaveNfce: string | null
+  urlConsulta: string | null
+  valor: number | null
+  estabelecimentoNome: string | null
+  cnpjEmitente: string | null
+  dataHoraDocumento: string | null
 }
 
 export interface AdicionarRegistroFinanceiroCompraRequest {

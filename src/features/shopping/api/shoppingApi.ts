@@ -1,5 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import type { AcaoRemocaoItemCompra, AdicionarItemCompraRequest, AdicionarRegistroFinanceiroCompraRequest, CompraResponse, DeclaracaoPresenca, ItemCompraResponse } from '../types/shopping'
+import type { AcaoRemocaoItemCompra, AdicionarItemCompraRequest, AdicionarRegistroFinanceiroCompraRequest, CompraResponse, DeclaracaoPresenca, ItemCompraResponse, NfceQrAnaliseResponse } from '../types/shopping'
 
 export async function alterarMinhaPresenca(token: string, familiaId: string, listaId: string, estado: DeclaracaoPresenca) {
   const response = await apiRequest<CompraResponse>(
@@ -134,5 +134,15 @@ export async function removerRegistroFinanceiroCompra(token: string, familiaId: 
     { token, method: 'DELETE' },
   )
   if (response.status !== 200 || !response.data) throw new Error('N\u00e3o foi poss\u00edvel remover o valor. Atualize a compra para conferir o resultado.')
+  return response.data
+}
+export async function analisarQrNfce(token: string, familiaId: string, listaId: string, conteudoQr: string) {
+  const response = await apiRequest<NfceQrAnaliseResponse>(`/familias/${familiaId}/listas/${listaId}/compra/registros-financeiros/analisar-qr`, { token, method: 'POST', body: { conteudoQr } })
+  if (!response.data) throw new Error('Não foi possível analisar o QR Code.')
+  return response.data
+}
+export async function adicionarRegistroNfce(token: string, familiaId: string, listaId: string, data: { valor: number; estabelecimentoNome: string | null; chaveNfce: string | null; urlConsulta: string | null; cnpjEmitente: string | null }) {
+  const response = await apiRequest<CompraResponse>(`/familias/${familiaId}/listas/${listaId}/compra/registros-financeiros/nfce`, { token, method: 'POST', body: data })
+  if (response.status !== 201 || !response.data) throw new Error('Não foi possível registrar a NFC-e.')
   return response.data
 }

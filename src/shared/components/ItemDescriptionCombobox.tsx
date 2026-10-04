@@ -47,7 +47,7 @@ export function ItemDescriptionCombobox({ value, disabled, onChange, onSelect, l
   return <div className="relative z-10">
     <input ref={input} id="item-descricao" role="combobox" aria-autocomplete="list" aria-expanded={expanded}
       aria-controls={expanded ? id : undefined} aria-activedescendant={expanded && items[active] ? `${id}-${active}` : undefined}
-      aria-describedby={`${id}-hint`} autoComplete="off" value={value} required autoFocus disabled={disabled} maxLength={200}
+      aria-describedby={`${id}-hint`} autoComplete="off" value={value} required disabled={disabled} maxLength={200}
       onFocus={() => { setResult(null); setOpen(true) }} onBlur={() => { setOpen(false); setActive(-1) }}
       onChange={(event) => { onChange(event.target.value); setActive(-1); setOpen(true) }}
       onKeyDown={(event) => {

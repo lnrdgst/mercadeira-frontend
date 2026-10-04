@@ -97,10 +97,8 @@ export function ListaDetalhePage() {
     useState<ItemListaCompraResponse | null>(null);
   const [operacaoItem, setOperacaoItem] = useState<string | null>(null);
   const [reordenando, setReordenando] = useState(false);
-  const itemDialogRef = useRef<HTMLDialogElement>(null);
   const itensTituloRef = useRef<HTMLHeadingElement>(null);
   const dialogOpenerRef = useRef<HTMLElement | null>(null);
-  const dialogScrollYRef = useRef(0);
   const leituraPeriodicaRef = useRef<AbortController | null>(null);
   const geracaoRef = useRef(0);
   const mutacaoRef = useRef(false);
@@ -338,19 +336,6 @@ export function ListaDetalhePage() {
       window.removeEventListener("online", disponibilidade);
     };
   }, [auth, familiaSelecionada, listaId, chave, detalhe?.status, logout]);
-  useEffect(() => {
-    const dialog = itemDialogRef.current;
-    if (!dialog) return;
-    if (itemEditando && !dialog.open) {
-      dialogOpenerRef.current =
-        document.activeElement instanceof HTMLElement
-          ? document.activeElement
-          : null;
-      dialogScrollYRef.current = window.scrollY;
-      dialog.showModal();
-    }
-    if (!itemEditando && dialog.open) dialog.close();
-  }, [itemEditando]);
   if (!familiaSelecionada || !listaId || !chave) return null;
   const lista = detalheKey === chave ? detalhe : null;
   const listaParticipantes = participantesKey === chave ? participantes : [];
@@ -395,12 +380,13 @@ export function ListaDetalhePage() {
   function fecharDialog() {
     setItemEditando(null);
     requestAnimationFrame(() => {
-      window.scrollTo({
-        top: dialogScrollYRef.current,
-        behavior: "auto",
-      });
       dialogOpenerRef.current?.focus({ preventScroll: true });
     });
+  }
+
+  function abrirEditorItem(item: ItemListaCompraResponse | "novo", acionador: HTMLElement) {
+    dialogOpenerRef.current = acionador;
+    setItemEditando(item);
   }
 
   function atualizarEstadoMutacao(emAndamento: boolean) {
@@ -1125,7 +1111,7 @@ export function ListaDetalhePage() {
               {podeAlterar && itemEditando === null && (
                 <button
                   type="button"
-                  onClick={() => setItemEditando("novo")}
+                  onClick={(event) => abrirEditorItem("novo", event.currentTarget)}
                   className="mt-gutter flex min-h-touch w-full items-center justify-center gap-2 rounded-control border-2 border-primary bg-surface px-page font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 >
                   Adicionar item na lista
@@ -1151,10 +1137,12 @@ export function ListaDetalhePage() {
               )}
             </div>
 
-            <dialog
-              ref={itemDialogRef}
+            <Modal
+              open={itemEditando !== null}
               onClose={fecharDialog}
-              className="m-auto flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-xl flex-col overflow-hidden rounded-card bg-surface p-0 text-foreground shadow-soft backdrop:bg-foreground/40"
+              closeDisabled={operacaoItem !== null}
+              ariaLabel="Adicionar ou editar item"
+              panelClassName="max-w-xl p-0"
             >
               {podeAlterar && itemEditando && (
                 <ItemForm
@@ -1171,7 +1159,7 @@ export function ListaDetalhePage() {
                   onSubmit={salvarItem}
                 />
               )}
-            </dialog>
+            </Modal>
 
             {podeAlterar && itemParaRemover && (
               <ConfirmarRemocaoItemDialog
@@ -1292,7 +1280,7 @@ export function ListaDetalhePage() {
                       <div className="flex flex-col gap-1">
                         <button
                           type="button"
-                          onClick={() => setItemEditando(item)}
+                          onClick={(event) => abrirEditorItem(item, event.currentTarget)}
                           aria-label={`Editar ${item.descricao}`}
                           title="Alterar item"
                           className="flex size-10 items-center justify-center rounded-control text-primary transition-colors hover:bg-primary"

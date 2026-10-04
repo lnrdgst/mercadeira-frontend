@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Modal } from "../../../shared/components/Modal";
+import { ResumoFinanceiroCompraCard } from "../components/ResumoFinanceiroCompraCard";
 import type { ApiRequestError } from "../../../shared/api/apiClient";
 import { useSession } from "../../auth/session/sessionContext";
 import { useAuthenticatedUser } from "../../auth/user/AuthenticatedUserContext";
@@ -694,6 +695,8 @@ export function ListasPage() {
                                         )}
                                     </div>
 
+                                    <ResumoFinanceiroCompraCard status={lista.status} resumoFinanceiro={lista.resumoFinanceiro} estabelecimentoJaExibido={lista.estabelecimento} />
+
                                     <p className="text-label-lg font-semibold text-primary">
                                         {finalizada
                                             ? "Ver resumo"
@@ -782,6 +785,7 @@ export function ListasPage() {
                                                         </p>
                                                     )}
                                                 </div>
+                                                <ResumoFinanceiroCompraCard status={lista.status} resumoFinanceiro={lista.resumoFinanceiro} estabelecimentoJaExibido={lista.estabelecimento} />
                                                 <p className="text-label-lg font-semibold text-primary">
                                                     Ver resumo
                                                 </p>

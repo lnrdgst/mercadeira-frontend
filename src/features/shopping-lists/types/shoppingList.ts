@@ -15,6 +15,13 @@ export type StatusListaCompra =
   | 'FINALIZADA'
   | 'CANCELADA'
 
+export interface ResumoFinanceiroCompraResponse {
+  totalRegistrado: number
+  quantidadeRegistrosFinanceiros: number
+  quantidadeEstabelecimentos: number
+  estabelecimentoResumo: string | null
+}
+
 export interface ListaCompraResumoResponse {
   id: string
   nome: string
@@ -24,6 +31,7 @@ export interface ListaCompraResumoResponse {
   criadaEm: string
   atualizadaEm: string
   criadaPorUsuarioId?: string
+  resumoFinanceiro?: ResumoFinanceiroCompraResponse | null
 }
 
 export interface HistoricoListaCompraItemResponse {

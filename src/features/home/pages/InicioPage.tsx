@@ -7,6 +7,8 @@ import { useFamilyContext } from "../../family/session/familyContext";
 import { buscarMinhasSolicitacoesPendentes, buscarSolicitacoesFamilia } from "../../family/api/familyApi";
 import type { MinhaSolicitacaoPendenteResponse, SolicitacaoFamiliaResponse } from "../../family/types/family";
 import { buscarListas } from "../../shopping-lists/api/shoppingListsApi";
+import { ResumoFinanceiroCompraCard } from "../../shopping-lists/components/ResumoFinanceiroCompraCard";
+import { resumirRegistrosFinanceiros } from "../../shopping-lists/components/resumoFinanceiroCompra";
 import { buscarCompra } from "../../shopping/api/shoppingApi";
 import type { CompraResponse } from "../../shopping/types/shopping";
 import {
@@ -262,6 +264,10 @@ export function InicioPage() {
                       {ultimaCompraFinalizada.nomeLista}
                     </span>
                   </p>
+                  <ResumoFinanceiroCompraCard
+                    status="FINALIZADA"
+                    resumoFinanceiro={resumirRegistrosFinanceiros(ultimaCompraFinalizada.registrosFinanceiros, ultimaCompraFinalizada.totalRegistrado)}
+                  />
                   <Link
                     to={`/listas/${ultimaCompraFinalizada.listaId}/compra/revisao`}
                     className="mt-1 inline-flex items-center py-1 text-label-lg font-semibold text-primary"

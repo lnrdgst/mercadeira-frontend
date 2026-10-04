@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { ApiRequestError } from '../../../shared/api/apiClient'
 import { Modal } from '../../../shared/components/Modal'
+import { formatarValorMonetario } from '../../../shared/formatarValorMonetario'
 import { adicionarRegistroFinanceiroCompra, removerRegistroFinanceiroCompra } from '../api/shoppingApi'
 import type { CompraResponse } from '../types/shopping'
 
@@ -11,10 +12,6 @@ type Props = {
   listaId: string
   onAtualizar: (compra: CompraResponse) => void
   onNaoAutorizado: () => void
-}
-
-function formatarValor(valor: number) {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)
 }
 
 function converterValor(valor: string): number | null {
@@ -35,7 +32,7 @@ export function RegistrosFinanceirosCompra({ compra, token, familiaId, listaId, 
   const podeGerenciar = compra.status === 'EM_ANDAMENTO' && compra.contextoUsuario.podeGerenciarRegistrosFinanceiros === true
   const registros = compra.registrosFinanceiros ?? []
   const valorTotal = compra.totalRegistrado ?? registros.reduce((total, registro) => total + registro.valor, 0)
-  const total = useMemo(() => formatarValor(valorTotal), [valorTotal])
+  const total = useMemo(() => formatarValorMonetario(valorTotal), [valorTotal])
 
   function abrir() {
     setValor('')
@@ -96,7 +93,7 @@ export function RegistrosFinanceirosCompra({ compra, token, familiaId, listaId, 
       : <ul className="divide-y divide-foreground/10">
         {registros.map((registro) => <li key={registro.id} className="flex items-center justify-between gap-gutter py-gutter">
           <div>
-            <p className="font-semibold">{formatarValor(registro.valor)}</p>
+            <p className="font-semibold">{formatarValorMonetario(registro.valor)}</p>
             {registro.estabelecimentoNome && <p className="text-body-sm text-foreground-muted">{registro.estabelecimentoNome}</p>}
           </div>
           {podeGerenciar && <button type="button" disabled={enviando} onClick={() => void remover(registro.id)} className="min-h-touch rounded-control px-gutter font-semibold text-error disabled:opacity-60">Remover</button>}

@@ -25,8 +25,10 @@ export function MinhaContaPage() {
         }
     }, [usuario]);
     const token = auth?.token;
+    const podeAlterarEmail = usuario?.podeAlterarEmail !== false;
+    const podeAlterarSenha = usuario?.podeAlterarSenha !== false;
     if (!token) return null;
-    const emailMudou =
+    const emailMudou = podeAlterarEmail &&
         email.trim().toLowerCase() !== (usuario?.email ?? "").toLowerCase();
     const mudou = nome.trim() !== (usuario?.nome ?? "") || emailMudou;
     async function salvar(e: React.FormEvent) {
@@ -126,10 +128,13 @@ export function MinhaContaPage() {
                         autoComplete="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
+                        readOnly={!podeAlterarEmail}
+                        aria-readonly={!podeAlterarEmail}
                         className="min-h-touch w-full rounded-card border border-foreground/20 px-gutter"
                         required
                     />
                 </label>
+                {!podeAlterarEmail && <p className="text-body-sm text-foreground-muted">Gerenciado pela sua Conta Google.</p>}
                 {emailMudou && (
                     <PasswordField
                         id="senha-email"
@@ -149,7 +154,7 @@ export function MinhaContaPage() {
                     {salvando ? "Salvando..." : "Salvar alterações"}
                 </button>
             </form>
-            <form
+            {podeAlterarSenha && <form
                 onSubmit={trocarSenha}
                 className="space-y-gutter rounded-card border border-foreground/10 p-page"
             >
@@ -192,7 +197,8 @@ export function MinhaContaPage() {
                 >
                     {salvando ? "Alterando..." : "Alterar senha"}
                 </button>
-            </form>
+            </form>}
+            {usuario?.formasAcesso && <section className="rounded-card border border-foreground/10 p-page"><h2 className="text-headline-md font-semibold">Formas de acesso</h2><p className="mt-2 text-body-md text-foreground-muted">{usuario.formasAcesso.includes("GOOGLE") ? "Conta Google" : ""}{usuario.formasAcesso.includes("GOOGLE") && usuario.formasAcesso.includes("LOCAL") ? " e " : ""}{usuario.formasAcesso.includes("LOCAL") ? "Senha" : ""}</p></section>}
         </section>
     );
 }

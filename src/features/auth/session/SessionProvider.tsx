@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { login as loginRequest, logout as logoutRequest, refresh as refreshRequest } from '../api/authApi'
+import { login as loginRequest, loginComGoogle, logout as logoutRequest, refresh as refreshRequest, vincularGoogle as vincularGoogleRequest } from '../api/authApi'
 import type { AuthSession, LoginRequest } from '../types/auth'
 import type { ApiRequestError } from '../../../shared/api/apiClient'
 import { registerAuthRecovery } from '../../../shared/api/authRecovery'
@@ -114,5 +114,26 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     atualizarSessao('authenticated', response.data)
   }
 
-  return <SessionContext value={{ ...session, authenticate, logout }}>{children}</SessionContext>
+  function iniciarSessaoGoogle(response: { token: string | null; expiracao: string | null; refreshToken: string | null }) {
+    if (!response.token || !response.expiracao || !response.refreshToken) throw new Error('Resposta de autenticacao Google invalida.')
+    const auth = { token: response.token, expiracao: response.expiracao, refreshToken: response.refreshToken }
+    persistAuthSession(auth)
+    atualizarSessao('authenticated', auth)
+  }
+
+  async function authenticateGoogle(credential: string) {
+    const response = await loginComGoogle(credential)
+    if (!response.data) throw new Error('Nao foi possivel validar sua Conta Google.')
+    if (response.data.vinculoNecessario) return true
+    iniciarSessaoGoogle(response.data)
+    return false
+  }
+
+  async function vincularGoogle(credential: string, senhaAtual: string) {
+    const response = await vincularGoogleRequest(credential, senhaAtual)
+    if (!response.data || response.data.vinculoNecessario) throw new Error('Nao foi possivel vincular sua Conta Google.')
+    iniciarSessaoGoogle(response.data)
+  }
+
+  return <SessionContext value={{ ...session, authenticate, authenticateGoogle, vincularGoogle, logout }}>{children}</SessionContext>
 }

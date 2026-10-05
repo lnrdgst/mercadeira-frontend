@@ -2,6 +2,12 @@
 
 Frontend do Mercadeira, uma aplicação colaborativa para organização de compras entre membros de famílias e grupos.
 
+## Acesso com Conta Google
+
+Quando `VITE_GOOGLE_CLIENT_ID` está configurada, Login e Cadastro exibem o botão oficial do Google Identity Services. O frontend envia apenas a credential ao backend e, após a validação, armazena somente a sessão própria do Mercadeira. Sem essa variável, o botão não é mostrado e o acesso local continua normal.
+
+Para uma conta LOCAL que já tenha o mesmo e-mail Google, a tela solicita a senha local atual antes de vincular a nova forma de acesso. Em conta somente Google, Minha Conta mostra o e-mail como gerenciado pela Conta Google e mantém somente a edição do nome.
+
 ## Registros financeiros da compra
 
 A revisão mostra os registros financeiros manuais e o total derivado. Durante a Compra, a capability `contextoUsuario.podeGerenciarRegistrosFinanceiros` permite adicionar ou remover múltiplos valores, com estabelecimento opcional. Após `FINALIZADA`, os valores continuam visíveis somente para leitura. Não há forma de pagamento, NFC-e, QR Code, câmera ou integração SEFAZ nesta entrega.

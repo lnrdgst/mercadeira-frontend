@@ -15,6 +15,8 @@ export function sessionFixture(overrides: Partial<SessionValue> = {}): SessionVa
     status: 'authenticated',
     auth: { token: 'token-teste', expiracao: '2099-01-01T00:00:00Z', refreshToken: 'refresh-teste' },
     authenticate: vi.fn(async () => {}),
+    authenticateGoogle: vi.fn(async () => false),
+    vincularGoogle: vi.fn(async () => {}),
     logout: vi.fn(),
     ...overrides,
   }

@@ -51,7 +51,7 @@ export function TransactionalShell() {
           {statusCompra === 'EM_ANDAMENTO' && wakeLock.suportado && (
             <div className="flex flex-wrap items-center justify-between gap-gutter rounded-card border border-foreground/10 px-gutter py-2 text-body-md">
               <div>
-                <p className="font-semibold">Manter tela ligada</p>
+                <p className="font-semibold">Manter tela ligada em compras</p>
                 <p className="text-foreground-muted">
                   {wakeLock.preferenciaHabilitada
                     ? (wakeLock.ativo ? 'Ligada' : 'PreferÃªncia ligada; indisponÃ­vel agora.')
@@ -60,11 +60,11 @@ export function TransactionalShell() {
               </div>
               <button
                 type="button"
-                aria-pressed={wakeLock.preferenciaHabilitada}
+                role="switch" aria-label={wakeLock.preferenciaHabilitada ? 'Desligar' : 'Ligar'} aria-checked={wakeLock.preferenciaHabilitada}
                 onClick={() => wakeLock.definirPreferencia(!wakeLock.preferenciaHabilitada)}
-                className="min-h-touch rounded-control border border-primary px-gutter text-label-md font-semibold text-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                className={`relative inline-flex h-8 w-14 shrink-0 items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${wakeLock.preferenciaHabilitada ? 'bg-primary' : 'bg-foreground/20'}`}
               >
-                {wakeLock.preferenciaHabilitada ? 'Desligar' : 'Ligar'}
+                <span className={`size-6 rounded-full bg-surface shadow-sm transition-transform ${wakeLock.preferenciaHabilitada ? 'translate-x-7' : 'translate-x-1'}`} />
               </button>
             </div>
           )}

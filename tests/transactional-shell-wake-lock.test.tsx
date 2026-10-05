@@ -100,11 +100,11 @@ test('preferência desligada permanece desligada ao navegar entre as rotas trans
   renderFluxo()
 
   await waitFor(() => expect(request).toHaveBeenCalledOnce())
-  await act(async () => { screen.getByRole('button', { name: 'Desligar' }).click() })
+  await act(async () => { screen.getByRole('switch', { name: 'Desligar' }).click() })
   await waitFor(() => expect(sentinel.release).toHaveBeenCalledOnce())
   await act(async () => { screen.getByRole('link', { name: 'Navegar' }).click() })
   expect(await screen.findByText('Revisão')).toBeVisible()
-  expect(screen.getByRole('button', { name: 'Ligar' })).toBeVisible()
+  expect(screen.getByRole('switch', { name: 'Ligar' })).toBeVisible()
   expect(request).toHaveBeenCalledOnce()
 })
 

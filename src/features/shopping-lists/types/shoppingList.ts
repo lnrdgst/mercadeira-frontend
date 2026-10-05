@@ -1,4 +1,5 @@
 import type { PapelFamilia } from '../../family/types/family'
+import type { AlertaContinuidadeCompraResponse } from '../../shopping/types/shopping'
 
 export type CategoriaCompra =
   | 'SUPERMERCADO'
@@ -32,6 +33,7 @@ export interface ListaCompraResumoResponse {
   atualizadaEm: string
   criadaPorUsuarioId?: string
   resumoFinanceiro?: ResumoFinanceiroCompraResponse | null
+  alertaContinuidade?: AlertaContinuidadeCompraResponse | null
 }
 
 export interface HistoricoListaCompraItemResponse {

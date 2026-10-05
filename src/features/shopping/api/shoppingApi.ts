@@ -73,6 +73,15 @@ export async function finalizarCompra(token: string, familiaId: string, listaId:
   return response.data
 }
 
+export async function continuarCompra(token: string, familiaId: string, listaId: string) {
+  const response = await apiRequest<CompraResponse>(
+    `/familias/${familiaId}/listas/${listaId}/compra/continuar`,
+    { token, method: 'POST' },
+  )
+  if (response.status !== 200 || !response.data) throw new Error('NÃ£o foi possÃ­vel confirmar a continuidade da compra.')
+  return response.data
+}
+
 export async function encerrarCompraAdministrativamente(token: string, familiaId: string, listaId: string) {
   const response = await apiRequest<CompraResponse>(
     `/familias/${familiaId}/listas/${listaId}/compra/finalizar-administrativamente`,

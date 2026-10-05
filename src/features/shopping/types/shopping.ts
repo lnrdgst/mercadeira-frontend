@@ -146,6 +146,7 @@ export interface CompraResponse {
   estabelecimentoLista?: string | null
   status: 'EM_ANDAMENTO' | 'FINALIZADA'
   iniciadaEm: string
+  alertaContinuidade?: AlertaContinuidadeCompraResponse | null
   finalizadaPor: ReferenciaParticipanteCompra | null
   finalizadaEm: string | null
   responsabilidadeOperacional?: ResponsabilidadeOperacionalResponse
@@ -158,6 +159,12 @@ export interface CompraResponse {
   registrosFinanceiros?: RegistroFinanceiroCompraResponse[]
   totalRegistrado?: number
   contextoUsuario: ContextoUsuarioCompraResponse
+}
+
+export interface AlertaContinuidadeCompraResponse {
+  necessario: boolean
+  iniciadaEm: string
+  adiadoAte: string | null
 }
 
 export interface RegistroFinanceiroCompraResponse {

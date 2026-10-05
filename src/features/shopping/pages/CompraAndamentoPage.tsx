@@ -11,6 +11,7 @@ import { ItemCompraCard } from '../components/ItemCompraCard'
 import { CompraProgresso } from '../components/CompraProgresso'
 import { MinhaPresenca } from '../components/MinhaPresenca'
 import { EncerramentoAdministrativoCompra } from '../components/EncerramentoAdministrativoCompra'
+import { AlertaContinuidadeCompraModal } from '../components/AlertaContinuidadeCompraModal'
 import { useCompraTransacional } from '../session/CompraTransacionalContext'
 import type { AcaoRemocaoItemCompra, AdicionarItemCompraRequest, CompraResponse, ItemCompraResponse } from '../types/shopping'
 
@@ -274,6 +275,7 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
 
       {compra && (
         <>
+          <AlertaContinuidadeCompraModal alerta={compra.alertaContinuidade} token={token} familiaId={familiaId} listaId={listaId} onAtualizar={atualizarCompra} />
           <header className="space-y-gutter rounded-card bg-surface p-page shadow-soft">
             <div className="flex flex-wrap gap-2">
               <span className="rounded-full bg-primary/10 px-gutter py-1 text-label-md font-semibold text-primary">

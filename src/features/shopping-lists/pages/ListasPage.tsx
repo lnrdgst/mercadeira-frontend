@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Modal } from "../../../shared/components/Modal";
+import { AlertaContinuidadeCompraModal } from "../../shopping/components/AlertaContinuidadeCompraModal";
 import { ResumoFinanceiroCompraCard } from "../components/ResumoFinanceiroCompraCard";
 import type { ApiRequestError } from "../../../shared/api/apiClient";
 import { useSession } from "../../auth/session/sessionContext";
@@ -342,6 +343,7 @@ export function ListasPage() {
 
     return (
         <section className="mx-auto max-w-3xl space-y-page py-page">
+            {auth && familiaSelecionada && listasVisiveis.find((lista) => lista.alertaContinuidade?.necessario) && <AlertaContinuidadeCompraModal alerta={listasVisiveis.find((lista) => lista.alertaContinuidade?.necessario)?.alertaContinuidade} token={auth.token} familiaId={familiaSelecionada.id} listaId={listasVisiveis.find((lista) => lista.alertaContinuidade?.necessario)?.id ?? ''} />}
             <header className="flex flex-wrap items-end justify-between gap-gutter">
                 <div>
                     <h1 className="text-headline-lg font-bold">

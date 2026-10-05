@@ -10,6 +10,7 @@ import { ReutilizarListaButton } from '../components/ReutilizarListaButton'
 import { ReaproveitarItensForaButton } from '../components/ReaproveitarItensForaButton'
 import { EncerramentoAdministrativoCompra } from '../components/EncerramentoAdministrativoCompra'
 import { RegistrosFinanceirosCompra } from '../components/RegistrosFinanceirosCompra'
+import { AlertaContinuidadeCompraModal } from '../components/AlertaContinuidadeCompraModal'
 import { useCompraTransacional } from '../session/CompraTransacionalContext'
 import type { CompraResponse } from '../types/shopping'
 
@@ -146,6 +147,7 @@ function RevisaoCompra({ token, familiaId, listaId }: { token: string; familiaId
     {erro && <p role="alert" className="rounded-card bg-error/10 p-page text-error">{erro}</p>}
     {!carregando && (!compra || precisaAtualizar) && <button type="button" disabled={enviando} onClick={atualizar} className="min-h-touch rounded-control border border-primary px-page font-semibold text-primary disabled:opacity-60">Atualizar compra</button>}
     {compra && <>
+      <AlertaContinuidadeCompraModal alerta={compra.alertaContinuidade} token={token} familiaId={familiaId} listaId={listaId} onAtualizar={setCompra} />
       {compra.status === 'FINALIZADA' && <CompraFinalizadaAviso />}
       <CompraResumo compra={compra} />
       <RegistrosFinanceirosCompra compra={compra} token={token} familiaId={familiaId} listaId={listaId} onAtualizar={setCompra} onNaoAutorizado={logout} />

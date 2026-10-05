@@ -11,6 +11,7 @@ import { resumirRegistrosFinanceiros } from "../../shopping-lists/components/res
 import { formatarValorMonetario } from "../../../shared/formatarValorMonetario";
 import { buscarCompra } from "../../shopping/api/shoppingApi";
 import type { CompraResponse } from "../../shopping/types/shopping";
+import { AlertaContinuidadeCompraModal } from "../../shopping/components/AlertaContinuidadeCompraModal";
 import {
   categoriaCompraLabels,
   statusListaCompraLabels,
@@ -225,6 +226,7 @@ export function InicioPage() {
       : null;
   return (
     <section className="mx-auto max-w-3xl space-y-page py-page">
+      {auth && compraEmAndamentoVisivel && <AlertaContinuidadeCompraModal alerta={compraEmAndamentoVisivel.alertaContinuidade} token={auth.token} familiaId={familiaSelecionada.id} listaId={compraEmAndamentoVisivel.listaId} />}
       <header className="space-y-gutter">
         <h1 className="text-headline-lg font-bold">
           {perfilLoading

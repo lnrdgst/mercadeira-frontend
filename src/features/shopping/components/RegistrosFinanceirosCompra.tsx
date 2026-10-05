@@ -29,7 +29,7 @@ export function RegistrosFinanceirosCompra({ compra, token, familiaId, listaId, 
 
   function abrir() {
     setValor('')
-    setEstabelecimentoNome('')
+    setEstabelecimentoNome(compra.estabelecimentoLista ?? compra.estabelecimento ?? '')
     setErro(null)
     setAberto(true)
   }

@@ -143,6 +143,7 @@ export interface CompraResponse {
   nomeLista: string
   categoria: CategoriaCompra
   estabelecimento: string | null
+  estabelecimentoLista?: string | null
   status: 'EM_ANDAMENTO' | 'FINALIZADA'
   iniciadaEm: string
   finalizadaPor: ReferenciaParticipanteCompra | null

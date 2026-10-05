@@ -26,6 +26,50 @@ test('mantém a gestão manual de valores após a finalização', () => {
   expect(screen.getByRole('button', { name: 'Remover' })).toBeVisible()
 })
 
+test('preenche o estabelecimento da Lista, mas permite alterar ou apagar antes de registrar', async () => {
+  const inicial = { ...compra(), estabelecimento: 'Snapshot anterior', estabelecimentoLista: 'Supermaxi', registrosFinanceiros: [], totalRegistrado: 0 }
+  const atualizada = { ...inicial, registrosFinanceiros: [{ id: 'registro-novo', valor: 1, tipo: 'MANUAL' as const, estabelecimentoNome: 'Farmacia X', criadoEm: '2026-10-02T19:00:00Z' }] }
+  const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json(atualizada, { status: 201 }))
+  const view = renderApp(<RegistrosFinanceirosCompra compra={inicial} token="token" familiaId="familia-a" listaId="lista-a" onAtualizar={vi.fn()} onNaoAutorizado={vi.fn()} />)
+
+  await view.user.click(screen.getByRole('button', { name: 'Informar valor' }))
+  const estabelecimento = screen.getByLabelText(/Estabelecimento/)
+  expect(estabelecimento).toHaveValue('Supermaxi')
+  await view.user.clear(estabelecimento)
+  await view.user.type(estabelecimento, 'Farmacia X')
+  await view.user.click(screen.getByRole('button', { name: /1$/ }))
+  await view.user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Adicionar valor' }))
+
+  await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce())
+  expect(JSON.parse((fetch.mock.calls[0][1] as RequestInit).body as string)).toEqual({ valor: 1, estabelecimentoNome: 'Farmacia X' })
+})
+
+test('reutiliza o estabelecimento retornado pela Lista no prÃ³ximo registro sem recarregar a pÃ¡gina', async () => {
+  const inicial = { ...compra(), registrosFinanceiros: [], totalRegistrado: 0 }
+  const atualizada = { ...inicial, estabelecimentoLista: 'Supermaxi', registrosFinanceiros: [{ id: 'registro-novo', valor: 10, tipo: 'MANUAL' as const, estabelecimentoNome: 'Supermaxi', criadoEm: '2026-10-02T19:00:00Z' }], totalRegistrado: 10 }
+  const onAtualizar = vi.fn()
+  vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json(atualizada, { status: 201 }))
+  const view = renderApp(<RegistrosFinanceirosCompra compra={inicial} token="token" familiaId="familia-a" listaId="lista-a" onAtualizar={onAtualizar} onNaoAutorizado={vi.fn()} />)
+
+  await view.user.click(screen.getByRole('button', { name: 'Informar valor' }))
+  await view.user.click(screen.getByRole('button', { name: /1$/ }))
+  await view.user.type(screen.getByLabelText(/Estabelecimento/), 'Supermaxi')
+  await view.user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Adicionar valor' }))
+  await vi.waitFor(() => expect(onAtualizar).toHaveBeenCalledWith(atualizada))
+
+  view.rerender(<RegistrosFinanceirosCompra compra={atualizada} token="token" familiaId="familia-a" listaId="lista-a" onAtualizar={onAtualizar} onNaoAutorizado={vi.fn()} />)
+  await view.user.click(screen.getByRole('button', { name: 'Adicionar outro valor' }))
+  expect(screen.getByLabelText(/Estabelecimento/)).toHaveValue('Supermaxi')
+})
+
+test('usa o estabelecimento da Lista tambÃ©m em compra finalizada', async () => {
+  const finalizada = { ...compra('FINALIZADA'), estabelecimentoLista: 'Supermaxi', contextoUsuario: { ...compra().contextoUsuario, podeGerenciarRegistrosFinanceiros: true } }
+  const view = renderApp(<RegistrosFinanceirosCompra compra={finalizada} token="token" familiaId="familia-a" listaId="lista-a" onAtualizar={vi.fn()} onNaoAutorizado={vi.fn()} />)
+
+  await view.user.click(screen.getByRole('button', { name: 'Adicionar outro valor' }))
+  expect(screen.getByLabelText(/Estabelecimento/)).toHaveValue('Supermaxi')
+})
+
 test('envia valor manual e estabelecimento para o endpoint da compra', async () => {
   const atualizada = { ...compra(), registrosFinanceiros: [], totalRegistrado: 0 }
   const onAtualizar = vi.fn()

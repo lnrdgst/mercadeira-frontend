@@ -140,7 +140,7 @@ function RevisaoCompra({ token, familiaId, listaId }: { token: string; familiaId
     </nav>}
     <header className="space-y-1">
       <h1 ref={tituloRef} tabIndex={-1} className="text-headline-lg font-bold">{compra?.status === 'FINALIZADA' ? 'Resumo da compra' : 'Revisão da compra'}</h1>
-      {compra && <><p className="break-words text-body-lg font-semibold">{compra.nomeLista}</p>{compra.estabelecimento && <p className="break-words text-foreground-muted">{compra.estabelecimento}</p>}<p className="text-label-lg text-primary">{compra.status === 'FINALIZADA' ? 'Finalizada' : 'Em andamento'}</p></>}
+      {compra && <><p className="break-words text-body-lg font-semibold">{compra.nomeLista}</p>{(compra.estabelecimentoLista ?? compra.estabelecimento) && <p className="break-words text-foreground-muted">{compra.estabelecimentoLista ?? compra.estabelecimento}</p>}<p className="text-label-lg text-primary">{compra.status === 'FINALIZADA' ? 'Finalizada' : 'Em andamento'}</p></>}
     </header>
     {carregando && <p role="status">Carregando compra...</p>}
     {erro && <p role="alert" className="rounded-card bg-error/10 p-page text-error">{erro}</p>}

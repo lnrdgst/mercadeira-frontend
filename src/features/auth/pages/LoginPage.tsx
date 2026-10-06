@@ -17,6 +17,7 @@ export function LoginPage() {
   const accountCreated = Boolean(
     (location.state as { accountCreated?: boolean } | null)?.accountCreated,
   )
+  const manual = location.pathname.endsWith('/manual')
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -95,12 +96,13 @@ export function LoginPage() {
           </p>
         )}
 
-        <div className="space-y-3">
+        {!manual && <div className="space-y-3">
           <GoogleSignInButton onCredential={receberCredentialGoogle} onError={erroGoogle} />
           <p className="text-center text-body-sm text-foreground-muted">ou entre com e-mail e senha</p>
-        </div>
+          <Link className="block text-center font-semibold text-primary underline" to="/login/manual">Clicando aqui</Link>
+        </div>}
 
-        {googleCredential && (
+        {!manual && googleCredential && (
           <form onSubmit={confirmarVinculo} className="space-y-gutter rounded-card border border-primary/30 bg-primary/5 p-page">
             <div><h2 className="text-headline-md font-semibold">Encontramos uma conta existente</h2><p className="mt-1 text-body-md text-foreground-muted">Confirme sua senha atual uma Ãºnica vez para vincular sua Conta Google.</p></div>
             <PasswordField id="senha-vinculo-google" label="Senha atual" name="senhaAtual" autoComplete="current-password" value={senhaVinculo} onChange={(event) => setSenhaVinculo(event.target.value)} required disabled={isSubmitting} />
@@ -108,7 +110,7 @@ export function LoginPage() {
           </form>
         )}
 
-        <form className="space-y-gutter" onSubmit={handleSubmit}>
+        {manual && <><Link className="block text-body-sm font-semibold text-primary" to="/login">← Voltar</Link><form className="space-y-gutter" onSubmit={handleSubmit}>
           <div className="space-y-1">
             <label className="block text-label-lg font-semibold" htmlFor="email">
               E-mail
@@ -138,7 +140,7 @@ export function LoginPage() {
           >
             {isSubmitting ? 'Entrando...' : 'Entrar'}
           </button>
-        </form>
+        </form></>}
 
         <p className="text-center text-body-md text-foreground-muted">
           Ainda não possui conta?{' '}

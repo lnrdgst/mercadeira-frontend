@@ -34,9 +34,11 @@ export function AppRouter() {
 
       <Route element={<PublicOnlyRoute />}>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/login/manual" element={<LoginPage />} />
         <Route path="/esqueci-senha" element={<EsqueciSenhaPage />} />
         <Route path="/redefinir-senha" element={<RedefinirSenhaPage />} />
         <Route path="/cadastro" element={<CadastroPage />} />
+        <Route path="/cadastro/manual" element={<CadastroPage />} />
       </Route>
 
       <Route element={<AuthenticatedRoute />}>

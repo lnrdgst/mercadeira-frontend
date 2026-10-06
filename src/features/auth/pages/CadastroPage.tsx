@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 import type { ApiRequestError } from '../../../shared/api/apiClient'
 import { cadastrarUsuario } from '../api/authApi'
 import { PasswordField } from '../components/PasswordField'
@@ -8,6 +8,7 @@ import { useSession } from '../session/sessionContext'
 
 export function CadastroPage() {
   const navigate = useNavigate()
+  const manual = useLocation().pathname.endsWith('/manual')
   const { authenticateGoogle, vincularGoogle } = useSession()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -68,10 +69,10 @@ export function CadastroPage() {
           </p>
         )}
 
-        <div className="space-y-3"><GoogleSignInButton onCredential={receberCredentialGoogle} onError={erroGoogle} /><p className="text-center text-body-sm text-foreground-muted">ou crie sua conta com e-mail e senha</p></div>
-        {googleCredential && <form onSubmit={confirmarVinculo} className="space-y-gutter rounded-card border border-primary/30 bg-primary/5 p-page"><div><h2 className="text-headline-md font-semibold">Encontramos uma conta existente</h2><p className="mt-1 text-body-md text-foreground-muted">Confirme sua senha atual para vincular sua Conta Google.</p></div><PasswordField id="senha-vinculo-google" label="Senha atual" name="senhaAtual" autoComplete="current-password" value={senhaVinculo} onChange={(event) => setSenhaVinculo(event.target.value)} required disabled={isSubmitting} /><div className="flex gap-gutter"><button className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60" disabled={isSubmitting}>{isSubmitting ? 'Vinculando...' : 'Vincular e entrar'}</button><button className="min-h-touch rounded-control px-page font-semibold text-foreground" type="button" onClick={() => { setGoogleCredential(null); setSenhaVinculo('') }}>Cancelar</button></div></form>}
+        {!manual && <div className="space-y-3"><GoogleSignInButton onCredential={receberCredentialGoogle} onError={erroGoogle} /><p className="text-center text-body-sm text-foreground-muted">ou crie sua conta com e-mail e senha</p><Link className="block text-center font-semibold text-primary underline" to="/cadastro/manual">Clicando aqui</Link></div>}
+        {!manual && googleCredential && <form onSubmit={confirmarVinculo} className="space-y-gutter rounded-card border border-primary/30 bg-primary/5 p-page"><div><h2 className="text-headline-md font-semibold">Encontramos uma conta existente</h2><p className="mt-1 text-body-md text-foreground-muted">Confirme sua senha atual para vincular sua Conta Google.</p></div><PasswordField id="senha-vinculo-google" label="Senha atual" name="senhaAtual" autoComplete="current-password" value={senhaVinculo} onChange={(event) => setSenhaVinculo(event.target.value)} required disabled={isSubmitting} /><div className="flex gap-gutter"><button className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60" disabled={isSubmitting}>{isSubmitting ? 'Vinculando...' : 'Vincular e entrar'}</button><button className="min-h-touch rounded-control px-page font-semibold text-foreground" type="button" onClick={() => { setGoogleCredential(null); setSenhaVinculo('') }}>Cancelar</button></div></form>}
 
-        <form className="space-y-gutter" onSubmit={handleSubmit}>
+        {manual && <><Link className="block text-body-sm font-semibold text-primary" to="/cadastro">← Voltar</Link><form className="space-y-gutter" onSubmit={handleSubmit}>
           <div className="space-y-1">
             <label className="block text-label-lg font-semibold" htmlFor="nome">
               Nome
@@ -113,7 +114,7 @@ export function CadastroPage() {
           >
             {isSubmitting ? 'Criando conta...' : 'Criar conta'}
           </button>
-        </form>
+        </form></>}
 
         <p className="text-center text-body-md text-foreground-muted">
           Já possui conta?{' '}

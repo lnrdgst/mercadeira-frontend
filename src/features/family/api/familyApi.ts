@@ -25,6 +25,18 @@ export function removerIntegranteFamilia(token: string, familiaId: string, membr
   return apiRequest<void>(`/familias/${familiaId}/membros/${membroId}`, { method: 'DELETE', token })
 }
 
+export function atualizarPermissaoIniciarCompra(
+  token: string,
+  familiaId: string,
+  membroId: string,
+  podeIniciarCompra: boolean,
+) {
+  return apiRequest<MembroFamiliaResponse>(
+    `/familias/${familiaId}/membros/${membroId}/permissao-iniciar-compra`,
+    { method: 'PATCH', body: { podeIniciarCompra }, token },
+  )
+}
+
 export function sairDaFamilia(token: string, familiaId: string) {
   return apiRequest<void>(`/familias/${familiaId}/membros/me`, { method: 'DELETE', token })
 }

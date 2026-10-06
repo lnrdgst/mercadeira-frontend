@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ApiRequestError } from "../../../shared/api/apiClient";
 import { useSession } from "../../auth/session/sessionContext";
+import { Modal } from "../../../shared/components/Modal";
 import { atualizarDadosLista, buscarLista } from "../api/shoppingListsApi";
 import {
   categoriaCompraLabels,
@@ -147,27 +148,11 @@ export function EditarDadosLista({
       </button>
 
 
-      {editando && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="editar-lista-titulo"
-          className="fixed inset-0 z-50 flex items-end bg-foreground/40 p-gutter sm:items-center sm:justify-center"
-          onKeyDown={(event) => {
-            if (event.key === "Escape" && !enviando) {
-              event.preventDefault();
-              setEditando(false);
-            }
-          }}
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget && !enviando)
-              setEditando(false);
-          }}
-        >
+      <Modal open={editando} onClose={() => setEditando(false)} closeDisabled={enviando} ariaLabelledBy="editar-lista-titulo" panelClassName="max-w-xl p-page">
           <form
             aria-labelledby="editar-lista-titulo"
             onSubmit={(event) => void salvar(event)}
-            className="max-h-[calc(100svh-2rem)] w-full max-w-xl overflow-y-auto rounded-card bg-surface p-page shadow-soft space-y-gutter"
+            className="min-h-0 space-y-gutter overflow-y-auto"
             aria-busy={enviando}
           >
             <h2
@@ -256,15 +241,18 @@ export function EditarDadosLista({
               </div>
             </fieldset>
 
-            <div className="sticky bottom-0 -mx-page border-t border-foreground/15 bg-surface px-page pt-gutter pb-[max(env(safe-area-inset-bottom),1rem)]">
-              <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="sticky bottom-0 -mx-page border-t border-foreground/15 bg-surface px-gutter py-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] sm:px-page sm:pt-gutter sm:pb-[max(env(safe-area-inset-bottom),1rem)]">
+              <div className="flex items-center justify-end gap-2">
                 <button
                   type="button"
                   disabled={enviando}
                   onClick={() => setEditando(false)}
-                  className="min-h-touch rounded-control border border-foreground/20 px-page font-semibold disabled:opacity-60"
+                  aria-label="Cancelar"
+                  title="Cancelar"
+                  className="inline-flex min-h-touch min-w-touch items-center justify-center rounded-control border border-foreground/20 px-2 font-semibold disabled:opacity-60 sm:px-page"
                 >
-                  Cancelar
+                  <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5 fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                  <span className="hidden sm:inline">Cancelar</span>
                 </button>
 
                 {precisaAtualizar && (
@@ -285,9 +273,9 @@ export function EditarDadosLista({
                         setEnviando(false);
                       }
                     }}
-                    className="min-h-touch rounded-control border border-primary px-page font-semibold text-primary disabled:opacity-60"
+                    className="min-h-touch flex-1 rounded-control border border-primary px-2 font-semibold text-primary disabled:opacity-60 sm:flex-none sm:px-page"
                   >
-                    Atualizar lista
+                    <span className="sm:hidden">Atualizar</span><span className="hidden sm:inline">Atualizar lista</span>
                   </button>
                 )}
 
@@ -298,17 +286,16 @@ export function EditarDadosLista({
                     !permitido ||
                     precisaAtualizar
                   }
-                  className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60"
+                  className="min-h-touch flex-1 rounded-control bg-primary px-2 font-semibold text-surface disabled:opacity-60 sm:flex-none sm:px-page"
                 >
                   {enviando
                     ? "Salvando..."
-                    : "Salvar alterações"}
+                    : <><span className="sm:hidden">Salvar</span><span className="hidden sm:inline">Salvar alterações</span></>}
                 </button>
               </div>
             </div>
           </form>
-        </div>
-      )}
+      </Modal>
     </>
   );
 }

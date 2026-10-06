@@ -12,8 +12,10 @@ import {
   sairDaFamilia,
   excluirFamilia,
   transferirAdministracaoFamilia,
+  atualizarPermissaoIniciarCompra,
 } from '../api/familyApi'
 import { ConfirmacaoSensivelDialog } from '../components/ConfirmacaoSensivelDialog'
+import { Modal } from '../../../shared/components/Modal'
 import { useFamilyContext } from '../session/familyContext'
 import type { MembroFamiliaResponse, SolicitacaoFamiliaResponse } from '../types/family'
 
@@ -57,6 +59,7 @@ export function FamiliaPage() {
   const [erroConfirmacaoSensivel, setErroConfirmacaoSensivel] = useState<string | null>(null)
   const [saidaBloqueada, setSaidaBloqueada] = useState<{ motivo: 'ADMINISTRADOR_UNICO' | 'COMPRA_EM_ANDAMENTO'; membroFamiliaId: string } | null>(null)
   const [remocaoBloqueada, setRemocaoBloqueada] = useState<MembroFamiliaResponse | null>(null)
+  const [permissaoEmProcessamentoId, setPermissaoEmProcessamentoId] = useState<string | null>(null)
 
   const carregarSolicitacoes = useCallback(async (mostrarCarregamento = true) => {
     if (!auth || !familiaSelecionada || familiaSelecionada.contextoUsuario?.podeGerenciarIntegrantes !== true) {
@@ -307,6 +310,31 @@ export function FamiliaPage() {
     }
   }
 
+  async function salvarPermissaoIniciarCompra(integrante: MembroFamiliaResponse) {
+    if (!auth || !isAdministrador || permissaoEmProcessamentoId === integrante.membroFamiliaId) return
+    const podeIniciarCompra = integrante.podeIniciarCompra !== false
+    setPermissaoEmProcessamentoId(integrante.membroFamiliaId)
+    setFeedback(null)
+    try {
+      const atualizado = await atualizarPermissaoIniciarCompra(
+        auth.token,
+        familia.id,
+        integrante.membroFamiliaId,
+        !podeIniciarCompra,
+      )
+      setIntegrantes((atuais) => atuais.map((membro) => membro.membroFamiliaId === integrante.membroFamiliaId
+        ? { ...membro, podeIniciarCompra: atualizado.data?.podeIniciarCompra ?? !podeIniciarCompra }
+        : membro))
+      setFeedback('Permissão para iniciar compras atualizada.')
+    } catch (error) {
+      const apiError = error as ApiRequestError
+      if (apiError.status === 401) logout()
+      else setFeedback(apiError.message || 'Não foi possível atualizar a permissão para iniciar compras.')
+    } finally {
+      setPermissaoEmProcessamentoId(null)
+    }
+  }
+
   return (
     <section className="mx-auto max-w-2xl space-y-page py-page">
       <header className="space-y-2">
@@ -527,6 +555,22 @@ export function FamiliaPage() {
                   </span>
                 </div>
 
+                {isAdministrador && (
+                  <div className="flex min-h-touch items-center justify-between gap-gutter border-t border-foreground/10 pt-gutter">
+                    <span className="text-label-lg font-semibold">Pode iniciar compras</span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={integrante.podeIniciarCompra !== false}
+                      aria-label="Pode iniciar compras"
+                      disabled={permissaoEmProcessamentoId === integrante.membroFamiliaId}
+                      onClick={() => void salvarPermissaoIniciarCompra(integrante)}
+                      className={`relative inline-flex h-8 w-14 shrink-0 items-center rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60 ${integrante.podeIniciarCompra !== false ? 'bg-primary' : 'bg-foreground/20'}`}
+                    >
+                      <span className={`size-6 rounded-full bg-surface shadow-sm transition-transform ${integrante.podeIniciarCompra !== false ? 'translate-x-7' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
+                )}
 
                 <div className="flex w-full flex-wrap items-center justify-end gap-2 border-t border-foreground/10 pt-gutter">
                   {integrante.usuarioAtual && (
@@ -663,9 +707,7 @@ export function FamiliaPage() {
           onCancelar={() => { if (!processandoConfirmacaoSensivel) setConfirmacaoSensivel(null) }} />
       )}
 
-      {saidaBloqueada && (
-        <div role="dialog" aria-modal="true" aria-labelledby="saida-bloqueada-titulo" className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-page">
-          <section className="w-full max-w-md space-y-gutter rounded-card bg-surface p-page shadow-soft">
+      {saidaBloqueada && <Modal open onClose={() => setSaidaBloqueada(null)} ariaLabelledBy="saida-bloqueada-titulo" panelClassName="max-w-md space-y-gutter p-page">
             <div>
               <h2 id="saida-bloqueada-titulo" className="text-headline-md font-semibold">
                 {saidaBloqueada.motivo === 'COMPRA_EM_ANDAMENTO' ? 'Não é possível sair da família' : 'Transfira a administração primeiro'}
@@ -686,13 +728,9 @@ export function FamiliaPage() {
                 {saidaBloqueada.motivo === 'COMPRA_EM_ANDAMENTO' ? 'Voltar' : 'Entendi'}
               </button>
             </div>
-          </section>
-        </div>
-      )}
+      </Modal>}
 
-      {remocaoBloqueada && (
-        <div role="dialog" aria-modal="true" aria-labelledby="remocao-bloqueada-titulo" className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-page">
-          <section className="w-full max-w-md space-y-gutter rounded-card bg-surface p-page shadow-soft">
+      {remocaoBloqueada && <Modal open onClose={() => setRemocaoBloqueada(null)} ariaLabelledBy="remocao-bloqueada-titulo" panelClassName="max-w-md space-y-gutter p-page">
             <div>
               <h2 id="remocao-bloqueada-titulo" className="text-headline-md font-semibold">Não é possível remover este integrante</h2>
               <p className="mt-1 text-body-md text-foreground-muted">Este integrante participa de uma compra em andamento e não pode ser removido enquanto ela estiver aberta.</p>
@@ -705,9 +743,7 @@ export function FamiliaPage() {
                 Voltar
               </button>
             </div>
-          </section>
-        </div>
-      )}
+      </Modal>}
     </section>
   )
 }

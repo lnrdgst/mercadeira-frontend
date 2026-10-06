@@ -1,4 +1,5 @@
 import type { PapelFamilia } from '../../family/types/family'
+import type { AlertaContinuidadeCompraResponse } from '../../shopping/types/shopping'
 
 export type CategoriaCompra =
   | 'SUPERMERCADO'
@@ -15,6 +16,13 @@ export type StatusListaCompra =
   | 'FINALIZADA'
   | 'CANCELADA'
 
+export interface ResumoFinanceiroCompraResponse {
+  totalRegistrado: number
+  quantidadeRegistrosFinanceiros: number
+  quantidadeEstabelecimentos: number
+  estabelecimentoResumo: string | null
+}
+
 export interface ListaCompraResumoResponse {
   id: string
   nome: string
@@ -24,6 +32,8 @@ export interface ListaCompraResumoResponse {
   criadaEm: string
   atualizadaEm: string
   criadaPorUsuarioId?: string
+  resumoFinanceiro?: ResumoFinanceiroCompraResponse | null
+  alertaContinuidade?: AlertaContinuidadeCompraResponse | null
 }
 
 export interface HistoricoListaCompraItemResponse {
@@ -55,6 +65,7 @@ export interface ContextoUsuarioListaResponse {
   podeEditarDadosBasicos: boolean
   podeSairDaLista: boolean
   podeExcluirLista: boolean
+  podeIniciarCompra?: boolean
 }
 
 export interface ListaCompraDetalheResponse extends ListaCompraResumoResponse {

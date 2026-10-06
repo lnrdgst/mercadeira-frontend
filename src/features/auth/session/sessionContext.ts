@@ -6,6 +6,8 @@ interface SessionContextValue {
   status: SessionStatus
   auth: AuthSession | null
   authenticate: (credentials: LoginRequest) => Promise<void>
+  authenticateGoogle: (credential: string) => Promise<boolean>
+  vincularGoogle: (credential: string, senhaAtual: string) => Promise<void>
   logout: () => void
 }
 export const SessionContext = createContext<SessionContextValue | null>(null)

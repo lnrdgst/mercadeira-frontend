@@ -2,6 +2,18 @@
 
 Frontend do Mercadeira, uma aplicação colaborativa para organização de compras entre membros de famílias e grupos.
 
+## Acesso com Conta Google
+
+Quando `VITE_GOOGLE_CLIENT_ID` está configurada, Login e Cadastro exibem o botão oficial do Google Identity Services. O frontend envia apenas a credential ao backend e, após a validação, armazena somente a sessão própria do Mercadeira. Sem essa variável, o botão não é mostrado e o acesso local continua normal.
+
+Para uma conta LOCAL que já tenha o mesmo e-mail Google, a tela solicita a senha local atual antes de vincular a nova forma de acesso. Em conta somente Google, Minha Conta mostra o e-mail como gerenciado pela Conta Google e mantém somente a edição do nome.
+
+## Registros financeiros da compra
+
+A revisão mostra os registros financeiros manuais e o total derivado. Durante a Compra, a capability `contextoUsuario.podeGerenciarRegistrosFinanceiros` permite adicionar ou remover múltiplos valores, com estabelecimento opcional. Após `FINALIZADA`, os valores continuam visíveis somente para leitura. Não há forma de pagamento, NFC-e, QR Code, câmera ou integração SEFAZ nesta entrega.
+
+Finalizar sem valor registrado continua permitido. Antes de confirmar, a revisão exibe um aviso e oferece voltar para adicionar valores.
+
 A aplicação segue abordagem mobile-first, priorizando smartphones, navegação simples, contexto familiar explícito e fluxos colaborativos.
 
 ## Stack
@@ -129,25 +141,13 @@ Também existe tratamento para rotas inexistentes.
 
 ## Autenticação
 
-A API utiliza Bearer JWT.
+A API utiliza Bearer JWT de curta duração e sessão persistente com refresh token rotativo.
 
-Após o login, o frontend persiste somente:
+Após o login, o frontend persiste o access token, sua expiração e o refresh token. A senha nunca é persistida. A sessão persistente expira definitivamente em 180 dias e cada renovação substitui o refresh token anterior.
 
-- token
+Na abertura, o frontend restaura a sessão sem exibir Login enquanto valida ou renova o access token. Próximo da expiração, ou após um `401`, a renovação é silenciosa e compartilhada por requisições concorrentes. Falhas de rede e `5xx` não fazem logout; somente refresh inválido, expirado ou revogado limpa a sessão.
 
-- instante de expiração.
-
-A senha nunca é persistida.
-
-A sessão:
-
-- é restaurada após atualização da página
-
-- valida a expiração antes de reutilizar o token
-
-- limpa credenciais expiradas ou inválidas
-
-- não utiliza refresh token atualmente.
+O refresh permanece em armazenamento local porque o frontend DSV Vercel e o backend Railway são cross-site e cookie `HttpOnly` cross-site não é confiável no Safari/iOS. Ele não é colocado em URL ou logs.
 
 O JWT contém somente o UUID do usuário no claim sub.
 
@@ -323,6 +323,8 @@ Os membros ativos podem ser consultados por:
 Esse contrato já é utilizado no fluxo de participantes das listas e na Guia Família, que exibe integrantes ativos e identifica o usuário atual.
 
 Quando o backend disponibiliza `acoes.podeTransferirAdministracao`, o administrador(a) atual pode transferir a administração para outro membro ativo. A interface exige confirmar um código numérico local de quatro dígitos para evitar ações acidentais; o código não é enviado à API e não substitui a autorização do backend.
+
+Cada vínculo de integrante também possui `podeIniciarCompra`, inicialmente verdadeiro. Administradores(as) ativos(as) podem alterar esse estado pelo switch “Pode iniciar compras”, usando `PATCH /api/familias/{familiaId}/membros/{membroId}/permissao-iniciar-compra` com `{ "podeIniciarCompra": boolean }`. A permissão é independente do papel familiar e afeta somente futuros inícios de Compra.
 
 ## Dashboard
 
@@ -576,7 +578,7 @@ A rota `/listas/:listaId/compra` apresenta nome da lista, categoria, estabelecim
 
 `POST /api/familias/{familiaId}/listas/{listaId}/compra`
 
-Sem body. Iniciar compra aparece somente quando a ListaCompra está `EM_PREPARACAO` e `contextoUsuario.participanteAtivo = true`. Ser `ADMINISTRADOR` não concede essa permissão: administrador(a) não participante não pode iniciar.
+Sem body. Iniciar compra aparece somente quando a ListaCompra está `EM_PREPARACAO` e `contextoUsuario.participanteAtivo = true`. Ser `ADMINISTRADOR` não concede essa permissão: administrador(a) não participante não pode iniciar. A capability `contextoUsuario.podeIniciarCompra` também precisa estar verdadeira; quando estiver falsa, a ação permanece visível, mas desabilitada com uma explicação.
 
 O botão fica desabilitado até a consulta dos itens concluir com sucesso e retornar pelo menos um item. Lista vazia apresenta “Adicione pelo menos um item para iniciar a compra.” junto à ação, sem abrir o dialog. O GET de itens e o início da Compra usam no backend a mesma coleção de itens ativos (`removidoEm IS NULL`); não há filtro adicional de quantidade ou descrição no frontend. Remover o último item volta a bloquear o início. A validação backend permanece responsável por alterações concorrentes e seus erros continuam no dialog.
 

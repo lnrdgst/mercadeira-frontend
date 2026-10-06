@@ -6,6 +6,7 @@ import { buscarMinhasSolicitacoesPendentes, criarFamilia, solicitarEntrada } fro
 import { useFamilyContext } from '../session/familyContext'
 import type { MinhaSolicitacaoPendenteResponse } from '../types/family'
 import trocaFamilia from '../../../assets/branding/mercadeira/troca-familia.png'
+import { Modal } from '../../../shared/components/Modal'
 
 const papelLabel = {
   ADMINISTRADOR: 'Administrador(a)',
@@ -199,9 +200,8 @@ export function FamiliaSelecionarPage() {
         </button>
       </section>
 
-      {acaoAberta && (
-        <div role="dialog" aria-modal="true" aria-labelledby="acao-familia-titulo" className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-page">
-          <form onSubmit={acaoAberta === 'criar' ? criar : ingressar} className="w-full max-w-md space-y-gutter rounded-card bg-surface p-page shadow-soft">
+      <Modal open={acaoAberta !== null} onClose={() => { setErro(null); setAcaoAberta(null) }} closeDisabled={enviando} ariaLabelledBy="acao-familia-titulo" panelClassName="max-w-md space-y-gutter p-page">
+          <form onSubmit={acaoAberta === 'criar' ? criar : ingressar} className="space-y-gutter">
             <div>
               <h2 id="acao-familia-titulo" className="text-headline-md font-semibold">{acaoAberta === 'criar' ? 'Criar nova família' : 'Ingressar com código'}</h2>
               <p id={acaoAberta === 'criar' ? 'orientacao-nome-familia' : undefined} className="mt-1 text-body-md text-foreground-muted">{acaoAberta === 'criar' ? 'Digite apenas o nome, sem a palavra “família”. Ex.: Silva.' : 'Informe o código de ingresso compartilhado pela família.'}</p>
@@ -226,8 +226,7 @@ export function FamiliaSelecionarPage() {
               <button type="button" disabled={enviando} onClick={() => { setErro(null); setAcaoAberta(null) }} className="min-h-touch rounded-control border border-foreground/20 px-page text-label-lg font-semibold">Cancelar</button>
             </div>
           </form>
-        </div>
-      )}
+      </Modal>
 
     </main>
   )

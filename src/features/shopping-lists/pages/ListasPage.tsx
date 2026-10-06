@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
+import { Modal } from "../../../shared/components/Modal";
+import { AlertaContinuidadeCompraModal } from "../../shopping/components/AlertaContinuidadeCompraModal";
+import { ResumoFinanceiroCompraCard } from "../components/ResumoFinanceiroCompraCard";
 import type { ApiRequestError } from "../../../shared/api/apiClient";
 import { useSession } from "../../auth/session/sessionContext";
 import { useAuthenticatedUser } from "../../auth/user/AuthenticatedUserContext";
@@ -340,6 +343,7 @@ export function ListasPage() {
 
     return (
         <section className="mx-auto max-w-3xl space-y-page py-page">
+            {auth && familiaSelecionada && listasVisiveis.find((lista) => lista.alertaContinuidade?.necessario) && <AlertaContinuidadeCompraModal alerta={listasVisiveis.find((lista) => lista.alertaContinuidade?.necessario)?.alertaContinuidade} token={auth.token} familiaId={familiaSelecionada.id} listaId={listasVisiveis.find((lista) => lista.alertaContinuidade?.necessario)?.id ?? ''} />}
             <header className="flex flex-wrap items-end justify-between gap-gutter">
                 <div>
                     <h1 className="text-headline-lg font-bold">
@@ -467,14 +471,7 @@ export function ListasPage() {
                 </Link>
             </header>
 
-            {modalFiltrosAberto && (
-                <div
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label="Filtrar listas"
-                    className="fixed inset-0 z-50 flex items-end bg-foreground/40 p-gutter sm:items-center sm:justify-center"
-                >
-                    <section className="max-h-[calc(100dvh-2rem)] w-full max-w-2xl space-y-page overflow-y-auto rounded-t-card bg-surface p-page shadow-soft sm:rounded-card sm:p-8">
+            <Modal open={modalFiltrosAberto} onClose={() => setModalFiltrosAberto(false)} ariaLabel="Filtrar listas" panelClassName="max-w-2xl space-y-page overflow-y-auto p-page sm:p-8">
                         <h2 className="text-headline-md font-semibold">
                             Buscar listas da família
                         </h2>
@@ -567,33 +564,40 @@ export function ListasPage() {
                                     final.
                                 </p>
                             )}
-                        <footer className="sticky bottom-0 -mx-page flex flex-col-reverse gap-gutter border-t border-foreground/10 bg-surface px-page pt-gutter pb-[max(env(safe-area-inset-bottom),1rem)] sm:flex-row sm:items-center">
+                        <footer className="sticky bottom-0 -mx-page flex items-center gap-2 border-t border-foreground/10 bg-surface px-gutter py-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] sm:gap-gutter sm:px-page sm:pt-gutter sm:pb-[max(env(safe-area-inset-bottom),1rem)]">
                             <button
                                 type="button"
                                 onClick={() => setModalFiltrosAberto(false)}
-                                className="min-h-touch rounded-control px-page font-semibold text-foreground-muted"
+                                aria-label="Cancelar"
+                                title="Cancelar"
+                                className="inline-flex min-h-touch min-w-touch items-center justify-center rounded-control px-2 font-semibold text-foreground-muted"
                             >
-                                Cancelar
+                                <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5 fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                                <span className="hidden sm:inline">Cancelar</span>
                             </button>
                             <button
                                 type="button"
                                 onClick={limparFiltros}
-                                className="min-h-touch rounded-control border border-foreground/20 px-page font-semibold"
+                                aria-label="Limpar filtros"
+                                title="Limpar filtros"
+                                className="inline-flex min-h-touch min-w-touch items-center justify-center rounded-control border border-foreground/20 px-2 font-semibold sm:px-page"
                             >
-                                Limpar filtros
+                                <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5 fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                                <span className="hidden sm:inline">Limpar filtros</span>
                             </button>
                             <button
                                 type="button"
                                 disabled={datasTemporariasInvalidas}
                                 onClick={aplicarFiltros}
-                                className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60 sm:ml-auto"
+                                aria-label="Buscar"
+                                title="Buscar"
+                                className="ml-auto inline-flex min-h-touch min-w-touch items-center justify-center rounded-control bg-primary px-2 font-semibold text-surface disabled:opacity-60 sm:px-page"
                             >
-                                Aplicar filtros
+                                <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5 fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="6" /><path d="m16 16 4 4" /></svg>
+                                <span className="hidden sm:inline">Buscar</span>
                             </button>
                         </footer>
-                    </section>
-                </div>
-            )}
+            </Modal>
 
             {mostrandoCarregamento && (
                 <p className="rounded-card bg-surface p-page text-body-md text-foreground-muted shadow-soft">
@@ -625,6 +629,7 @@ export function ListasPage() {
             {!mostrandoCarregamento && !erro && listasVisiveis.length > 0 && (
                 <ul className="grid gap-gutter sm:grid-cols-2">
                     {listasVisiveis.map((lista) => {
+                        const emPreparacao = lista.status === "EM_PREPARACAO";
                         const emAndamento = lista.status === "EM_COMPRA";
                         const finalizada = lista.status === "FINALIZADA";
                         const labelStatus = emAndamento
@@ -647,7 +652,9 @@ export function ListasPage() {
                                         ? "border-blue-300 bg-blue-50"
                                         : emAndamento
                                             ? "border-primary/20 bg-primary/5"
-                                            : "border-foreground/10 bg-surface"
+                                            : emPreparacao
+                                                ? "border-2 border-foreground bg-surface"
+                                                : "border-foreground/10 bg-surface"
                                         }`}
                                 >
                                     <div className="flex flex-wrap gap-2">
@@ -689,6 +696,8 @@ export function ListasPage() {
                                             </p>
                                         )}
                                     </div>
+
+                                    <ResumoFinanceiroCompraCard status={lista.status} resumoFinanceiro={lista.resumoFinanceiro} estabelecimentoJaExibido={lista.estabelecimento} />
 
                                     <p className="text-label-lg font-semibold text-primary">
                                         {finalizada
@@ -778,6 +787,7 @@ export function ListasPage() {
                                                         </p>
                                                     )}
                                                 </div>
+                                                <ResumoFinanceiroCompraCard status={lista.status} resumoFinanceiro={lista.resumoFinanceiro} estabelecimentoJaExibido={lista.estabelecimento} />
                                                 <p className="text-label-lg font-semibold text-primary">
                                                     Ver resumo
                                                 </p>

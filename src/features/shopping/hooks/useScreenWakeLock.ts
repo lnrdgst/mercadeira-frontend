@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 export const screenWakeLockPreferenceKey = 'mercadeira:manter-tela-ligada'
+const preferenceEvent = 'mercadeira:wake-lock-preference'
 
 interface WakeLockSentinelLike extends EventTarget {
   release(): Promise<void>
@@ -100,6 +101,7 @@ export function useScreenWakeLock(compraEmAndamento: boolean) {
     setPreferenciaHabilitada(habilitada)
     try {
       localStorage.setItem(screenWakeLockPreferenceKey, String(habilitada))
+      window.dispatchEvent(new Event(preferenceEvent))
     } catch {
       // A preferÃªncia continua vÃ¡lida apenas nesta sessÃ£o se o storage falhar.
     }
@@ -108,4 +110,11 @@ export function useScreenWakeLock(compraEmAndamento: boolean) {
   }, [adquirir, liberar])
 
   return { suportado, preferenciaHabilitada, ativo, definirPreferencia }
+}
+
+export function useWakeLockPreference() {
+  const [preferenciaHabilitada, setPreferenciaHabilitada] = useState(preferenciaInicial)
+  useEffect(() => { const atualizar = () => setPreferenciaHabilitada(preferenciaInicial()); window.addEventListener(preferenceEvent, atualizar); return () => window.removeEventListener(preferenceEvent, atualizar) }, [])
+  const definirPreferencia = useCallback((habilitada: boolean) => { try { localStorage.setItem(screenWakeLockPreferenceKey, String(habilitada)); window.dispatchEvent(new Event(preferenceEvent)) } catch {} setPreferenciaHabilitada(habilitada) }, [])
+  return { preferenciaHabilitada, definirPreferencia }
 }

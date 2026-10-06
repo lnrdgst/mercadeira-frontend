@@ -3,6 +3,8 @@ import { AppShell } from '../layouts/AppShell'
 import { TransactionalShell } from '../layouts/TransactionalShell'
 import { CadastroPage } from '../../features/auth/pages/CadastroPage'
 import { LoginPage } from '../../features/auth/pages/LoginPage'
+import { EsqueciSenhaPage } from '../../features/auth/pages/EsqueciSenhaPage'
+import { RedefinirSenhaPage } from '../../features/auth/pages/RedefinirSenhaPage'
 import { FamiliaEntradaPage } from '../../features/family/pages/FamiliaEntradaPage'
 import { FamiliaPage } from '../../features/family/pages/FamiliaPage'
 import { FamiliaSelecionarPage } from '../../features/family/pages/FamiliaSelecionarPage'
@@ -14,6 +16,7 @@ import { ListasPage } from '../../features/shopping-lists/pages/ListasPage'
 import { ListaDetalhePage } from '../../features/shopping-lists/pages/ListaDetalhePage'
 import { NovaListaPage } from '../../features/shopping-lists/pages/NovaListaPage'
 import { NotFoundPage } from './NotFoundPage'
+import { MinhaContaPage } from '../../features/auth/pages/MinhaContaPage'
 import { ScrollToTop } from './ScrollToTop'
 import {
   AuthenticatedRoute,
@@ -31,7 +34,11 @@ export function AppRouter() {
 
       <Route element={<PublicOnlyRoute />}>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/login/manual" element={<LoginPage />} />
+        <Route path="/esqueci-senha" element={<EsqueciSenhaPage />} />
+        <Route path="/redefinir-senha" element={<RedefinirSenhaPage />} />
         <Route path="/cadastro" element={<CadastroPage />} />
+        <Route path="/cadastro/manual" element={<CadastroPage />} />
       </Route>
 
       <Route element={<AuthenticatedRoute />}>
@@ -53,6 +60,7 @@ export function AppRouter() {
           <Route path="/listas/nova" element={<NovaListaPage />} />
           <Route path="/listas/:listaId" element={<ListaDetalhePage />} />
           <Route path="/familia" element={<FamiliaPage />} />
+          <Route path="/minha-conta" element={<MinhaContaPage />} />
           <Route path="/historico" element={<Navigate to="/listas" replace />} />
         </Route>
 

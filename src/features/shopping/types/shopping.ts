@@ -33,6 +33,7 @@ export interface ContextoUsuarioCompraResponse {
   podeEncerrarCompraAdministrativamente?: boolean
   podeAdicionarItemDuranteCompra?: boolean
   podeTransferirResponsabilidade?: boolean
+  podeGerenciarRegistrosFinanceiros?: boolean
 }
 
 export interface ReferenciaParticipanteCompra {
@@ -88,6 +89,7 @@ export interface SolicitacaoResponsabilidadeResponse {
 export interface AcoesItemCompraResponse {
   podeColocarNoCarrinho: boolean
   podeSolicitarRemocao: boolean
+  podeRemoverDiretamente?: boolean
   podeDecidirRemocao: boolean
   podeRestaurarNoCarrinho: boolean
 }
@@ -141,8 +143,10 @@ export interface CompraResponse {
   nomeLista: string
   categoria: CategoriaCompra
   estabelecimento: string | null
+  estabelecimentoLista?: string | null
   status: 'EM_ANDAMENTO' | 'FINALIZADA'
   iniciadaEm: string
+  alertaContinuidade?: AlertaContinuidadeCompraResponse | null
   finalizadaPor: ReferenciaParticipanteCompra | null
   finalizadaEm: string | null
   responsabilidadeOperacional?: ResponsabilidadeOperacionalResponse
@@ -152,5 +156,30 @@ export interface CompraResponse {
   solicitacoesResponsabilidadePendentes?: SolicitacaoResponsabilidadeResponse[]
   participantes: ParticipanteCompraResponse[]
   itens: ItemCompraResponse[]
+  registrosFinanceiros?: RegistroFinanceiroCompraResponse[]
+  totalRegistrado?: number
   contextoUsuario: ContextoUsuarioCompraResponse
+}
+
+export interface AlertaContinuidadeCompraResponse {
+  necessario: boolean
+  iniciadaEm: string
+  adiadoAte: string | null
+}
+
+export interface RegistroFinanceiroCompraResponse {
+  id: string
+  valor: number
+  tipo: 'MANUAL' | 'NFCE'
+  estabelecimentoNome: string | null
+  chaveNfce?: string | null
+  urlConsulta?: string | null
+  cnpjEmitente?: string | null
+  dataHoraDocumento?: string | null
+  criadoEm: string
+}
+
+export interface AdicionarRegistroFinanceiroCompraRequest {
+  valor: number
+  estabelecimentoNome: string | null
 }

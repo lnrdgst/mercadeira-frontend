@@ -7,8 +7,11 @@ import { useFamilyContext } from "../../family/session/familyContext";
 import { buscarMinhasSolicitacoesPendentes, buscarSolicitacoesFamilia } from "../../family/api/familyApi";
 import type { MinhaSolicitacaoPendenteResponse, SolicitacaoFamiliaResponse } from "../../family/types/family";
 import { buscarListas } from "../../shopping-lists/api/shoppingListsApi";
+import { resumirRegistrosFinanceiros } from "../../shopping-lists/components/resumoFinanceiroCompra";
+import { formatarValorMonetario } from "../../../shared/formatarValorMonetario";
 import { buscarCompra } from "../../shopping/api/shoppingApi";
 import type { CompraResponse } from "../../shopping/types/shopping";
+import { AlertaContinuidadeCompraModal } from "../../shopping/components/AlertaContinuidadeCompraModal";
 import {
   categoriaCompraLabels,
   statusListaCompraLabels,
@@ -193,6 +196,9 @@ export function InicioPage() {
         .sort((a, b) => b.atualizadaEm.localeCompare(a.atualizadaEm))
         .at(0)
       : undefined;
+  const temFluxoAtivo = familiaId === familiaSelecionada.id && listas.some(
+    (lista) => lista.status === "EM_PREPARACAO" || lista.status === "EM_COMPRA",
+  );
   const historicoCarregado = familiaHistoricoId === familiaSelecionada.id;
   const compraEmAndamentoVisivel = familiaCompraEmAndamentoId === familiaSelecionada.id && !erroCompraEmAndamento
     ? compraEmAndamento
@@ -210,8 +216,17 @@ export function InicioPage() {
       return `${dataFormatada} às ${horaFormatada}`;
     }
   };
+  const resumoFinanceiroUltimaCompra = ultimaCompraFinalizada
+    ? resumirRegistrosFinanceiros(ultimaCompraFinalizada.registrosFinanceiros, ultimaCompraFinalizada.totalRegistrado)
+    : null;
+  const estabelecimentoUltimaCompra = resumoFinanceiroUltimaCompra?.quantidadeEstabelecimentos === 1
+    ? resumoFinanceiroUltimaCompra.estabelecimentoResumo
+    : resumoFinanceiroUltimaCompra && resumoFinanceiroUltimaCompra.quantidadeEstabelecimentos > 1
+      ? `${resumoFinanceiroUltimaCompra.quantidadeEstabelecimentos} estabelecimentos`
+      : null;
   return (
     <section className="mx-auto max-w-3xl space-y-page py-page">
+      {auth && compraEmAndamentoVisivel && <AlertaContinuidadeCompraModal alerta={compraEmAndamentoVisivel.alertaContinuidade} token={auth.token} familiaId={familiaSelecionada.id} listaId={compraEmAndamentoVisivel.listaId} />}
       <header className="space-y-gutter">
         <h1 className="text-headline-lg font-bold">
           {perfilLoading
@@ -258,7 +273,9 @@ export function InicioPage() {
                     <span className="font-normal">
                       {ultimaCompraFinalizada.nomeLista}
                     </span>
+                    {estabelecimentoUltimaCompra && <span className="font-normal text-foreground-muted"> · {estabelecimentoUltimaCompra}</span>}
                   </p>
+                  {resumoFinanceiroUltimaCompra && <p className="mt-1 text-body-md font-semibold">{formatarValorMonetario(resumoFinanceiroUltimaCompra.totalRegistrado)}</p>}
                   <Link
                     to={`/listas/${ultimaCompraFinalizada.listaId}/compra/revisao`}
                     className="mt-1 inline-flex items-center py-1 text-label-lg font-semibold text-primary"
@@ -289,8 +306,7 @@ export function InicioPage() {
 
       <hr style={{ border: '0', borderTop: '1px solid #e0e0e0', margin: '16px 0' }} />
 
-      <Link
-
+      {!temFluxoAtivo && <Link
         to="/listas/nova"
         className="flex min-h-touch w-full items-center justify-center gap-2 rounded-control border-2 border-primary bg-surface px-page font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
@@ -315,7 +331,7 @@ export function InicioPage() {
         </svg>
 
         <span>Preparar nova lista de compras</span>
-      </Link>
+      </Link>}
 
       {!loading && !error && (compraEmAndamentoVisivel || listaEmPreparacao) && (
         <section className={`grid gap-page ${compraEmAndamentoVisivel && listaEmPreparacao ? "md:grid-cols-2" : ""}`}>
@@ -340,7 +356,7 @@ export function InicioPage() {
           {listaEmPreparacao && (
             <section className={`space-y-gutter ${compraEmAndamentoVisivel ? "border-t border-foreground/10 pt-page md:border-t-0 md:border-l md:pt-0 md:pl-page" : ""}`} aria-labelledby="lista-em-preparacao">
               <h2 id="lista-em-preparacao" className="text-headline-md font-semibold">Lista em preparação</h2>
-              <Link to={`/listas/${listaEmPreparacao.id}`} className="block space-y-1 rounded-card border border-foreground/10 bg-surface p-page shadow-soft">
+              <Link to={`/listas/${listaEmPreparacao.id}`} className="block space-y-1 rounded-card border-2 border-foreground bg-surface p-page shadow-soft">
                 <div className="flex flex-wrap gap-2">
                   <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md font-semibold text-foreground-muted">{categoriaCompraLabels[listaEmPreparacao.categoria]}</span>
                   <span className="rounded-full bg-foreground/5 px-gutter py-1 text-label-md text-foreground-muted">{statusListaCompraLabels[listaEmPreparacao.status]}</span>

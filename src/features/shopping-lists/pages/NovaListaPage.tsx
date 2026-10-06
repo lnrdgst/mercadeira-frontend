@@ -118,19 +118,22 @@ export function NovaListaPage() {
           />
         </div>
 
-        <div className="sticky bottom-0 -mx-page grid gap-gutter border-t border-foreground/10 bg-surface px-page pt-gutter pb-[max(env(safe-area-inset-bottom),1rem)] sm:grid-cols-2">
+        <div className="sticky bottom-0 -mx-page grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2 border-t border-foreground/10 bg-surface px-gutter py-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] sm:grid-cols-2 sm:gap-gutter sm:px-page sm:pt-gutter sm:pb-[max(env(safe-area-inset-bottom),1rem)]">
           <button
             type="submit"
             disabled={enviando}
-            className="min-h-touch rounded-control bg-primary px-page text-label-lg font-semibold text-surface transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60"
+            className="order-last min-h-touch rounded-control bg-primary px-page text-label-lg font-semibold text-surface transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {enviando ? 'Criando...' : 'Criar lista'}
+            {enviando ? 'Criando...' : <><span className="sm:hidden">Criar</span><span className="hidden sm:inline">Criar lista</span></>}
           </button>
           <Link
             to="/listas"
-            className="inline-flex min-h-touch items-center justify-center rounded-control border border-foreground/20 px-page text-label-lg font-semibold text-foreground transition-colors hover:bg-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            aria-label="Cancelar"
+            title="Cancelar"
+            className="order-first inline-flex min-h-touch min-w-touch items-center justify-center rounded-control border border-foreground/20 px-2 text-label-lg font-semibold text-foreground transition-colors hover:bg-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:px-page"
           >
-            Cancelar
+            <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5 fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+            <span className="hidden sm:inline">Cancelar</span>
           </Link>
         </div>
       </form>

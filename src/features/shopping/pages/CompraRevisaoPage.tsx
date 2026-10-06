@@ -5,9 +5,13 @@ import { useSession } from '../../auth/session/sessionContext'
 import { useFamilyContext } from '../../family/session/familyContext'
 import { buscarCompra, finalizarCompra } from '../api/shoppingApi'
 import { CompraResumo } from '../components/CompraResumo'
+import { CompraFinalizadaAviso } from '../components/CompraFinalizadaAviso'
+import { ScrollToEndAction } from '../../../shared/components/ScrollToEndAction'
 import { ReutilizarListaButton } from '../components/ReutilizarListaButton'
 import { ReaproveitarItensForaButton } from '../components/ReaproveitarItensForaButton'
 import { EncerramentoAdministrativoCompra } from '../components/EncerramentoAdministrativoCompra'
+import { RegistrosFinanceirosCompra } from '../components/RegistrosFinanceirosCompra'
+import { AlertaContinuidadeCompraModal } from '../components/AlertaContinuidadeCompraModal'
 import { useCompraTransacional } from '../session/CompraTransacionalContext'
 import type { CompraResponse } from '../types/shopping'
 
@@ -34,7 +38,10 @@ function RevisaoCompra({ token, familiaId, listaId }: { token: string; familiaId
   const dialogRef = useRef<HTMLDialogElement>(null)
   const botaoRef = useRef<HTMLButtonElement>(null)
   const tituloRef = useRef<HTMLHeadingElement>(null)
+  const finalRef = useRef<HTMLDivElement>(null)
   const ativoRef = useRef(true)
+  const temItensNaoComprados = compra?.itens.some((item) => item.status === 'PENDENTE' || item.status === 'REMOVIDO') === true
+  const semValorRegistrado = (compra?.registrosFinanceiros?.length ?? 0) === 0
 
   useEffect(() => {
     ativoRef.current = true
@@ -115,9 +122,9 @@ function RevisaoCompra({ token, familiaId, listaId }: { token: string; familiaId
   }
 
   return <section className="mx-auto max-w-3xl space-y-page">
-    {compra && <nav className="flex flex-wrap gap-gutter" aria-label="Navegação da revisão">
+    {compra?.status === 'EM_ANDAMENTO' && <nav className="flex flex-wrap gap-gutter" aria-label="Navegação da revisão">
       <Link
-        to={compra?.status === 'FINALIZADA' ? '/listas' : `/listas/${listaId}/compra`}
+        to={`/listas/${listaId}/compra`}
         className="inline-flex min-h-touch items-center gap-2 font-semibold text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
         <svg
@@ -131,18 +138,21 @@ function RevisaoCompra({ token, familiaId, listaId }: { token: string; familiaId
           <path d="m15 18-6-6 6-6" />
         </svg>
 
-        {compra?.status === 'FINALIZADA' ? 'Voltar para listas' : 'Voltar à compra'}
+        Voltar à compra
       </Link>
     </nav>}
     <header className="space-y-1">
       <h1 ref={tituloRef} tabIndex={-1} className="text-headline-lg font-bold">{compra?.status === 'FINALIZADA' ? 'Resumo da compra' : 'Revisão da compra'}</h1>
-      {compra && <><p className="break-words text-body-lg font-semibold">{compra.nomeLista}</p>{compra.estabelecimento && <p className="break-words text-foreground-muted">{compra.estabelecimento}</p>}<p className="text-label-lg text-primary">{compra.status === 'FINALIZADA' ? 'Finalizada' : 'Em andamento'}</p></>}
+      {compra && <><p className="break-words text-body-lg font-semibold">{compra.nomeLista}</p>{(compra.estabelecimentoLista ?? compra.estabelecimento) && <p className="break-words text-foreground-muted">{compra.estabelecimentoLista ?? compra.estabelecimento}</p>}<p className="text-label-lg text-primary">{compra.status === 'FINALIZADA' ? 'Finalizada' : 'Em andamento'}</p></>}
     </header>
     {carregando && <p role="status">Carregando compra...</p>}
     {erro && <p role="alert" className="rounded-card bg-error/10 p-page text-error">{erro}</p>}
     {!carregando && (!compra || precisaAtualizar) && <button type="button" disabled={enviando} onClick={atualizar} className="min-h-touch rounded-control border border-primary px-page font-semibold text-primary disabled:opacity-60">Atualizar compra</button>}
     {compra && <>
+      <AlertaContinuidadeCompraModal alerta={compra.alertaContinuidade} token={token} familiaId={familiaId} listaId={listaId} onAtualizar={setCompra} />
+      {compra.status === 'FINALIZADA' && <CompraFinalizadaAviso />}
       <CompraResumo compra={compra} />
+      <RegistrosFinanceirosCompra compra={compra} token={token} familiaId={familiaId} listaId={listaId} onAtualizar={setCompra} onNaoAutorizado={logout} />
       {!carregando && compra.status === 'FINALIZADA' && <div className="space-y-2"><ReaproveitarItensForaButton compra={compra} familiaId={familiaId} abrirAoFinalizar={mostrarItensFora} onAgoraNao={mostrarItensFora ? () => navigate('/inicio', { replace: true }) : undefined} /><ReutilizarListaButton compra={compra} familiaId={familiaId} onAtualizada={setCompra} /></div>}
       {!carregando && compra.status === 'EM_ANDAMENTO' && compra.contextoUsuario.podeFinalizarCompra === true && <button ref={botaoRef} type="button" disabled={enviando || precisaAtualizar} onClick={() => { setErro(null); dialogRef.current?.showModal() }} className="min-h-touch w-full rounded-control bg-primary px-page font-semibold text-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60">{enviando ? 'Finalizando compra...' : 'Finalizar compra'}</button>}
       {!carregando && <EncerramentoAdministrativoCompra compra={compra} token={token} familiaId={familiaId} listaId={listaId} bloqueada={enviando || precisaAtualizar} compacto onSucesso={() => navigate('/inicio', { replace: true })} onReconciliar={reconciliarEncerramentoAdministrativo} onNaoAutorizado={logout} />}
@@ -151,13 +161,18 @@ function RevisaoCompra({ token, familiaId, listaId }: { token: string; familiaId
     <dialog ref={dialogRef} aria-labelledby="finalizar-titulo" aria-describedby="finalizar-descricao" onCancel={(event) => { if (enviandoRef.current) event.preventDefault() }} onClose={() => (botaoRef.current || tituloRef.current)?.focus({ preventScroll: true })} className="m-auto max-h-[calc(100svh-2rem)] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-card bg-surface p-page text-foreground shadow-soft backdrop:bg-foreground/40">
       <div className="space-y-page">
         <h2 id="finalizar-titulo" className="text-headline-md font-semibold">Finalizar compra?</h2>
-        <p id="finalizar-descricao">A compra será encerrada. Itens pendentes permanecerão registrados como não comprados. Após finalizar, os itens não poderão mais ser alterados.</p>
+        <p id="finalizar-descricao">{temItensNaoComprados
+          ? 'A compra será encerrada. Itens pendentes permanecerão registrados como não comprados. Após finalizar, os itens não poderão mais ser alterados.'
+          : 'A compra será encerrada. Após finalizar, os itens não poderão mais ser alterados.'}</p>
+        {semValorRegistrado && <p className="rounded-card border border-warning/30 bg-warning/10 p-gutter text-warning">{'Nenhum valor foi registrado. Voc\u00ea pode finalizar mesmo assim ou voltar para adicionar valores antes de encerrar.'}</p>}
         {erro && <p role="alert" className="rounded-card bg-error/10 p-gutter text-error">{erro}</p>}
         <div className="flex flex-col gap-2">
-          <button type="button" disabled={enviando || carregando || precisaAtualizar || compra?.status !== 'EM_ANDAMENTO' || compra.contextoUsuario.podeFinalizarCompra !== true} onClick={() => void confirmar()} className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60">{enviando ? 'Finalizando compra...' : 'Confirmar finalização'}</button>
-          <button type="button" autoFocus disabled={enviando} onClick={() => dialogRef.current?.close()} className="min-h-touch rounded-control border border-foreground/20 px-page font-semibold disabled:opacity-60">Cancelar</button>
+          <button type="button" disabled={enviando || carregando || precisaAtualizar || compra?.status !== 'EM_ANDAMENTO' || compra.contextoUsuario.podeFinalizarCompra !== true} onClick={() => void confirmar()} className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60">{enviando ? 'Finalizando compra...' : semValorRegistrado ? 'Finalizar sem valor' : 'Confirmar finalização'}</button>
+          <button type="button" autoFocus disabled={enviando} onClick={() => dialogRef.current?.close()} className="min-h-touch rounded-control border border-foreground/20 px-page font-semibold disabled:opacity-60">{semValorRegistrado ? 'Voltar para revisão' : 'Cancelar'}</button>
         </div>
       </div>
     </dialog>
+    <div ref={finalRef} />
+    <ScrollToEndAction targetRef={finalRef} />
   </section>
 }

@@ -13,8 +13,7 @@ export function CompraResumo({ compra }: { compra: CompraResponse }) {
   const pendentes = compra.itens.filter((item) => item.status === 'PENDENTE').length
   const remocoesPendentes = compra.itens.some((item) => item.status === 'REMOCAO_SOLICITADA')
   return <div className="space-y-page">
-    {finalizada && <div role="status" className="space-y-1 rounded-card border border-primary/20 bg-primary/5 p-page">
-      <p className="text-headline-md font-semibold text-primary">Compra finalizada</p>
+    {finalizada && <div className="space-y-1 rounded-card border border-primary/20 bg-primary/5 p-page">
       {compra.finalizadaPor && <p className="break-words">Finalizada por {compra.finalizadaPor.nome}</p>}
       {compra.finalizadaEm && <p className="text-label-lg text-foreground-muted"><time dateTime={compra.finalizadaEm}>{new Date(compra.finalizadaEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</time></p>}
       <p className="text-body-md text-foreground-muted">Os itens desta compra não podem mais ser alterados.</p>

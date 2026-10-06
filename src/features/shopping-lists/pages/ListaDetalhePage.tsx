@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ScrollToEndAction } from "../../../shared/components/ScrollToEndAction";
 import { Link, useNavigate, useParams } from "react-router";
 import type { ApiRequestError } from "../../../shared/api/apiClient";
 import { useSession } from "../../auth/session/sessionContext";
@@ -33,6 +34,7 @@ import {
   unidadeMedidaLabels,
 } from "../types/shoppingList";
 import { ConfirmacaoSensivelDialog } from "../../family/components/ConfirmacaoSensivelDialog";
+import { Modal } from "../../../shared/components/Modal";
 
 function nomeCompacto(
   nome: string,
@@ -96,13 +98,12 @@ export function ListaDetalhePage() {
     useState<ItemListaCompraResponse | null>(null);
   const [operacaoItem, setOperacaoItem] = useState<string | null>(null);
   const [reordenando, setReordenando] = useState(false);
-  const itemDialogRef = useRef<HTMLDialogElement>(null);
   const itensTituloRef = useRef<HTMLHeadingElement>(null);
   const dialogOpenerRef = useRef<HTMLElement | null>(null);
-  const dialogScrollYRef = useRef(0);
   const leituraPeriodicaRef = useRef<AbortController | null>(null);
   const geracaoRef = useRef(0);
   const mutacaoRef = useRef(false);
+  const finalRef = useRef<HTMLDivElement>(null);
   const chave =
     familiaSelecionada && listaId
       ? `${familiaSelecionada.id}:${listaId}`
@@ -337,25 +338,13 @@ export function ListaDetalhePage() {
       window.removeEventListener("online", disponibilidade);
     };
   }, [auth, familiaSelecionada, listaId, chave, detalhe?.status, logout]);
-  useEffect(() => {
-    const dialog = itemDialogRef.current;
-    if (!dialog) return;
-    if (itemEditando && !dialog.open) {
-      dialogOpenerRef.current =
-        document.activeElement instanceof HTMLElement
-          ? document.activeElement
-          : null;
-      dialogScrollYRef.current = window.scrollY;
-      dialog.showModal();
-    }
-    if (!itemEditando && dialog.open) dialog.close();
-  }, [itemEditando]);
   if (!familiaSelecionada || !listaId || !chave) return null;
   const lista = detalheKey === chave ? detalhe : null;
   const listaParticipantes = participantesKey === chave ? participantes : [];
   const listaItens = itensKey === chave ? itens : [];
   const itensProntos = itensKey === chave && !carregandoItens && !erroItens;
   const emPreparacao = lista?.status === "EM_PREPARACAO";
+  const podeIniciarCompra = lista?.contextoUsuario.podeIniciarCompra !== false;
   const podeGerenciar =
     emPreparacao &&
     lista?.contextoUsuario.podeGerenciarParticipantes === true;
@@ -393,12 +382,13 @@ export function ListaDetalhePage() {
   function fecharDialog() {
     setItemEditando(null);
     requestAnimationFrame(() => {
-      window.scrollTo({
-        top: dialogScrollYRef.current,
-        behavior: "auto",
-      });
       dialogOpenerRef.current?.focus({ preventScroll: true });
     });
+  }
+
+  function abrirEditorItem(item: ItemListaCompraResponse | "novo", acionador: HTMLElement) {
+    dialogOpenerRef.current = acionador;
+    setItemEditando(item);
   }
 
   function atualizarEstadoMutacao(emAndamento: boolean) {
@@ -1013,83 +1003,67 @@ export function ListaDetalhePage() {
             />
           )}
 
-          {adicionandoParticipante && (
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="adicionar-participante-titulo"
-              className="fixed inset-0 z-50 flex items-end bg-foreground/40 p-gutter sm:items-center sm:justify-center"
-              onMouseDown={(event) => {
-                if (
-                  event.target === event.currentTarget &&
-                  operacaoParticipante === null
-                )
-                  setAdicionandoParticipante(false);
-              }}
+          <Modal open={adicionandoParticipante} onClose={() => setAdicionandoParticipante(false)} closeDisabled={operacaoParticipante !== null} ariaLabelledBy="adicionar-participante-titulo" panelClassName="max-w-md space-y-gutter p-page">
+            <h2
+              id="adicionar-participante-titulo"
+              className="text-headline-md font-semibold"
             >
-              <div className="w-full max-w-md space-y-gutter rounded-card bg-surface p-page shadow-soft">
-                <h2
-                  id="adicionar-participante-titulo"
-                  className="text-headline-md font-semibold"
-                >
-                  Adicionar participante
-                </h2>
-                <label className="block space-y-1">
-                  <span>Participante</span>
-                  <select
-                    autoFocus
-                    value={membroParaAdicionar}
-                    onChange={(event) =>
-                      setMembroParaAdicionar(
-                        event.target.value,
-                      )
-                    }
-                    className="min-h-touch w-full rounded-control border border-foreground/20 bg-background px-gutter"
+              Adicionar participante
+            </h2>
+            <label className="block space-y-1">
+              <span>Participante</span>
+              <select
+                autoFocus
+                value={membroParaAdicionar}
+                onChange={(event) =>
+                  setMembroParaAdicionar(
+                    event.target.value,
+                  )
+                }
+                className="min-h-touch w-full rounded-control border border-foreground/20 bg-background px-gutter"
+              >
+                <option value="">
+                  Selecione uma pessoa
+                </option>
+                {candidatos.map((membro) => (
+                  <option
+                    key={membro.membroFamiliaId}
+                    value={membro.membroFamiliaId}
                   >
-                    <option value="">
-                      Selecione uma pessoa
-                    </option>
-                    {candidatos.map((membro) => (
-                      <option
-                        key={membro.membroFamiliaId}
-                        value={membro.membroFamiliaId}
-                      >
-                        {membro.nome}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <div className="flex flex-wrap gap-gutter">
-                  <button
-                    type="button"
-                    disabled={
-                      !membroParaAdicionar ||
-                      operacaoParticipante !== null
-                    }
-                    onClick={() =>
-                      void atualizarParticipante(
-                        membroParaAdicionar,
-                      )
-                    }
-                    className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60"
-                  >
-                    Adicionar
-                  </button>
-                  <button
-                    type="button"
-                    disabled={operacaoParticipante !== null}
-                    onClick={() => {
-                      setMembroParaAdicionar("");
-                      setAdicionandoParticipante(false);
-                    }}
-                    className="min-h-touch rounded-control border border-foreground/20 px-page font-semibold"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </div>
+                    {membro.nome}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="flex flex-wrap gap-gutter">
+              <button
+                type="button"
+                disabled={
+                  !membroParaAdicionar ||
+                  operacaoParticipante !== null
+                }
+                onClick={() =>
+                  void atualizarParticipante(
+                    membroParaAdicionar,
+                  )
+                }
+                className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60"
+              >
+                Adicionar
+              </button>
+              <button
+                type="button"
+                disabled={operacaoParticipante !== null}
+                onClick={() => {
+                  setMembroParaAdicionar("");
+                  setAdicionandoParticipante(false);
+                }}
+                className="min-h-touch rounded-control border border-foreground/20 px-page font-semibold"
+              >
+                Cancelar
+              </button>
             </div>
-          )}
+          </Modal>
 
           {lista.status === "EM_COMPRA" && (
             <div className="space-y-gutter rounded-card border border-primary/20 bg-primary/5 p-page w-full [&>button]:w-full text-center items-center">
@@ -1102,17 +1076,17 @@ export function ListaDetalhePage() {
                 className="inline-flex min-h-touch text-center items-center justify-center gap-2 rounded-control bg-primary px-page font-semibold text-surface"
               >
                 <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                className="size-5 fill-none stroke-current"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="9" cy="20" r="1" />
-                <circle cx="19" cy="20" r="1" />
-                <path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6L22 8H7" />
-              </svg>
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  className="size-5 fill-none stroke-current"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="9" cy="20" r="1" />
+                  <circle cx="19" cy="20" r="1" />
+                  <path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6L22 8H7" />
+                </svg>
                 Ver compra em andamento
               </Link>
             </div>
@@ -1139,7 +1113,7 @@ export function ListaDetalhePage() {
               {podeAlterar && itemEditando === null && (
                 <button
                   type="button"
-                  onClick={() => setItemEditando("novo")}
+                  onClick={(event) => abrirEditorItem("novo", event.currentTarget)}
                   className="mt-gutter flex min-h-touch w-full items-center justify-center gap-2 rounded-control border-2 border-primary bg-surface px-page font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 >
                   Adicionar item na lista
@@ -1155,12 +1129,22 @@ export function ListaDetalhePage() {
                   </svg>
                 </button>
               )}
+
+              {emPreparacao && (
+                <p className="mt-2 text-label-lg text-foreground-muted">
+                  {listaItens.length === 1
+                    ? "1 item"
+                    : `${listaItens.length} itens`}
+                </p>
+              )}
             </div>
 
-            <dialog
-              ref={itemDialogRef}
+            <Modal
+              open={itemEditando !== null}
               onClose={fecharDialog}
-              className="m-auto flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-xl flex-col overflow-hidden rounded-card bg-surface p-0 text-foreground shadow-soft backdrop:bg-foreground/40"
+              closeDisabled={operacaoItem !== null}
+              ariaLabel="Adicionar ou editar item"
+              panelClassName="max-w-xl p-0"
             >
               {podeAlterar && itemEditando && (
                 <ItemForm
@@ -1177,7 +1161,7 @@ export function ListaDetalhePage() {
                   onSubmit={salvarItem}
                 />
               )}
-            </dialog>
+            </Modal>
 
             {podeAlterar && itemParaRemover && (
               <ConfirmarRemocaoItemDialog
@@ -1298,7 +1282,7 @@ export function ListaDetalhePage() {
                       <div className="flex flex-col gap-1">
                         <button
                           type="button"
-                          onClick={() => setItemEditando(item)}
+                          onClick={(event) => abrirEditorItem(item, event.currentTarget)}
                           aria-label={`Editar ${item.descricao}`}
                           title="Alterar item"
                           className="flex size-10 items-center justify-center rounded-control text-primary transition-colors hover:bg-primary"
@@ -1347,15 +1331,11 @@ export function ListaDetalhePage() {
           </section>
 
           {emPreparacao &&
-            lista.contextoUsuario.participanteAtivo && (
+            lista.contextoUsuario.participanteAtivo &&
+            itensProntos &&
+            listaItens.length > 0 && podeIniciarCompra
+            && (
               <div className="space-y-gutter pt-page">
-                {itensProntos && listaItens.length === 0 && (
-                  <p className="rounded-card bg-error/10 p-gutter text-body-md font-normal text-error">
-                    Adicione pelo menos um item para iniciar
-                    a compra.
-                  </p>
-                )}
-
                 <div className="w-full [&>button]:w-full">
                   <IniciarCompraButton
                     key={chave}
@@ -1365,8 +1345,7 @@ export function ListaDetalhePage() {
                     iniciadorMembroFamiliaId={lista.contextoUsuario.membroFamiliaId}
                     onMutacao={atualizarEstadoMutacao}
                     disabled={
-                      !itensProntos ||
-                      listaItens.length === 0 ||
+                      !podeIniciarCompra ||
                       operacaoParticipante !== null ||
                       operacaoItem !== null ||
                       reordenando ||
@@ -1377,8 +1356,14 @@ export function ListaDetalhePage() {
                 </div>
               </div>
             )}
+          {!podeIniciarCompra && (
+            <p className="text-center text-body-md text-foreground-muted">
+              Você ainda não tem permissão para iniciar esta compra.
+            </p>
+          )}
         </>
       )}
+      {emPreparacao && <><div ref={finalRef} /><ScrollToEndAction targetRef={finalRef} /></>}
     </section>
   );
 }

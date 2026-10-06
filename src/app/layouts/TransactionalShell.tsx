@@ -4,6 +4,7 @@ import mercadeiraLabel from '../../assets/branding/mercadeira/mercadeira-label.p
 import { useScreenWakeLock } from '../../features/shopping/hooks/useScreenWakeLock'
 import { CompraTransacionalContext } from '../../features/shopping/session/CompraTransacionalContext'
 import type { CompraResponse } from '../../features/shopping/types/shopping'
+import { Modal } from '../../shared/components/Modal'
 
 export function TransactionalShell() {
   const { listaId } = useParams()
@@ -50,7 +51,7 @@ export function TransactionalShell() {
           {statusCompra === 'EM_ANDAMENTO' && wakeLock.suportado && (
             <div className="flex flex-wrap items-center justify-between gap-gutter rounded-card border border-foreground/10 px-gutter py-2 text-body-md">
               <div>
-                <p className="font-semibold">Manter tela ligada</p>
+                <p className="font-semibold">Manter tela ligada em compras</p>
                 <p className="text-foreground-muted">
                   {wakeLock.preferenciaHabilitada
                     ? (wakeLock.ativo ? 'Ligada' : 'PreferÃªncia ligada; indisponÃ­vel agora.')
@@ -59,19 +60,17 @@ export function TransactionalShell() {
               </div>
               <button
                 type="button"
-                aria-pressed={wakeLock.preferenciaHabilitada}
+                role="switch" aria-label={wakeLock.preferenciaHabilitada ? 'Desligar' : 'Ligar'} aria-checked={wakeLock.preferenciaHabilitada}
                 onClick={() => wakeLock.definirPreferencia(!wakeLock.preferenciaHabilitada)}
-                className="min-h-touch rounded-control border border-primary px-gutter text-label-md font-semibold text-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                className={`relative inline-flex h-8 w-14 shrink-0 items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${wakeLock.preferenciaHabilitada ? 'bg-primary' : 'bg-foreground/20'}`}
               >
-                {wakeLock.preferenciaHabilitada ? 'Desligar' : 'Ligar'}
+                <span className={`size-6 rounded-full bg-surface shadow-sm transition-transform ${wakeLock.preferenciaHabilitada ? 'translate-x-7' : 'translate-x-1'}`} />
               </button>
             </div>
           )}
           <Outlet />
         </main>
-        {ajudaAberta && (
-          <div role="dialog" aria-modal="true" aria-labelledby="ajuda-compra-titulo" className="fixed inset-0 z-50 flex items-end bg-foreground/40 sm:items-center sm:justify-center sm:p-page">
-            <section className="w-full max-w-lg space-y-gutter rounded-t-card bg-surface p-page pb-[calc(theme(spacing.page)+env(safe-area-inset-bottom))] shadow-soft sm:rounded-card sm:pb-page">
+        <Modal open={ajudaAberta} onClose={() => setAjudaAberta(false)} ariaLabelledBy="ajuda-compra-titulo" panelClassName="max-w-lg space-y-gutter p-page pb-[calc(var(--spacing-page)+env(safe-area-inset-bottom))] sm:pb-page">
               <div className="flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden">
                 <div className="flex shrink-0 items-start justify-between gap-gutter border-b border-border bg-surface pb-gutter">
                   <h2
@@ -146,9 +145,7 @@ export function TransactionalShell() {
                   </dl>
                 </div>
               </div>
-            </section>
-          </div>
-        )}
+        </Modal>
       </div>
     </CompraTransacionalContext>
   )

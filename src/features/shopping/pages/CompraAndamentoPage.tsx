@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { ScrollToEndAction } from '../../../shared/components/ScrollToEndAction'
 import { Link, Navigate, useNavigate, useParams } from 'react-router'
 import type { ApiRequestError } from '../../../shared/api/apiClient'
 import { useSession } from '../../auth/session/sessionContext'
@@ -8,8 +9,10 @@ import { categoriaCompraLabels } from '../../shopping-lists/types/shoppingList'
 import { adicionarItemCompra, alterarMinhaPresenca, buscarCompra, cancelarSolicitacaoPresenca, cancelarSolicitacaoResponsabilidade, colocarItemNoCarrinho, decidirSolicitacaoPresenca, decidirSolicitacaoResponsabilidade, removerItemCompra, restaurarItemNoCarrinho, solicitarMinhaPresenca, solicitarResponsabilidade, transferirResponsabilidade } from '../api/shoppingApi'
 import { AdicionarItemCompraDialog } from '../components/AdicionarItemCompraDialog'
 import { ItemCompraCard } from '../components/ItemCompraCard'
+import { CompraProgresso } from '../components/CompraProgresso'
 import { MinhaPresenca } from '../components/MinhaPresenca'
 import { EncerramentoAdministrativoCompra } from '../components/EncerramentoAdministrativoCompra'
+import { AlertaContinuidadeCompraModal } from '../components/AlertaContinuidadeCompraModal'
 import { useCompraTransacional } from '../session/CompraTransacionalContext'
 import type { AcaoRemocaoItemCompra, AdicionarItemCompraRequest, CompraResponse, ItemCompraResponse } from '../types/shopping'
 
@@ -31,6 +34,7 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
   const geracao = useRef(0)
   const leituraPeriodica = useRef<AbortController | null>(null)
   const ultimaOperacao = useRef(0)
+  const finalRef = useRef<HTMLDivElement>(null)
   const [ocupada, setOcupada] = useState(false)
   useEffect(() => { ativo.current = true; return () => { ativo.current = false } }, [])
 
@@ -273,6 +277,7 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
 
       {compra && (
         <>
+          <AlertaContinuidadeCompraModal alerta={compra.alertaContinuidade} token={token} familiaId={familiaId} listaId={listaId} onAtualizar={atualizarCompra} />
           <header className="space-y-gutter rounded-card bg-surface p-page shadow-soft">
             <div className="flex flex-wrap gap-2">
               <span className="rounded-full bg-primary/10 px-gutter py-1 text-label-md font-semibold text-primary">
@@ -328,6 +333,8 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
               onAtualizar={reconciliarCompra}
             />
           </header>
+
+          <CompraProgresso itens={compra.itens} />
 
           <EncerramentoAdministrativoCompra compra={compra} token={token} familiaId={familiaId} listaId={listaId} bloqueada={ocupada} executar={executar} onSucesso={() => navigate('/inicio', { replace: true })} onReconciliar={reconciliarCompra} onNaoAutorizado={logout} />
 
@@ -393,6 +400,8 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
         </>
       )
       }
+      <div ref={finalRef} />
+      <ScrollToEndAction targetRef={finalRef} />
     </section >
   )
 }

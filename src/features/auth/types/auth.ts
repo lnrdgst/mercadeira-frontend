@@ -21,9 +21,18 @@ export interface LoginRequest {
 export interface LoginResponse {
   token: string
   expiracao: Instant
+  refreshToken: string
+}
+
+export interface GoogleLoginResponse {
+  vinculoNecessario: boolean
+  token: string | null
+  expiracao: Instant | null
+  refreshToken: string | null
 }
 
 export interface AuthSession {
   token: string
   expiracao: Instant
+  refreshToken: string
 }

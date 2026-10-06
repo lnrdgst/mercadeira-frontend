@@ -54,7 +54,7 @@ function preparar(deletar: () => Promise<Response> = async () => new Response(nu
 
 async function botaoRemover() {
   const item = (await screen.findByRole('heading', { name: 'Arroz' })).closest('li')!
-  return within(item).getByRole('button', { name: 'Remover da lista' })
+  return within(item).getByRole('button', { name: 'Remover Arroz da lista' })
 }
 
 test('abre por teclado, identifica item e modal, contém Tab/Shift+Tab e Escape devolve foco ao acionador', async () => {
@@ -135,8 +135,8 @@ test('sucesso 204 remove o item e leva foco ao título Itens quando o acionador 
   expect(screen.getByRole('heading', { name: 'Itens' })).toHaveFocus()
   expect(screen.getByRole('status')).toHaveTextContent('Item removido.')
   expect(deletes()).toHaveLength(1)
-  expect(screen.getByRole('button', { name: 'Iniciar compra' })).toBeDisabled()
-  expect(screen.getByText('Adicione pelo menos um item para iniciar a compra.')).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Iniciar compra' })).not.toBeInTheDocument()
+  expect(screen.queryByText('Adicione pelo menos um item para iniciar a compra.')).not.toBeInTheDocument()
 })
 
 test('erro é anunciado dentro do modal e permite repetir por teclado antes de cancelar', async () => {
@@ -169,11 +169,9 @@ test('consulta sem capability de alteração não oferece remoção nem modal', 
 
 test('lista vazia desabilita início, explica o motivo e não abre confirmação nem envia POST', async () => {
   const showModal = vi.spyOn(HTMLDialogElement.prototype, 'showModal')
-  const { user, fetchMock } = preparar(undefined, true, { listar: async () => Response.json([]) })
-  expect(await screen.findByText('Adicione pelo menos um item para iniciar a compra.')).toBeInTheDocument()
-  const iniciar = screen.getByRole('button', { name: 'Iniciar compra' })
-  expect(iniciar).toBeDisabled()
-  await user.click(iniciar)
+  const { fetchMock } = preparar(undefined, true, { listar: async () => Response.json([]) })
+  await screen.findByText('Nenhum item adicionado ainda.')
+  expect(screen.queryByRole('button', { name: 'Iniciar compra' })).not.toBeInTheDocument()
   expect(showModal).not.toHaveBeenCalled()
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   expect(fetchMock.mock.calls.some(([, options]) => options?.method === 'POST')).toBe(false)

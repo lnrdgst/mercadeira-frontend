@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ScrollToEndAction } from "../../../shared/components/ScrollToEndAction";
 import { Link, useNavigate, useParams } from "react-router";
 import type { ApiRequestError } from "../../../shared/api/apiClient";
 import { useSession } from "../../auth/session/sessionContext";
@@ -102,6 +103,7 @@ export function ListaDetalhePage() {
   const leituraPeriodicaRef = useRef<AbortController | null>(null);
   const geracaoRef = useRef(0);
   const mutacaoRef = useRef(false);
+  const finalRef = useRef<HTMLDivElement>(null);
   const chave =
     familiaSelecionada && listaId
       ? `${familiaSelecionada.id}:${listaId}`
@@ -1361,6 +1363,7 @@ export function ListaDetalhePage() {
           )}
         </>
       )}
+      {emPreparacao && <><div ref={finalRef} /><ScrollToEndAction targetRef={finalRef} /></>}
     </section>
   );
 }

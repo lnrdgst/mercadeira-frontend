@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { ScrollToEndAction } from '../../../shared/components/ScrollToEndAction'
 import { Link, Navigate, useNavigate, useParams } from 'react-router'
 import type { ApiRequestError } from '../../../shared/api/apiClient'
 import { useSession } from '../../auth/session/sessionContext'
@@ -33,6 +34,7 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
   const geracao = useRef(0)
   const leituraPeriodica = useRef<AbortController | null>(null)
   const ultimaOperacao = useRef(0)
+  const finalRef = useRef<HTMLDivElement>(null)
   const [ocupada, setOcupada] = useState(false)
   useEffect(() => { ativo.current = true; return () => { ativo.current = false } }, [])
 
@@ -398,6 +400,8 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
         </>
       )
       }
+      <div ref={finalRef} />
+      <ScrollToEndAction targetRef={finalRef} />
     </section >
   )
 }

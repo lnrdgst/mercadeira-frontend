@@ -6,6 +6,7 @@ import { useFamilyContext } from '../../family/session/familyContext'
 import { buscarCompra, finalizarCompra } from '../api/shoppingApi'
 import { CompraResumo } from '../components/CompraResumo'
 import { CompraFinalizadaAviso } from '../components/CompraFinalizadaAviso'
+import { ScrollToEndAction } from '../../../shared/components/ScrollToEndAction'
 import { ReutilizarListaButton } from '../components/ReutilizarListaButton'
 import { ReaproveitarItensForaButton } from '../components/ReaproveitarItensForaButton'
 import { EncerramentoAdministrativoCompra } from '../components/EncerramentoAdministrativoCompra'
@@ -37,6 +38,7 @@ function RevisaoCompra({ token, familiaId, listaId }: { token: string; familiaId
   const dialogRef = useRef<HTMLDialogElement>(null)
   const botaoRef = useRef<HTMLButtonElement>(null)
   const tituloRef = useRef<HTMLHeadingElement>(null)
+  const finalRef = useRef<HTMLDivElement>(null)
   const ativoRef = useRef(true)
   const temItensNaoComprados = compra?.itens.some((item) => item.status === 'PENDENTE' || item.status === 'REMOVIDO') === true
   const semValorRegistrado = (compra?.registrosFinanceiros?.length ?? 0) === 0
@@ -170,5 +172,7 @@ function RevisaoCompra({ token, familiaId, listaId }: { token: string; familiaId
         </div>
       </div>
     </dialog>
+    <div ref={finalRef} />
+    <ScrollToEndAction targetRef={finalRef} />
   </section>
 }

@@ -57,3 +57,9 @@ test('atualiza o progresso quando a colecao recebida muda', () => {
   rerender(<CompraProgresso itens={[item(1, 'NO_CARRINHO'), item(2, 'REMOVIDO')]} />)
   expect(screen.getByRole('progressbar')).toHaveAccessibleName('2 de 2 itens resolvidos, 100 por cento')
 })
+
+test('mostra o total calculado pelo backend e alerta discreto para itens sem preco', () => {
+  render(<CompraProgresso itens={[item(1, 'NO_CARRINHO'), item(2, 'NO_CARRINHO')]} totalItensComprados={54} quantidadeItensNoCarrinhoSemPreco={1} />)
+  expect(screen.getByText(/R\$\s*54,00/)).toBeInTheDocument()
+  expect(screen.getByText('1 item sem preço')).toBeInTheDocument()
+})

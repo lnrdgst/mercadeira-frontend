@@ -2,7 +2,9 @@ import { useRef, useState } from 'react'
 import type { ApiRequestError } from '../../../shared/api/apiClient'
 import { useSession } from '../../auth/session/sessionContext'
 import { unidadeMedidaLabels } from '../../shopping-lists/types/shoppingList'
-import type { AcaoRemocaoItemCompra, ItemCompraResponse } from '../types/shopping'
+import type { AcaoRemocaoItemCompra, AtualizarDadosItemCompraRequest, ItemCompraResponse } from '../types/shopping'
+import { DadosCompraItem } from './DadosCompraItem'
+import { formatarValorMonetario } from '../../../shared/formatarValorMonetario'
 
 const statusLabels: Record<ItemCompraResponse['status'], string> = {
   PENDENTE: 'Pendente',
@@ -31,6 +33,8 @@ type ItemCompraCardProps = { item: ItemCompraResponse } & ({
   onRestaurar?: never
   onRemover?: never
   onReconciliar?: never
+  podeInformarDadosCompra?: never
+  onAtualizarDadosCompra?: never
 } | {
   somenteLeitura?: false
   participante: boolean
@@ -38,9 +42,11 @@ type ItemCompraCardProps = { item: ItemCompraResponse } & ({
   onRestaurar: (itemId: string) => Promise<void>
   onRemover: (itemId: string, acao: AcaoRemocaoItemCompra) => Promise<void>
   onReconciliar: (itemId: string) => Promise<void>
+  podeInformarDadosCompra?: boolean
+  onAtualizarDadosCompra?: (itemId: string, dados: AtualizarDadosItemCompraRequest) => Promise<void>
 })
 
-export function ItemCompraCard({ item, somenteLeitura, onColocar, onRestaurar, onRemover, onReconciliar }: ItemCompraCardProps) {
+export function ItemCompraCard({ item, somenteLeitura, onColocar, onRestaurar, onRemover, onReconciliar, podeInformarDadosCompra, onAtualizarDadosCompra }: ItemCompraCardProps) {
   const { logout } = useSession()
   const enviandoRef = useRef(false)
   const [enviando, setEnviando] = useState<keyof typeof acaoLabels | 'atualizar' | null>(null)
@@ -107,6 +113,12 @@ export function ItemCompraCard({ item, somenteLeitura, onColocar, onRestaurar, o
       {item.remocao.decisao && <p>Remoção {item.remocao.decisao === 'APROVADA' ? 'aprovada' : 'rejeitada'}{item.remocao.decididaPor && ` por ${item.remocao.decididaPor.nome}`}<DataAutoria valor={item.remocao.decididaEm} /></p>}
     </div>}
     {item.restauracao && <p className="break-words text-label-md text-foreground-muted">Restaurado por {item.restauracao.restauradoPor.nome}<DataAutoria valor={item.restauracao.restauradoEm} /></p>}
+    {somenteLeitura && noCarrinho && <div className="space-y-1 text-body-sm text-foreground-muted">
+      {item.precoUnitario !== null && item.precoUnitario !== undefined && item.quantidadeComprada !== null && item.quantidadeComprada !== undefined && item.valorTotal !== null && item.valorTotal !== undefined
+        ? <><p>Preço unitário: <strong className="text-foreground">{formatarValorMonetario(item.precoUnitario)}</strong></p><p>Quantidade: <strong className="text-foreground">{item.quantidadeComprada.toLocaleString('pt-BR')}</strong></p><p>Total: <strong className="text-foreground">{formatarValorMonetario(item.valorTotal)}</strong></p></>
+        : <span>Preço não informado</span>}
+    </div>}
+    {!somenteLeitura && noCarrinho && onAtualizarDadosCompra && <DadosCompraItem item={item} disabled={enviando !== null || precisaAtualizar} podeEditar={podeInformarDadosCompra === true} onSalvar={(dados) => onAtualizarDadosCompra(item.id, dados)} />}
     {erro && <p role="alert" className="rounded-control bg-error/10 p-gutter text-error">{erro}</p>}
     {enviando && <p role="status" className="text-label-lg text-foreground-muted">{enviando === 'atualizar' ? 'Atualizando item...' : `${acaoLabels[enviando]}: processando...`}</p>}
     {precisaAtualizar && <button type="button" disabled={enviando !== null} onClick={() => void executar('atualizar')} className="min-h-touch rounded-control border border-current px-page font-semibold disabled:opacity-60">Atualizar item</button>}

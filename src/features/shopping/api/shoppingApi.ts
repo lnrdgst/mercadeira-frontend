@@ -1,5 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import type { AcaoRemocaoItemCompra, AdicionarItemCompraRequest, AdicionarRegistroFinanceiroCompraRequest, CompraResponse, DeclaracaoPresenca, ItemCompraResponse } from '../types/shopping'
+import type { AcaoRemocaoItemCompra, AdicionarItemCompraRequest, AdicionarRegistroFinanceiroCompraRequest, AtualizarDadosItemCompraRequest, CompraResponse, DeclaracaoPresenca, ItemCompraResponse } from '../types/shopping'
 
 export async function alterarMinhaPresenca(token: string, familiaId: string, listaId: string, estado: DeclaracaoPresenca) {
   const response = await apiRequest<CompraResponse>(
@@ -78,7 +78,16 @@ export async function continuarCompra(token: string, familiaId: string, listaId:
     `/familias/${familiaId}/listas/${listaId}/compra/continuar`,
     { token, method: 'POST' },
   )
-  if (response.status !== 200 || !response.data) throw new Error('NÃ£o foi possÃ­vel confirmar a continuidade da compra.')
+  if (response.status !== 200 || !response.data) throw new Error('Não foi possível confirmar a continuidade da compra.')
+  return response.data
+}
+
+export async function encerrarCompraProlongada(token: string, familiaId: string, listaId: string) {
+  const response = await apiRequest<CompraResponse>(
+    `/familias/${familiaId}/listas/${listaId}/compra/encerrar-prolongada`,
+    { token, method: 'POST' },
+  )
+  if (response.status !== 200 || !response.data) throw new Error('Não foi possível encerrar esta compra.')
   return response.data
 }
 
@@ -106,6 +115,15 @@ export async function colocarItemNoCarrinho(token: string, familiaId: string, li
     { token, method: 'POST' },
   )
   if (!response.data) throw new Error('Não foi possível recuperar o item atualizado.')
+  return response.data
+}
+
+export async function atualizarDadosItemCompra(token: string, familiaId: string, listaId: string, itemCompraId: string, data: AtualizarDadosItemCompraRequest) {
+  const response = await apiRequest<ItemCompraResponse>(
+    `/familias/${familiaId}/listas/${listaId}/compra/itens/${itemCompraId}/dados-compra`,
+    { token, method: 'PUT', body: data },
+  )
+  if (response.status !== 200 || !response.data) throw new Error('Não foi possível atualizar os dados da compra deste item.')
   return response.data
 }
 

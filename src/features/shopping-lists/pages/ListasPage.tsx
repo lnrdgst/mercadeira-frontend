@@ -343,7 +343,11 @@ export function ListasPage() {
 
     return (
         <section className="mx-auto max-w-3xl space-y-page py-page">
-            {auth && familiaSelecionada && listasVisiveis.find((lista) => lista.alertaContinuidade?.necessario) && <AlertaContinuidadeCompraModal alerta={listasVisiveis.find((lista) => lista.alertaContinuidade?.necessario)?.alertaContinuidade} token={auth.token} familiaId={familiaSelecionada.id} listaId={listasVisiveis.find((lista) => lista.alertaContinuidade?.necessario)?.id ?? ''} />}
+            {auth && familiaSelecionada && listasVisiveis.find((lista) => lista.alertaContinuidade?.necessario) && <AlertaContinuidadeCompraModal alerta={listasVisiveis.find((lista) => lista.alertaContinuidade?.necessario)?.alertaContinuidade} token={auth.token} familiaId={familiaSelecionada.id} listaId={listasVisiveis.find((lista) => lista.alertaContinuidade?.necessario)?.id ?? ''} onAtualizar={(atualizada) => {
+                setListas((atuais) => atualizada.status === 'EM_ANDAMENTO'
+                    ? atuais.map((lista) => lista.id === atualizada.listaId ? { ...lista, alertaContinuidade: atualizada.alertaContinuidade } : lista)
+                    : atuais.filter((lista) => lista.id !== atualizada.listaId))
+            }} />}
             <header className="flex flex-wrap items-end justify-between gap-gutter">
                 <div>
                     <h1 className="text-headline-lg font-bold">

@@ -25,3 +25,16 @@ test('sem capability de decisão ou solicitação não há ação de remoção',
 
   expect(screen.queryByRole('button', { name: /remoção|remover/i })).not.toBeInTheDocument()
 })
+
+test('participante presente e autorizado recebe controles para registrar os dados da compra', () => {
+  renderApp(<ItemCompraCard item={itemBase} participante onColocar={vi.fn(async () => {})} onRestaurar={vi.fn(async () => {})} onRemover={vi.fn(async () => {})} onReconciliar={vi.fn(async () => {})} podeInformarDadosCompra onAtualizarDadosCompra={vi.fn(async () => {})} />)
+
+  expect(screen.getByRole('button', { name: 'Informar' })).toBeInTheDocument()
+})
+
+test('participante remoto visualiza dados registrados, mas não recebe controles de edição', () => {
+  renderApp(<ItemCompraCard item={{ ...itemBase, precoUnitario: 10, quantidadeComprada: 2, valorTotal: 20 }} participante onColocar={vi.fn(async () => {})} onRestaurar={vi.fn(async () => {})} onRemover={vi.fn(async () => {})} onReconciliar={vi.fn(async () => {})} podeInformarDadosCompra={false} onAtualizarDadosCompra={vi.fn(async () => {})} />)
+
+  expect(screen.getByLabelText('Dados da compra: Arroz')).toHaveTextContent(/Preço unitário:\s*R\$\s*10,00/)
+  expect(screen.queryByRole('button', { name: /informar|alterar/i })).not.toBeInTheDocument()
+})

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
+import { Link, Navigate, useNavigate, useParams } from 'react-router'
 import type { ApiRequestError } from '../../../shared/api/apiClient'
 import { useSession } from '../../auth/session/sessionContext'
 import { useFamilyContext } from '../../family/session/familyContext'
@@ -120,6 +120,8 @@ function RevisaoCompra({ token, familiaId, listaId }: { token: string; familiaId
     setCompra(atualizada)
     setPrecisaAtualizar(false)
   }
+
+  if (compra?.status === 'CANCELADA') return <Navigate to="/inicio" replace />
 
   return <section className="mx-auto max-w-3xl space-y-page">
     {compra?.status === 'EM_ANDAMENTO' && <nav className="flex flex-wrap gap-gutter" aria-label="Navegação da revisão">

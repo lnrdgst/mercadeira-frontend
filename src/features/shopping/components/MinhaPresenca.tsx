@@ -100,6 +100,7 @@ export function MinhaPresenca({
     mensagemEmAndamento: string,
     acao: () => Promise<void>,
     escrita = true,
+    aoConcluir?: () => void,
   ) {
     if (enviando.current || ocupada || precisaAtualizar) return;
     enviando.current = true;
@@ -112,6 +113,7 @@ export function MinhaPresenca({
       setTransferindo(false);
       setPrecisaAtualizar(false);
       setMensagem("Compra atualizada.");
+      aoConcluir?.();
     } catch (error) {
       if (!ativo.current) return;
       const falha = error as ApiRequestError;
@@ -468,98 +470,49 @@ export function MinhaPresenca({
               {transferindo && (
                 <div role="dialog" aria-label="Transferir responsabilidade" className="mt-gutter w-full space-y-gutter border-t border-foreground/10 bg-blue-50 p-page text-center">
                   <div><h3 className="text-headline-md font-semibold text-blue-700">Transferir responsabilidade</h3><p className="text-foreground-muted">Quem ficará responsável pela compra?</p></div>
-                  <div className="space-y-2 text-left">{elegiveisTransferencia.map((participante) => <button key={participante.id} type="button" disabled={ocupada || precisaAtualizar} onClick={() => void executar('Transferindo responsabilidade...', () => onTransferirResponsabilidade(participante.id))} className="flex min-h-touch w-full items-center justify-between rounded-control border border-blue-200 bg-surface px-gutter font-semibold text-blue-700">{participante.nome}<span className="text-label-md text-primary">No mercado</span></button>)}</div>
+                  <div className="space-y-2 text-left">{elegiveisTransferencia.map((participante) => <button key={participante.id} type="button" disabled={ocupada || precisaAtualizar} onClick={() => void executar('Transferindo responsabilidade...', () => onTransferirResponsabilidade(participante.id), true, () => setConfirmacao("sair"))} className="flex min-h-touch w-full items-center justify-between rounded-control border border-blue-200 bg-surface px-gutter font-semibold text-blue-700">{participante.nome}<span className="text-label-md text-primary">No mercado</span></button>)}</div>
                   <button type="button" disabled={ocupada} onClick={() => setTransferindo(false)} className="min-h-touch rounded-control border border-blue-700 px-page font-semibold text-blue-700">Cancelar</button>
                 </div>
               )}
 
-              {confirmacao === "sair" && podeFicarRemoto && (
+              {confirmacao === "sair" && podeFicarRemoto && !transferindo && (
                 <div
-                  className="mt-gutter w-full space-y-gutter rounded-card border border-[#f6d0c9] bg-[#fff1ee] p-page"
+                  className={`mt-gutter w-full space-y-gutter ${podeTransferir ? 'border-t border-foreground/10 pt-gutter' : 'rounded-card border border-[#f6d0c9] bg-[#fff1ee] p-page'}`}
                   role="dialog"
                   aria-label="Confirmar participação à distância"
                 >
-                  <div className="space-y-2 text-center">
-                    <h3 className="text-headline-md font-semibold text-[#8a3f34]">
-                      Confirma sua participação nesta compra à distância?
-                    </h3>
-
-                    <p className="text-foreground-muted">
-                      Ao confirmar, você só poderá atuar nesta compra à distância.
-                      Se quiser participar no mercado, será necessário solicitar
-                      presença e aguardar a aprovação do responsável operacional
-                      da compra.
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col items-center gap-2">
-                    {podeTransferir && (
-                      <>
-                        <p className="rounded-control bg-warning/10 p-gutter text-warning">
-                          Transfira a responsabilidade antes de informar que está remoto.
-                        </p>
-
-                        <button
-                          type="button"
-                          disabled={ocupada || precisaAtualizar}
-                          onClick={() => {
-                            setConfirmacao(null)
-                            setTransferindo(true)
-                          }}
-                          className="min-h-touch rounded-control bg-blue-700 px-page font-semibold text-white"
-                        >
-                          Transferir responsabilidade
+                  {podeTransferir ? (
+                    <>
+                      <div className="space-y-2 text-center">
+                        <h3 className="text-headline-md font-semibold text-[#8a3f34]">Antes de participar à distância</h3>
+                        <p className="text-foreground-muted">Transfira a responsabilidade da compra antes de informar que está remoto.</p>
+                      </div>
+                      <div className="flex flex-col items-center gap-2">
+                        <button type="button" disabled={ocupada || precisaAtualizar} onClick={() => setTransferindo(true)} className="min-h-touch rounded-control bg-blue-700 px-page font-semibold text-white">Transferir responsabilidade</button>
+                        <button type="button" disabled={ocupada || precisaAtualizar} onClick={() => setConfirmacao(null)} className="inline-flex min-h-touch min-w-[180px] items-center justify-center gap-2 whitespace-nowrap rounded-control border border-[#f6d0c9] bg-surface px-10 font-semibold text-[#8a3f34] disabled:opacity-60">
+                          <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5 shrink-0 fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="m12 19-7-7 7-7" /></svg>
+                          <span>Voltar</span>
                         </button>
-                      </>
-                    )}
-
-                    <button
-                      type="button"
-                      disabled={ocupada || precisaAtualizar || podeTransferir}
-                      onClick={() =>
-                        void executar("Declarando saída...", onSair)
-                      }
-                      className="inline-flex min-h-touch items-center justify-center gap-2 rounded-control border border-[#f6d0c9] bg-[#ffd8d1] px-page font-semibold text-[#8a3f34] transition-colors hover:bg-[#f7c7bd] disabled:opacity-60"
-                    >
-                      <svg
-                        aria-hidden="true"
-                        viewBox="0 0 24 24"
-                        className="size-5 fill-none stroke-current"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <rect x="6" y="3" width="9" height="18" rx="2" />
-                        <path d="M9 18h3" />
-
-                        <path d="M18 8a3 3 0 0 1 3 3" />
-                        <path d="M18 4a7 7 0 0 1 7 7" />
-                      </svg>
-
-                      <span>Confirmar participação à distância</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      disabled={ocupada || precisaAtualizar}
-                      onClick={() => setConfirmacao(null)}
-                      className="inline-flex min-h-touch min-w-[180px] items-center justify-center gap-2 whitespace-nowrap rounded-control border border-[#f6d0c9] bg-surface px-10 font-semibold text-[#8a3f34] disabled:opacity-60"
-                    >
-                      <svg
-                        aria-hidden="true"
-                        viewBox="0 0 24 24"
-                        className="size-5 shrink-0 fill-none stroke-current"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M19 12H5" />
-                        <path d="m12 19-7-7 7-7" />
-                      </svg>
-
-                      <span>Voltar</span>
-                    </button>
-                  </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="space-y-2 text-center">
+                        <h3 className="text-headline-md font-semibold text-[#8a3f34]">Confirma sua participação nesta compra à distância?</h3>
+                        <p className="text-foreground-muted">Ao confirmar, você só poderá atuar nesta compra à distância. Se quiser participar no mercado, será necessário solicitar presença e aguardar a aprovação do responsável operacional da compra.</p>
+                      </div>
+                      <div className="flex flex-col items-center gap-2">
+                        <button type="button" disabled={ocupada || precisaAtualizar} onClick={() => void executar("Declarando saída...", onSair)} className="inline-flex min-h-touch items-center justify-center gap-2 rounded-control border border-[#f6d0c9] bg-[#ffd8d1] px-page font-semibold text-[#8a3f34] transition-colors hover:bg-[#f7c7bd] disabled:opacity-60">
+                          <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5 fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="3" width="9" height="18" rx="2" /><path d="M9 18h3" /><path d="M18 8a3 3 0 0 1 3 3" /><path d="M18 4a7 7 0 0 1 7 7" /></svg>
+                          <span>Confirmar participação à distância</span>
+                        </button>
+                        <button type="button" disabled={ocupada || precisaAtualizar} onClick={() => setConfirmacao(null)} className="inline-flex min-h-touch min-w-[180px] items-center justify-center gap-2 whitespace-nowrap rounded-control border border-[#f6d0c9] bg-surface px-10 font-semibold text-[#8a3f34] disabled:opacity-60">
+                          <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5 shrink-0 fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="m12 19-7-7 7-7" /></svg>
+                          <span>Voltar</span>
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 

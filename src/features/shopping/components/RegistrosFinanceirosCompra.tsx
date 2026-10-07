@@ -24,8 +24,13 @@ export function RegistrosFinanceirosCompra({ compra, token, familiaId, listaId, 
   const [enviando, setEnviando] = useState(false)
   const podeGerenciar = compra.contextoUsuario.podeGerenciarRegistrosFinanceiros === true
   const registros = compra.registrosFinanceiros ?? []
-  const valorTotal = compra.totalRegistrado ?? registros.reduce((total, registro) => total + registro.valor, 0)
-  const total = useMemo(() => formatarValorMonetario(valorTotal), [valorTotal])
+  const temValorPago = registros.length > 0
+  const valorPago = compra.totalRegistrado ?? registros.reduce((total, registro) => total + registro.valor, 0)
+  const totalRegistradoPorItem = compra.totalItensComprados ?? 0
+  const diferenca = temValorPago ? totalRegistradoPorItem - valorPago : null
+  const totalPagoFormatado = useMemo(() => formatarValorMonetario(valorPago), [valorPago])
+  const totalItensFormatado = useMemo(() => formatarValorMonetario(totalRegistradoPorItem), [totalRegistradoPorItem])
+  const quantidadeItensSemPreco = compra.quantidadeItensNoCarrinhoSemPreco ?? 0
 
   function abrir() {
     setValor('')
@@ -73,13 +78,36 @@ export function RegistrosFinanceirosCompra({ compra, token, familiaId, listaId, 
       setEnviando(false)
     }
   }
+
+  function diferencaFormatada() {
+    if (diferenca === null) return null
+    if (diferenca === 0) return formatarValorMonetario(0)
+    return `${diferenca > 0 ? '+' : '-'} ${formatarValorMonetario(Math.abs(diferenca))}`
+  }
+
+  const classeDiferenca = diferenca === null
+    ? ''
+    : diferenca < 0 ? 'text-error'
+      : diferenca > 0 ? 'text-primary'
+        : 'text-foreground'
+
   return <section aria-labelledby="registros-financeiros-titulo" className="space-y-gutter rounded-card border border-foreground/10 bg-surface p-page shadow-soft">
     <div className="flex flex-wrap items-center justify-between gap-gutter">
-      <div>
-        <h2 id="registros-financeiros-titulo" className="text-headline-sm font-semibold">Valores da compra</h2>
-        <p className="text-body-md text-foreground-muted">Total registrado: <strong className="text-foreground">{total}</strong></p>
+      <div className="min-w-0 w-full space-y-2">
+        <h2
+          id="registros-financeiros-titulo"
+          className="w-full border-b border-foreground/15 pb-2 text-headline-sm font-semibold"
+        >
+          Valores da compra
+        </h2>
+        <div className="space-y-0.5 text-body-md text-foreground-muted">
+          <p>Total registrado por item: <strong className="text-foreground">{totalItensFormatado}</strong></p>
+          {temValorPago && <p>Valor pago da compra: <strong className="text-foreground">{totalPagoFormatado}</strong></p>}
+          {diferenca !== null && <p>Diferença: <strong className={classeDiferenca}>{diferencaFormatada()}</strong></p>}
+          {quantidadeItensSemPreco > 0 && <p className="text-warning">{quantidadeItensSemPreco} {quantidadeItensSemPreco === 1 ? 'item ainda está sem preço registrado.' : 'itens ainda estão sem preço registrado.'}</p>}
+        </div>
       </div>
-      {podeGerenciar && <button type="button" onClick={abrir} className="min-h-touch rounded-control border border-primary px-page font-semibold text-primary">{registros.length ? 'Adicionar outro valor' : 'Informar valor'}</button>}
+      {podeGerenciar && <button type="button" onClick={abrir} className="min-h-touch w-full rounded-control border border-primary px-page font-semibold text-primary">{temValorPago ? 'Adicionar outro R$' : 'Informar R$ pago desta compra'}</button>}
     </div>
     {erro && !aberto && <p role="alert" className="rounded-card bg-error/10 p-gutter text-error">{erro}</p>}
     {registros.length === 0

@@ -226,7 +226,10 @@ export function InicioPage() {
       : null;
   return (
     <section className="mx-auto max-w-3xl space-y-page py-page">
-      {auth && compraEmAndamentoVisivel && <AlertaContinuidadeCompraModal alerta={compraEmAndamentoVisivel.alertaContinuidade} token={auth.token} familiaId={familiaSelecionada.id} listaId={compraEmAndamentoVisivel.listaId} />}
+      {auth && compraEmAndamentoVisivel && <AlertaContinuidadeCompraModal alerta={compraEmAndamentoVisivel.alertaContinuidade} token={auth.token} familiaId={familiaSelecionada.id} listaId={compraEmAndamentoVisivel.listaId} onAtualizar={(atualizada) => {
+        setCompraEmAndamento(atualizada.status === 'EM_ANDAMENTO' ? atualizada : null)
+        void carregar()
+      }} />}
       <header className="space-y-gutter">
         <h1 className="text-headline-lg font-bold">
           {perfilLoading

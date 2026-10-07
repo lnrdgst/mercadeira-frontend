@@ -12,6 +12,7 @@ type Props = {
   ariaLabelledBy?: string
   panelClassName?: string
   closeDisabled?: boolean
+  dismissible?: boolean
 }
 
 /**
@@ -26,6 +27,7 @@ export function Modal({
   ariaLabelledBy,
   panelClassName = '',
   closeDisabled = false,
+  dismissible = true,
 }: Props) {
   useEffect(() => {
     if (!open) return
@@ -45,27 +47,29 @@ export function Modal({
   useEffect(() => {
     if (!open) return
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !closeDisabled) {
+      if (event.key === 'Escape' && dismissible && !closeDisabled) {
         event.preventDefault()
         onClose()
       }
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [closeDisabled, onClose, open])
+  }, [closeDisabled, dismissible, onClose, open])
 
   if (!open || typeof document === 'undefined') return null
 
   return createPortal(
     <div data-modal-portal className="fixed inset-0 z-[100]">
-      <button
-        type="button"
-        tabIndex={-1}
-        aria-label="Fechar modal"
-        disabled={closeDisabled}
-        onClick={onClose}
-        className="absolute inset-0 h-full w-full cursor-default bg-foreground/40 disabled:cursor-not-allowed"
-      />
+      {dismissible
+        ? <button
+            type="button"
+            tabIndex={-1}
+            aria-label="Fechar modal"
+            disabled={closeDisabled}
+            onClick={onClose}
+            className="absolute inset-0 h-full w-full cursor-default bg-foreground/40 disabled:cursor-not-allowed"
+          />
+        : <div aria-hidden="true" className="absolute inset-0 bg-foreground/40" />}
       <div className="pointer-events-none fixed inset-0 flex items-end p-gutter pt-[max(1rem,env(safe-area-inset-top))] sm:items-center sm:justify-center sm:p-page">
         <section
           role="dialog"

@@ -1,12 +1,15 @@
 import { useMemo, useState } from 'react'
 import { Modal } from '../../../shared/components/Modal'
+import { formatarValorMonetario } from '../../../shared/formatarValorMonetario'
 import type { ItemCompraResponse } from '../types/shopping'
 
 type Props = {
   itens: ItemCompraResponse[]
+  totalItensComprados?: number
+  quantidadeItensNoCarrinhoSemPreco?: number
 }
 
-export function CompraProgresso({ itens }: Props) {
+export function CompraProgresso({ itens, totalItensComprados, quantidadeItensNoCarrinhoSemPreco }: Props) {
   const [revisaoAberta, setRevisaoAberta] = useState(false)
   const progresso = useMemo(() => {
     const noCarrinho = itens.filter((item) => item.status === 'NO_CARRINHO').length
@@ -22,7 +25,7 @@ export function CompraProgresso({ itens }: Props) {
     <>
       <section
         aria-label={`${progresso.resolvidos} de ${progresso.total} itens resolvidos, ${progresso.percentual} por cento`}
-        className="sticky top-2 z-10 flex min-w-0 items-center gap-3 rounded-control border border-foreground/10 bg-background/95 px-gutter py-2 shadow-soft backdrop-blur"
+        className="sticky top-1 z-10 flex w-full min-w-0 flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-foreground/10 bg-background/95 px-gutter py-1.5 shadow-soft backdrop-blur"
       >
         <div
           role="progressbar"
@@ -31,7 +34,7 @@ export function CompraProgresso({ itens }: Props) {
           aria-valuemax={progresso.total}
           aria-valuenow={progresso.resolvidos}
           aria-valuetext={`${progresso.resolvidos} de ${progresso.total} itens resolvidos, ${progresso.percentual} por cento`}
-          className="h-2 min-w-12 flex-1 overflow-hidden rounded-full bg-foreground/10"
+          className="h-1.5 min-w-8 flex-1 overflow-hidden rounded-full bg-foreground/10"
         >
           <div
             className="h-full rounded-full bg-primary transition-[width] duration-200"
@@ -39,7 +42,7 @@ export function CompraProgresso({ itens }: Props) {
           />
         </div>
 
-        <p className="shrink-0 text-label-lg font-semibold tabular-nums">
+        <p className="shrink-0 whitespace-nowrap text-label-md font-semibold tabular-nums">
           {progresso.resolvidos} de {progresso.total} <span className="text-foreground-muted">{`• ${progresso.percentual}%`}</span>
         </p>
 
@@ -47,11 +50,15 @@ export function CompraProgresso({ itens }: Props) {
           <button
             type="button"
             onClick={() => setRevisaoAberta(true)}
-            className="min-h-touch shrink-0 rounded-control px-gutter text-label-lg font-semibold text-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="min-h-touch shrink-0 rounded-control px-2 text-label-md font-semibold text-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             Revisar
           </button>
         )}
+        <div className="basis-full flex min-w-0 flex-wrap items-center gap-x-2 text-label-sm text-foreground-muted">
+          <p>Total registrado: <strong className="text-foreground">{formatarValorMonetario(totalItensComprados ?? 0)}</strong></p>
+          {(quantidadeItensNoCarrinhoSemPreco ?? 0) > 0 && <p>{quantidadeItensNoCarrinhoSemPreco} {quantidadeItensNoCarrinhoSemPreco === 1 ? 'item sem preço' : 'itens sem preço'}</p>}
+        </div>
       </section>
 
       <Modal

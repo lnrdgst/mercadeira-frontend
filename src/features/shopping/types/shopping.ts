@@ -126,6 +126,9 @@ export interface ItemCompraResponse {
   unidadeMedida: UnidadeMedida | null
   marca: string | null
   observacoes: string | null
+  precoUnitario?: number | null
+  quantidadeComprada?: number | null
+  valorTotal?: number | null
   ordemExibicao: number
   status: 'PENDENTE' | 'NO_CARRINHO' | 'REMOCAO_SOLICITADA' | 'REMOVIDO'
   remocao: RemocaoItemCompraResponse | null
@@ -144,7 +147,7 @@ export interface CompraResponse {
   categoria: CategoriaCompra
   estabelecimento: string | null
   estabelecimentoLista?: string | null
-  status: 'EM_ANDAMENTO' | 'FINALIZADA'
+  status: 'EM_ANDAMENTO' | 'FINALIZADA' | 'CANCELADA'
   iniciadaEm: string
   alertaContinuidade?: AlertaContinuidadeCompraResponse | null
   finalizadaPor: ReferenciaParticipanteCompra | null
@@ -158,6 +161,8 @@ export interface CompraResponse {
   itens: ItemCompraResponse[]
   registrosFinanceiros?: RegistroFinanceiroCompraResponse[]
   totalRegistrado?: number
+  totalItensComprados?: number
+  quantidadeItensNoCarrinhoSemPreco?: number
   contextoUsuario: ContextoUsuarioCompraResponse
 }
 
@@ -182,4 +187,9 @@ export interface RegistroFinanceiroCompraResponse {
 export interface AdicionarRegistroFinanceiroCompraRequest {
   valor: number
   estabelecimentoNome: string | null
+}
+
+export interface AtualizarDadosItemCompraRequest {
+  precoUnitario: number | null
+  quantidadeComprada: number | null
 }

@@ -169,6 +169,39 @@ test('responsável operacional também confirma a saída antes de chamar o backe
   expect(comandos()[0][1]!.method).toBe('PUT')
 })
 
+test('separa a transferência da confirmação de participação à distância', async () => {
+  const responsavel = compra('PRESENTE')
+  responsavel.responsabilidadeOperacional = { ...responsavel.responsabilidadeOperacional!, responsavel: { participanteCompraId: 'p-a', membroFamiliaId: 'm-a', usuarioId: 'u-a', nome: 'Ana' } }
+  responsavel.contextoUsuario.podeTransferirResponsabilidade = true
+  const aposTransferencia = compra('PRESENTE')
+  aposTransferencia.contextoUsuario.podeTransferirResponsabilidade = false
+  const { user, comandos } = preparar({ inicial: responsavel, comando: async () => Response.json(aposTransferencia) })
+
+  await user.click(await screen.findByRole('button', { name: 'Vou participar desta compra à distância' }))
+  const antes = screen.getByRole('dialog', { name: 'Confirmar participação à distância' })
+  expect(antes).toHaveTextContent('Antes de participar à distância')
+  expect(antes).toHaveTextContent('Transfira a responsabilidade da compra antes de informar que está remoto.')
+  expect(within(antes).getByRole('button', { name: 'Transferir responsabilidade' })).toBeVisible()
+  expect(within(antes).queryByRole('button', { name: 'Confirmar participação à distância' })).not.toBeInTheDocument()
+  expect(antes).not.toHaveTextContent('Ao confirmar, você só poderá atuar nesta compra à distância.')
+
+  await user.click(within(antes).getByRole('button', { name: 'Voltar' }))
+  expect(screen.getByRole('button', { name: 'Vou participar desta compra à distância' })).toBeVisible()
+
+  await user.click(screen.getByRole('button', { name: 'Vou participar desta compra à distância' }))
+  await user.click(screen.getByRole('button', { name: 'Transferir responsabilidade' }))
+  const transferencia = screen.getByRole('dialog', { name: 'Transferir responsabilidade' })
+  await user.click(within(transferencia).getByRole('button', { name: /Bia.*No mercado/ }))
+
+  const confirmar = await screen.findByRole('dialog', { name: 'Confirmar participação à distância' })
+  expect(confirmar).toHaveTextContent('Confirma sua participação nesta compra à distância?')
+  expect(confirmar).toHaveTextContent('Ao confirmar, você só poderá atuar nesta compra à distância.')
+  expect(within(confirmar).getByRole('button', { name: 'Confirmar participação à distância' })).toBeVisible()
+  expect(within(confirmar).queryByRole('button', { name: 'Transferir responsabilidade' })).not.toBeInTheDocument()
+  expect(confirmar).not.toHaveTextContent('Transfira a responsabilidade da compra antes de informar que está remoto.')
+  expect(comandos()).toHaveLength(1)
+})
+
 test('responsabilidade continua passando pela confirmação já existente', async () => {
   const presente = compra('PRESENTE')
   const { user, comandos } = preparar({ inicial: presente, comando: async () => Response.json(presente) })

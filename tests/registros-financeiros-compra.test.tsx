@@ -22,7 +22,7 @@ test('mantém a gestão manual de valores após a finalização', () => {
   expect(screen.getByText('Valores da compra')).toBeVisible()
   expect(screen.getByText('Mercado Central')).toBeVisible()
   expect(screen.getAllByText(/82,40/)).toHaveLength(3)
-  expect(screen.getByRole('button', { name: 'Adicionar outro valor' })).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Adicionar outro R$' })).toBeVisible()
   expect(screen.getByRole('button', { name: 'Remover' })).toBeVisible()
 })
 
@@ -32,7 +32,7 @@ test('preenche o estabelecimento da Lista, mas permite alterar ou apagar antes d
   const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json(atualizada, { status: 201 }))
   const view = renderApp(<RegistrosFinanceirosCompra compra={inicial} token="token" familiaId="familia-a" listaId="lista-a" onAtualizar={vi.fn()} onNaoAutorizado={vi.fn()} />)
 
-  await view.user.click(screen.getByRole('button', { name: 'Informar valor pago desta compra' }))
+  await view.user.click(screen.getByRole('button', { name: 'Informar R$ pago desta compra' }))
   const estabelecimento = screen.getByLabelText(/Estabelecimento/)
   expect(estabelecimento).toHaveValue('Supermaxi')
   await view.user.clear(estabelecimento)
@@ -51,14 +51,14 @@ test('reutiliza o estabelecimento retornado pela Lista no prÃ³ximo registro se
   vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json(atualizada, { status: 201 }))
   const view = renderApp(<RegistrosFinanceirosCompra compra={inicial} token="token" familiaId="familia-a" listaId="lista-a" onAtualizar={onAtualizar} onNaoAutorizado={vi.fn()} />)
 
-  await view.user.click(screen.getByRole('button', { name: 'Informar valor pago desta compra' }))
+  await view.user.click(screen.getByRole('button', { name: 'Informar R$ pago desta compra' }))
   await view.user.click(screen.getByRole('button', { name: /1$/ }))
   await view.user.type(screen.getByLabelText(/Estabelecimento/), 'Supermaxi')
   await view.user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Adicionar valor' }))
   await vi.waitFor(() => expect(onAtualizar).toHaveBeenCalledWith(atualizada))
 
   view.rerender(<RegistrosFinanceirosCompra compra={atualizada} token="token" familiaId="familia-a" listaId="lista-a" onAtualizar={onAtualizar} onNaoAutorizado={vi.fn()} />)
-  await view.user.click(screen.getByRole('button', { name: 'Adicionar outro valor' }))
+  await view.user.click(screen.getByRole('button', { name: 'Adicionar outro R$' }))
   expect(screen.getByLabelText(/Estabelecimento/)).toHaveValue('Supermaxi')
 })
 
@@ -66,7 +66,7 @@ test('usa o estabelecimento da Lista tambÃ©m em compra finalizada', async () =
   const finalizada = { ...compra('FINALIZADA'), estabelecimentoLista: 'Supermaxi', contextoUsuario: { ...compra().contextoUsuario, podeGerenciarRegistrosFinanceiros: true } }
   const view = renderApp(<RegistrosFinanceirosCompra compra={finalizada} token="token" familiaId="familia-a" listaId="lista-a" onAtualizar={vi.fn()} onNaoAutorizado={vi.fn()} />)
 
-  await view.user.click(screen.getByRole('button', { name: 'Adicionar outro valor' }))
+  await view.user.click(screen.getByRole('button', { name: 'Adicionar outro R$' }))
   expect(screen.getByLabelText(/Estabelecimento/)).toHaveValue('Supermaxi')
 })
 
@@ -76,7 +76,7 @@ test('envia valor manual e estabelecimento para o endpoint da compra', async () 
   const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json(atualizada, { status: 201 }))
   const view = renderApp(<RegistrosFinanceirosCompra compra={atualizada} token="token" familiaId="familia-a" listaId="lista-a" onAtualizar={onAtualizar} onNaoAutorizado={vi.fn()} />)
 
-  await view.user.click(screen.getByRole('button', { name: 'Informar valor pago desta compra' }))
+  await view.user.click(screen.getByRole('button', { name: 'Informar R$ pago desta compra' }))
   await view.user.click(screen.getByRole('button', { name: 'Número 8' }))
   await view.user.click(screen.getByRole('button', { name: 'Número 2' }))
   await view.user.click(screen.getByRole('button', { name: 'Vírgula decimal' }))
@@ -110,7 +110,7 @@ test('participante remoto consulta valores registrados sem receber mutações fi
   expect(screen.getByText(/Valor pago da compra:/)).toHaveTextContent(/R\$\s*82,40/)
   expect(screen.getByText(/Diferença:/)).toHaveTextContent(/R\$\s*0,00/)
   expect(screen.getByText('Mercado Central')).toBeVisible()
-  expect(screen.queryByRole('button', { name: /Informar valor pago desta compra|Adicionar outro valor|Alterar valor/ })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /Informar R\$ pago desta compra|Adicionar outro R\$|Alterar valor/ })).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Remover' })).not.toBeInTheDocument()
 })
 
@@ -121,7 +121,38 @@ test('mostra total por item, mas não mostra diferença antes de informar o valo
   expect(screen.getByText(/Total registrado por item:/)).toHaveTextContent(/R\$\s*120,00/)
   expect(screen.queryByText(/Diferença:/)).not.toBeInTheDocument()
   expect(screen.queryByText(/Valor pago da compra:/)).not.toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Informar valor pago desta compra' })).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Informar R$ pago desta compra' })).toBeVisible()
+})
+
+test('não compara valor pago quando não há total registrado por item, mantendo o aviso de preços pendentes', () => {
+  const semBaseParaComparacao = {
+    ...compra(),
+    registrosFinanceiros: [{ ...compra().registrosFinanceiros![0], valor: 442.95 }],
+    totalRegistrado: 442.95,
+    totalItensComprados: 0,
+    quantidadeItensNoCarrinhoSemPreco: 14,
+  }
+  renderApp(<RegistrosFinanceirosCompra compra={semBaseParaComparacao} token="token" familiaId="familia-a" listaId="lista-a" onAtualizar={vi.fn()} onNaoAutorizado={vi.fn()} />)
+
+  expect(screen.getByText(/Total registrado por item:/)).toHaveTextContent(/R\$\s*0,00/)
+  expect(screen.getByText(/Valor pago da compra:/)).toHaveTextContent(/R\$\s*442,95/)
+  expect(screen.queryByText(/Diferença:/)).not.toBeInTheDocument()
+  expect(screen.getByText('14 itens ainda estão sem preço registrado.')).toBeVisible()
+})
+
+test('aplica a mesma ausência de diferença em compra finalizada sem total por item', () => {
+  const finalizadaSemBase = {
+    ...compra('FINALIZADA'),
+    registrosFinanceiros: [{ ...compra().registrosFinanceiros![0], valor: 442.95 }],
+    totalRegistrado: 442.95,
+    totalItensComprados: 0,
+    quantidadeItensNoCarrinhoSemPreco: 1,
+  }
+  renderApp(<RegistrosFinanceirosCompra compra={finalizadaSemBase} token="token" familiaId="familia-a" listaId="lista-a" onAtualizar={vi.fn()} onNaoAutorizado={vi.fn()} />)
+
+  expect(screen.getByText(/Valor pago da compra:/)).toHaveTextContent(/R\$\s*442,95/)
+  expect(screen.queryByText(/Diferença:/)).not.toBeInTheDocument()
+  expect(screen.getByText('1 item ainda está sem preço registrado.')).toBeVisible()
 })
 
 test('mostra uma única diferença positiva, negativa ou zero entre total por item e valor pago', () => {
@@ -129,9 +160,11 @@ test('mostra uma única diferença positiva, negativa ou zero entre total por it
 
   expect(screen.getByText(/Diferença:/)).toHaveTextContent(/\+\s*R\$\s*5,00/)
   expect(screen.getAllByText(/Diferença:/)).toHaveLength(1)
+  expect(screen.getByText(/Diferença:/).querySelector('strong')).toHaveClass('text-primary')
 
   rerender(<RegistrosFinanceirosCompra compra={{ ...compra(), totalRegistrado: 125, registrosFinanceiros: [{ ...compra().registrosFinanceiros![0], valor: 125 }], totalItensComprados: 120 }} token="token" familiaId="familia-a" listaId="lista-a" onAtualizar={vi.fn()} onNaoAutorizado={vi.fn()} />)
   expect(screen.getByText(/Diferença:/)).toHaveTextContent(/-\s*R\$\s*5,00/)
+  expect(screen.getByText(/Diferença:/).querySelector('strong')).toHaveClass('text-error')
 
   rerender(<RegistrosFinanceirosCompra compra={{ ...compra(), totalItensComprados: 82.4 }} token="token" familiaId="familia-a" listaId="lista-a" onAtualizar={vi.fn()} onNaoAutorizado={vi.fn()} />)
   expect(screen.getByText(/Diferença:/)).toHaveTextContent(/R\$\s*0,00/)

@@ -27,7 +27,7 @@ export function RegistrosFinanceirosCompra({ compra, token, familiaId, listaId, 
   const temValorPago = registros.length > 0
   const valorPago = compra.totalRegistrado ?? registros.reduce((total, registro) => total + registro.valor, 0)
   const totalRegistradoPorItem = compra.totalItensComprados ?? 0
-  const diferenca = temValorPago ? totalRegistradoPorItem - valorPago : null
+  const diferenca = temValorPago && totalRegistradoPorItem > 0 ? totalRegistradoPorItem - valorPago : null
   const totalPagoFormatado = useMemo(() => formatarValorMonetario(valorPago), [valorPago])
   const totalItensFormatado = useMemo(() => formatarValorMonetario(totalRegistradoPorItem), [totalRegistradoPorItem])
   const quantidadeItensSemPreco = compra.quantidadeItensNoCarrinhoSemPreco ?? 0

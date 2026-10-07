@@ -31,6 +31,9 @@ export function RegistrosFinanceirosCompra({ compra, token, familiaId, listaId, 
   const totalPagoFormatado = useMemo(() => formatarValorMonetario(valorPago), [valorPago])
   const totalItensFormatado = useMemo(() => formatarValorMonetario(totalRegistradoPorItem), [totalRegistradoPorItem])
   const quantidadeItensSemPreco = compra.quantidadeItensNoCarrinhoSemPreco ?? 0
+  const avisoItensSemPreco = compra.status === 'FINALIZADA'
+    ? `${quantidadeItensSemPreco} ${quantidadeItensSemPreco === 1 ? 'item sem registro de preço.' : 'itens sem registro de preço.'}`
+    : `${quantidadeItensSemPreco} ${quantidadeItensSemPreco === 1 ? 'item ainda está sem preço registrado.' : 'itens ainda estão sem preço registrado.'}`
 
   function abrir() {
     setValor('')
@@ -104,7 +107,7 @@ export function RegistrosFinanceirosCompra({ compra, token, familiaId, listaId, 
           <p>Total registrado por item: <strong className="text-foreground">{totalItensFormatado}</strong></p>
           {temValorPago && <p>Valor pago da compra: <strong className="text-foreground">{totalPagoFormatado}</strong></p>}
           {diferenca !== null && <p>Diferença: <strong className={classeDiferenca}>{diferencaFormatada()}</strong></p>}
-          {quantidadeItensSemPreco > 0 && <p className="text-warning">{quantidadeItensSemPreco} {quantidadeItensSemPreco === 1 ? 'item ainda está sem preço registrado.' : 'itens ainda estão sem preço registrado.'}</p>}
+          {quantidadeItensSemPreco > 0 && <p className="text-warning">{avisoItensSemPreco}</p>}
         </div>
       </div>
       {podeGerenciar && <button type="button" onClick={abrir} className="min-h-touch w-full rounded-control border border-primary px-page font-semibold text-primary">{temValorPago ? 'Adicionar outro R$' : 'Informar R$ pago desta compra'}</button>}

@@ -140,7 +140,7 @@ test('não compara valor pago quando não há total registrado por item, mantend
   expect(screen.getByText('14 itens ainda estão sem preço registrado.')).toBeVisible()
 })
 
-test('aplica a mesma ausência de diferença em compra finalizada sem total por item', () => {
+test('compra finalizada sem total por item omite a diferença e usa aviso histórico de preço', () => {
   const finalizadaSemBase = {
     ...compra('FINALIZADA'),
     registrosFinanceiros: [{ ...compra().registrosFinanceiros![0], valor: 442.95 }],
@@ -152,7 +152,8 @@ test('aplica a mesma ausência de diferença em compra finalizada sem total por 
 
   expect(screen.getByText(/Valor pago da compra:/)).toHaveTextContent(/R\$\s*442,95/)
   expect(screen.queryByText(/Diferença:/)).not.toBeInTheDocument()
-  expect(screen.getByText('1 item ainda está sem preço registrado.')).toBeVisible()
+  expect(screen.getByText('1 item sem registro de preço.')).toBeVisible()
+  expect(screen.queryByText(/ainda está sem preço registrado/)).not.toBeInTheDocument()
 })
 
 test('mostra uma única diferença positiva, negativa ou zero entre total por item e valor pago', () => {
@@ -171,11 +172,11 @@ test('mostra uma única diferença positiva, negativa ou zero entre total por it
   expect(screen.getByText(/Diferença:/)).not.toHaveTextContent(/[+-]\s*R\$/)
 })
 
-test('avisa quando há itens no carrinho sem preço e omite o aviso quando todos possuem preço', () => {
+test('compra em andamento avisa itens sem preço e omite o aviso quando todos possuem preço', () => {
   const { rerender } = renderApp(<RegistrosFinanceirosCompra compra={{ ...compra(), quantidadeItensNoCarrinhoSemPreco: 1 }} token="token" familiaId="familia-a" listaId="lista-a" onAtualizar={vi.fn()} onNaoAutorizado={vi.fn()} />)
 
   expect(screen.getByText('1 item ainda está sem preço registrado.')).toBeVisible()
 
   rerender(<RegistrosFinanceirosCompra compra={{ ...compra(), quantidadeItensNoCarrinhoSemPreco: 0 }} token="token" familiaId="familia-a" listaId="lista-a" onAtualizar={vi.fn()} onNaoAutorizado={vi.fn()} />)
-  expect(screen.queryByText(/item ainda está sem preço registrado/)).not.toBeInTheDocument()
+  expect(screen.queryByText(/sem (preço registrado|registro de preço)/)).not.toBeInTheDocument()
 })

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 export type CameraError = 'unsupported' | 'permission' | 'unavailable' | 'busy' | 'unknown'
+export type CapturaCamera = { imagem: string; largura: number; altura: number; origemX: number; origemY: number; larguraOrigem: number; alturaOrigem: number }
 
 const preferredConstraints: MediaStreamConstraints = {
   audio: false,
@@ -58,10 +59,18 @@ export function useCameraStream() {
     if (!video.videoWidth || !video.videoHeight) return null
     const larguraOrigem = video.videoWidth
     const alturaOrigem = video.videoHeight
-    const larguraCorte = Math.round(larguraOrigem * 0.86)
-    const alturaCorte = Math.min(Math.round(alturaOrigem * 0.56), Math.round(larguraCorte * 0.7))
-    const origemX = Math.round((larguraOrigem - larguraCorte) / 2)
-    const origemY = Math.round((alturaOrigem - alturaCorte) / 2)
+    // A moldura ocupa 86% x 56% de um preview 4:3 com object-cover.
+    // Calculamos a mesma área no frame de origem, inclusive a parte ocultada pelo cover.
+    const aspectoPreview = 4 / 3
+    const aspectoOrigem = larguraOrigem / alturaOrigem
+    const larguraVisivel = aspectoOrigem > aspectoPreview ? alturaOrigem * aspectoPreview : larguraOrigem
+    const alturaVisivel = aspectoOrigem > aspectoPreview ? alturaOrigem : larguraOrigem / aspectoPreview
+    const inicioVisivelX = (larguraOrigem - larguraVisivel) / 2
+    const inicioVisivelY = (alturaOrigem - alturaVisivel) / 2
+    const larguraCorte = Math.round(larguraVisivel * 0.86)
+    const alturaCorte = Math.round(alturaVisivel * 0.56)
+    const origemX = Math.round(inicioVisivelX + (larguraVisivel - larguraCorte) / 2)
+    const origemY = Math.round(inicioVisivelY + (alturaVisivel - alturaCorte) / 2)
     const fator = Math.min(1, 1440 / Math.max(larguraCorte, alturaCorte))
     const larguraDestino = Math.max(1, Math.round(larguraCorte * fator))
     const alturaDestino = Math.max(1, Math.round(alturaCorte * fator))
@@ -71,7 +80,7 @@ export function useCameraStream() {
     const context = canvas.getContext('2d')
     if (!context) return null
     context.drawImage(video, origemX, origemY, larguraCorte, alturaCorte, 0, 0, larguraDestino, alturaDestino)
-    return canvas.toDataURL('image/jpeg', 0.9)
+    return { imagem: canvas.toDataURL('image/png'), largura: larguraDestino, altura: alturaDestino, origemX, origemY, larguraOrigem, alturaOrigem } satisfies CapturaCamera
   }, [])
 
   useEffect(() => parar, [parar])

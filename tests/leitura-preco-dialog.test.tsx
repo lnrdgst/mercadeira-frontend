@@ -43,7 +43,7 @@ test('usa fallback compatível e apresenta retorno manual se a permissão for ne
 })
 
 test('um candidato OCR preenche localmente e não salva', async () => {
-  configurarCamera(); ocr.reconhecer.mockResolvedValueOnce('3,99')
+  configurarCamera(); ocr.reconhecer.mockResolvedValueOnce({ texto: '3,99', confidence: 96 })
   const onSalvar = vi.fn(async () => {})
   const { user } = renderApp(<DadosCompraItem item={item} disabled={false} podeEditar onSalvar={onSalvar} />)
   await user.click(screen.getByRole('button', { name: 'Informar R$' }))
@@ -54,7 +54,7 @@ test('um candidato OCR preenche localmente e não salva', async () => {
 })
 
 test('vários candidatos exigem escolha e não escolhem automaticamente', async () => {
-  configurarCamera(); ocr.reconhecer.mockResolvedValueOnce('R$ 13,98 R$ 14,90 R$ 15,98')
+  configurarCamera(); ocr.reconhecer.mockResolvedValueOnce({ texto: 'R$ 13,98 R$ 14,90 R$ 15,98', confidence: 96 })
   const confirmar = vi.fn()
   const { user } = renderApp(<LeituraPrecoDialog open onClose={vi.fn()} onConfirmar={confirmar} />)
   await capturar(user)
@@ -66,7 +66,7 @@ test('vários candidatos exigem escolha e não escolhem automaticamente', async 
 })
 
 test('sem candidato permite tentar novamente ou informar manualmente', async () => {
-  configurarCamera(); ocr.reconhecer.mockResolvedValueOnce('PROMOCAO 3 POR 20')
+  configurarCamera(); ocr.reconhecer.mockResolvedValueOnce({ texto: 'PROMOCAO 3 POR 20', confidence: 96 })
   const onClose = vi.fn()
   const { user } = renderApp(<LeituraPrecoDialog open onClose={onClose} onConfirmar={vi.fn()} />)
   await capturar(user)
@@ -75,6 +75,14 @@ test('sem candidato permite tentar novamente ou informar manualmente', async () 
   expect(await screen.findByLabelText('Prévia da câmera')).toBeVisible()
   await user.click(screen.getByLabelText('Fechar modal'))
   expect(onClose).toHaveBeenCalled()
+})
+
+test('falha do OCR não é apresentada como ausência de preço', async () => {
+  configurarCamera(); ocr.reconhecer.mockRejectedValueOnce(new Error('worker indisponível'))
+  const { user } = renderApp(<LeituraPrecoDialog open onClose={vi.fn()} onConfirmar={vi.fn()} />)
+  await capturar(user)
+  expect(await screen.findByText('Não foi possível ler o preço desta vez.')).toBeVisible()
+  expect(screen.queryByText('Não encontrei um preço com segurança.')).not.toBeInTheDocument()
 })
 
 test('fecha e desmonta liberando a câmera', async () => {

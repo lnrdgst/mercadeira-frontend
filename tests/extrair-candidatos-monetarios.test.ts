@@ -4,6 +4,9 @@ import { normalizarCandidatoMonetario } from '../src/features/shopping/utils/nor
 
 test.each([
   ['R$ 25,90', [25.90]],
+  ['3,99', [3.99]],
+  ['6,50', [6.50]],
+  ['25,90', [25.90]],
   ['25.90', [25.90]],
   ['25.9O', [25.90]],
   ['R$ 2O,9O', [20.90]],
@@ -16,6 +19,7 @@ test.each([
   ['9,90', [9.90]],
   ['0,00', []],
   ['25,900', []],
+  ['250 650 399', []],
   ['R$ 25,90 25.90 R$ 25,90', [25.90]],
 ])('extrai candidatos monetários de %s', (texto, esperado) => {
   expect(extrairCandidatosMonetarios(texto)).toEqual(esperado)

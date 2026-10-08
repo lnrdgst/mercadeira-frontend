@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Modal } from '../../../shared/components/Modal'
-import { useCameraStream } from '../hooks/useCameraStream'
+import { useCameraStream, type CapturaCamera } from '../hooks/useCameraStream'
 import { useOcrLocal } from '../hooks/useOcrLocal'
 import { extrairCandidatosMonetarios } from '../utils/extrairCandidatosMonetarios'
 import { CameraPreview } from './CameraPreview'
 import { PrecosEncontrados } from './PrecosEncontrados'
 
 type Props = { open: boolean; onClose: () => void; onConfirmar: (valor: number) => void }
-type Etapa = 'camera' | 'lendo' | 'semResultado' | 'selecionar'
+type Etapa = 'camera' | 'lendo' | 'semResultado' | 'erroOcr' | 'selecionar'
 
 export function LeituraPrecoDialog({ open, onClose, onConfirmar }: Props) {
   const { stream, loading, error, iniciar, parar, capturar: capturarFrame } = useCameraStream()
@@ -36,25 +36,32 @@ export function LeituraPrecoDialog({ open, onClose, onConfirmar }: Props) {
   }
 
   async function capturarPreco(video: HTMLVideoElement) {
-    const imagem = capturarFrame(video)
-    if (!imagem) return
+    const captura = capturarFrame(video)
+    if (!captura) return
     parar()
     setEtapa('lendo')
     setSelecionado(null)
     try {
-      const texto = await reconhecer(imagem)
-      if (texto === null) return
-      const encontrados = extrairCandidatosMonetarios(texto)
+      const resultado = await reconhecer(captura.imagem)
+      if (resultado === null) return
+      const encontrados = extrairCandidatosMonetarios(resultado.texto)
+      registrarDiagnostico(resultado.texto, encontrados, resultado.confidence, captura)
       setCandidatos(encontrados)
       if (encontrados.length === 1) {
         informarPreco(encontrados[0])
       } else {
         setEtapa(encontrados.length === 0 ? 'semResultado' : 'selecionar')
       }
-    } catch {
+    } catch (erro) {
+      if (import.meta.env.DEV) console.error('[OCR preço] falha de reconhecimento', erro)
       setCandidatos([])
-      setEtapa('semResultado')
+      setEtapa('erroOcr')
     }
+  }
+
+  function registrarDiagnostico(rawText: string, encontrados: number[], confidence: number | null, captura: CapturaCamera) {
+    if (!import.meta.env.DEV) return
+    console.info('[OCR preço]', { rawText, textoNormalizado: rawText, candidatos: encontrados, confidence, imagem: { largura: captura.largura, altura: captura.altura, origemX: captura.origemX, origemY: captura.origemY, larguraOrigem: captura.larguraOrigem, alturaOrigem: captura.alturaOrigem } })
   }
 
   function tentarNovamente() {
@@ -70,6 +77,7 @@ export function LeituraPrecoDialog({ open, onClose, onConfirmar }: Props) {
       {etapa === 'camera' && <CameraPreview stream={stream} loading={loading} error={error} onCapturar={capturarPreco} onTentarNovamente={() => void iniciar()} onVoltarManual={fechar} />}
       {etapa === 'lendo' && <div className="space-y-gutter rounded-card bg-primary/5 p-page" aria-live="polite"><p className="font-semibold">{estadoOcr === 'preparando' ? 'Preparando leitor de preço…' : 'Lendo preço…'}</p><p className="text-body-md text-foreground-muted">Identificando valores na etiqueta.</p></div>}
       {etapa === 'semResultado' && <div className="space-y-gutter rounded-card bg-warning/10 p-gutter"><p>Não encontrei um preço com segurança.</p><div className="flex flex-col gap-2"><button type="button" onClick={tentarNovamente} className="min-h-touch rounded-control border border-warning px-gutter font-semibold text-warning">Tentar novamente</button><button type="button" onClick={fechar} className="min-h-touch rounded-control border border-foreground/20 px-gutter font-semibold">Informar manualmente</button></div></div>}
+      {etapa === 'erroOcr' && <div className="space-y-gutter rounded-card bg-warning/10 p-gutter"><p>Não foi possível ler o preço desta vez.</p><div className="flex flex-col gap-2"><button type="button" onClick={tentarNovamente} className="min-h-touch rounded-control border border-warning px-gutter font-semibold text-warning">Tentar novamente</button><button type="button" onClick={fechar} className="min-h-touch rounded-control border border-foreground/20 px-gutter font-semibold">Informar manualmente</button></div></div>}
       {etapa === 'selecionar' && <div className="space-y-page"><PrecosEncontrados candidatos={candidatos} selecionado={selecionado} onSelecionar={setSelecionado} /><div className="flex flex-col gap-2"><button type="button" disabled={selecionado === null} onClick={() => selecionado !== null && informarPreco(selecionado)} className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60">Usar preço</button><button type="button" onClick={fechar} className="min-h-touch rounded-control border border-foreground/20 px-page font-semibold">Informar manualmente</button></div></div>}
     </div>
   </Modal>

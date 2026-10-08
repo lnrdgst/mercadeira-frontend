@@ -5,6 +5,7 @@ import type { AtualizarDadosItemCompraRequest, ItemCompraResponse } from '../typ
 import { converterNumeroBrasileiro } from './dadosCompraItemValor'
 import { TecladoMonetario } from './TecladoMonetario'
 import { valorValido } from './valorMonetario'
+import { LeituraPrecoDialog } from './LeituraPrecoDialog'
 
 type Props = {
   item: ItemCompraResponse
@@ -23,6 +24,7 @@ export function DadosCompraItem({ item, disabled, podeEditar, onSalvar }: Props)
   const [preco, setPreco] = useState('')
   const [precoEmEdicao, setPrecoEmEdicao] = useState('')
   const [tecladoPrecoAberto, setTecladoPrecoAberto] = useState(false)
+  const [leituraPrecoAberta, setLeituraPrecoAberta] = useState(false)
   const [quantidade, setQuantidade] = useState('')
   const [erro, setErro] = useState<string | null>(null)
   const [salvando, setSalvando] = useState(false)
@@ -61,7 +63,13 @@ export function DadosCompraItem({ item, disabled, podeEditar, onSalvar }: Props)
 
   function fecharEditor() {
     setTecladoPrecoAberto(false)
+    setLeituraPrecoAberta(false)
     setAberto(false)
+  }
+
+  function usarPrecoLido(valor: number) {
+    alterarPreco(valor.toFixed(2).replace('.', ','))
+    setLeituraPrecoAberta(false)
   }
 
   async function salvar() {
@@ -112,6 +120,10 @@ export function DadosCompraItem({ item, disabled, podeEditar, onSalvar }: Props)
     </button>}
     {aberto && podeEditar && <div className="space-y-3 pt-1">
       {erro && <p role="alert" className="w-full break-words rounded-control bg-error/10 p-gutter text-error">{erro}</p>}
+      <button type="button" disabled={disabled || salvando} onClick={() => setLeituraPrecoAberta(true)} className="inline-flex min-h-touch items-center gap-2 rounded-control px-2 text-left font-semibold text-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60">
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5 shrink-0 fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7.5h3l1.5-2h7L17 7.5h3A1.5 1.5 0 0 1 21.5 9v9A1.5 1.5 0 0 1 20 19.5H4A1.5 1.5 0 0 1 2.5 18V9A1.5 1.5 0 0 1 4 7.5Z" /><circle cx="12" cy="13.5" r="3.25" /></svg>
+        <span>Ler o preço da etiqueta</span>
+      </button>
       <label className="block space-y-1">
         <span className="font-semibold">Preço unitário <span className="font-normal text-foreground-muted">(opcional)</span></span>
         <button type="button" aria-label="Preço unitário" disabled={disabled || salvando} onClick={abrirTecladoPreco} className="flex min-h-touch w-full items-center rounded-control border border-foreground/20 bg-surface px-gutter text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60">
@@ -149,5 +161,6 @@ export function DadosCompraItem({ item, disabled, podeEditar, onSalvar }: Props)
         </div>
       </div>
     </Modal>
+    <LeituraPrecoDialog open={leituraPrecoAberta} onClose={() => setLeituraPrecoAberta(false)} onConfirmar={usarPrecoLido} />
   </section>
 }

@@ -23,7 +23,7 @@ test('ao informar preço, inicia localmente a quantidade em 1 e apresenta o tota
   const onSalvar = vi.fn(async () => {})
   const { user, rerender } = renderApp(<DadosCompraItem item={itemBase} disabled={false} podeEditar onSalvar={onSalvar} />)
 
-  await user.click(screen.getByRole('button', { name: 'Informar' }))
+  await user.click(screen.getByRole('button', { name: 'Informar R$' }))
   const preco = screen.getByRole('button', { name: 'Preço unitário' })
   expect(screen.queryByRole('textbox', { name: 'Preço unitário' })).not.toBeInTheDocument()
   expect(screen.getByRole('textbox', { name: 'Quantidade comprada' })).toHaveValue('1')
@@ -35,7 +35,7 @@ test('ao informar preço, inicia localmente a quantidade em 1 e apresenta o tota
   expect(preco).toHaveTextContent(/R\$\s*27,00/)
   expect(onSalvar).not.toHaveBeenCalled()
   expect(screen.getByRole('textbox', { name: 'Quantidade comprada' })).toHaveValue('1')
-  await user.click(screen.getByRole('button', { name: 'Salvar dados' }))
+  await user.click(screen.getByRole('button', { name: 'Salvar R$' }))
 
   expect(onSalvar).toHaveBeenCalledWith({ precoUnitario: 27, quantidadeComprada: 1 })
   rerender(<DadosCompraItem item={{ ...itemBase, precoUnitario: 27, quantidadeComprada: 2, valorTotal: 54 }} disabled={false} podeEditar onSalvar={onSalvar} />)
@@ -49,7 +49,7 @@ test('não sobrescreve quantidade previamente informada ao digitar preço', asyn
   const onSalvar = vi.fn(async () => {})
   const { user } = renderApp(<DadosCompraItem item={itemBase} disabled={false} podeEditar onSalvar={onSalvar} />)
 
-  await user.click(screen.getByRole('button', { name: 'Informar' }))
+  await user.click(screen.getByRole('button', { name: 'Informar R$' }))
   const quantidade = screen.getByRole('textbox', { name: 'Quantidade comprada' })
   await user.clear(quantidade)
   await user.type(quantidade, '3')
@@ -65,7 +65,7 @@ test('confirma preço localmente no teclado monetário e permite alterar quantid
   const onSalvar = vi.fn(async () => {})
   const { user } = renderApp(<DadosCompraItem item={{ ...itemBase, precoUnitario: 0.89, quantidadeComprada: 10, valorTotal: 8.9 }} disabled={false} podeEditar onSalvar={onSalvar} />)
 
-  await user.click(screen.getByRole('button', { name: 'Alterar' }))
+  await user.click(screen.getByRole('button', { name: 'Alterar R$' }))
   await user.click(screen.getByRole('button', { name: 'Diminuir quantidade' }))
   await user.click(screen.getByRole('button', { name: 'Preço unitário' }))
   for (const _ of ['0', ',', '8', '9']) await user.click(screen.getByRole('button', { name: 'Apagar último dígito' }))
@@ -74,7 +74,7 @@ test('confirma preço localmente no teclado monetário e permite alterar quantid
   await user.click(screen.getByRole('button', { name: 'Número 9' }))
   await user.click(screen.getByRole('button', { name: 'Confirmar' }))
   expect(onSalvar).not.toHaveBeenCalled()
-  await user.click(screen.getByRole('button', { name: 'Salvar dados' }))
+  await user.click(screen.getByRole('button', { name: 'Salvar R$' }))
   expect(onSalvar).toHaveBeenCalledWith({ precoUnitario: 0.9, quantidadeComprada: 9 })
 })
 
@@ -82,7 +82,7 @@ test('fecha o editor pelo ícone sem persistir dados locais', async () => {
   const onSalvar = vi.fn(async () => {})
   const { user } = renderApp(<DadosCompraItem item={itemBase} disabled={false} podeEditar onSalvar={onSalvar} />)
 
-  await user.click(screen.getByRole('button', { name: 'Informar' }))
+  await user.click(screen.getByRole('button', { name: 'Informar R$' }))
   expect(screen.getByRole('button', { name: 'Preço unitário' })).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Cancelar edição' }))
   expect(onSalvar).not.toHaveBeenCalled()
@@ -92,7 +92,7 @@ test('fecha o editor pelo ícone sem persistir dados locais', async () => {
 test('cancelar o teclado monetário preserva o último preço confirmado', async () => {
   const { user } = renderApp(<DadosCompraItem item={{ ...itemBase, precoUnitario: 10, quantidadeComprada: 1, valorTotal: 10 }} disabled={false} podeEditar onSalvar={vi.fn(async () => {})} />)
 
-  await user.click(screen.getByRole('button', { name: 'Alterar' }))
+  await user.click(screen.getByRole('button', { name: 'Alterar R$' }))
   const preco = screen.getByRole('button', { name: 'Preço unitário' })
   await user.click(preco)
   await user.click(screen.getByRole('button', { name: 'Apagar último dígito' }))
@@ -105,7 +105,7 @@ test('cancelar o teclado monetário preserva o último preço confirmado', async
 test('preserva a quantidade já registrada ao reabrir o editor', async () => {
   const { user } = renderApp(<DadosCompraItem item={{ ...itemBase, quantidadeComprada: 3 }} disabled={false} podeEditar onSalvar={vi.fn(async () => {})} />)
 
-  await user.click(screen.getByRole('button', { name: 'Alterar' }))
+  await user.click(screen.getByRole('button', { name: 'Alterar R$' }))
 
   expect(screen.getByRole('textbox', { name: 'Quantidade comprada' })).toHaveValue('3')
 })

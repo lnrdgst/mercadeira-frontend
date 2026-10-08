@@ -4,11 +4,11 @@ import { useOcrLocal } from '../src/features/shopping/hooks/useOcrLocal'
 import { renderApp } from './helpers'
 
 const tesseract = vi.hoisted(() => ({ createWorker: vi.fn() }))
-vi.mock('tesseract.js', () => ({ createWorker: tesseract.createWorker, PSM: { SINGLE_LINE: 'single-line', SPARSE_TEXT: 'sparse-text' } }))
+vi.mock('tesseract.js', () => ({ createWorker: tesseract.createWorker, PSM: { SINGLE_LINE: 'single-line', SPARSE_TEXT: 'sparse-text', RAW_LINE: 'raw-line', SINGLE_WORD: 'single-word' } }))
 
 function Probe() {
   const { reconhecer } = useOcrLocal()
-  return <button type="button" onClick={() => void reconhecer('data:image/png;base64,original', 'data:image/png;base64,processada')}>Ler</button>
+  return <button type="button" onClick={() => void reconhecer('data:image/png;base64,original', 'data:image/png;base64,processada', () => ({ imagemAdaptativa: 'data:image/png;base64,adaptativa', imagemInvertida: 'data:image/png;base64,invertida' }))}>Ler</button>
 }
 
 test('cria worker sob demanda com recursos locais, sem cache persistente, e o encerra após reconhecer', async () => {
@@ -30,4 +30,13 @@ test('mantém o resultado quando uma passagem falha e a outra conclui', async ()
   await user.click(screen.getByRole('button', { name: 'Ler' }))
   await waitFor(() => expect(worker.recognize).toHaveBeenCalledTimes(2))
   expect(worker.terminate).toHaveBeenCalled()
+})
+
+test('executa fallback reforçado somente quando as passagens rápidas não geram candidato', async () => {
+  const worker = { setParameters: vi.fn(), recognize: vi.fn().mockResolvedValueOnce({ data: { text: '15599', confidence: 90 } }).mockResolvedValueOnce({ data: { text: '', confidence: 0 } }).mockResolvedValueOnce({ data: { text: 'R$ 155,99', confidence: 88 } }).mockResolvedValueOnce({ data: { text: '', confidence: 0 } }), terminate: vi.fn() }
+  tesseract.createWorker.mockResolvedValueOnce(worker)
+  const { user } = renderApp(<Probe />)
+  await user.click(screen.getByRole('button', { name: 'Ler' }))
+  await waitFor(() => expect(worker.recognize).toHaveBeenCalledTimes(4))
+  expect(worker.setParameters).toHaveBeenNthCalledWith(3, { tessedit_pageseg_mode: 'raw-line', tessedit_char_whitelist: '0123456789O.,R$' })
 })

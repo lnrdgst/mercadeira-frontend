@@ -43,7 +43,7 @@ export function LeituraPrecoDialog({ open, onClose, onConfirmar }: Props) {
     setEtapa('lendo')
     setSelecionado(null)
     try {
-      const resultado = await reconhecer(captura.imagem, captura.imagemProcessada)
+      const resultado = await reconhecer(captura.imagem, captura.imagemProcessada, captura.criarImagensReforcadas)
       if (resultado === null) return
       const listas = resultado.passagens.map((passagem) => {
         const encontrados = extrairCandidatosMonetarios(passagem.texto)

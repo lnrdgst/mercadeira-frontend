@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 export type CameraError = 'unsupported' | 'permission' | 'unavailable' | 'busy' | 'unknown'
-export type CapturaCamera = { imagem: string; imagemProcessada: string; largura: number; altura: number; origemX: number; origemY: number; larguraOrigem: number; alturaOrigem: number }
+export type CapturaCamera = { imagem: string; imagemProcessada: string; criarImagensReforcadas: () => { imagemAdaptativa: string; imagemInvertida: string }; largura: number; altura: number; origemX: number; origemY: number; larguraOrigem: number; alturaOrigem: number }
 
 const preferredConstraints: MediaStreamConstraints = {
   audio: false,
@@ -27,6 +27,25 @@ function criarImagemProcessada(original: HTMLCanvasElement) {
     imagem.data[indice + 2] = binario
   }
   contexto.putImageData(imagem, 0, 0)
+  return canvas.toDataURL('image/png')
+}
+
+function criarImagemAdaptativa(original: HTMLCanvasElement, inverter = false) {
+  const escala = Math.min(2, 1440 / Math.max(original.width, original.height))
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.max(1, Math.round(original.width * escala)); canvas.height = Math.max(1, Math.round(original.height * escala))
+  const contexto = canvas.getContext('2d', { willReadFrequently: true })
+  if (!contexto || typeof contexto.getImageData !== 'function') return original.toDataURL('image/png')
+  contexto.drawImage(original, 0, 0, canvas.width, canvas.height)
+  const dados = contexto.getImageData(0, 0, canvas.width, canvas.height)
+  const bloco = 32
+  for (let y = 0; y < canvas.height; y += bloco) for (let x = 0; x < canvas.width; x += bloco) {
+    let soma = 0; let total = 0
+    for (let py = y; py < Math.min(y + bloco, canvas.height); py += 1) for (let px = x; px < Math.min(x + bloco, canvas.width); px += 1) { const i = (py * canvas.width + px) * 4; soma += dados.data[i] * .299 + dados.data[i + 1] * .587 + dados.data[i + 2] * .114; total += 1 }
+    const limiar = soma / total * .9
+    for (let py = y; py < Math.min(y + bloco, canvas.height); py += 1) for (let px = x; px < Math.min(x + bloco, canvas.width); px += 1) { const i = (py * canvas.width + px) * 4; const cinza = dados.data[i] * .299 + dados.data[i + 1] * .587 + dados.data[i + 2] * .114; const valor = (cinza > limiar) !== inverter ? 255 : 0; dados.data[i] = valor; dados.data[i + 1] = valor; dados.data[i + 2] = valor }
+  }
+  contexto.putImageData(dados, 0, 0)
   return canvas.toDataURL('image/png')
 }
 
@@ -101,7 +120,7 @@ export function useCameraStream() {
     const context = canvas.getContext('2d')
     if (!context) return null
     context.drawImage(video, origemX, origemY, larguraCorte, alturaCorte, 0, 0, larguraDestino, alturaDestino)
-    return { imagem: canvas.toDataURL('image/png'), imagemProcessada: criarImagemProcessada(canvas), largura: larguraDestino, altura: alturaDestino, origemX, origemY, larguraOrigem, alturaOrigem } satisfies CapturaCamera
+    return { imagem: canvas.toDataURL('image/png'), imagemProcessada: criarImagemProcessada(canvas), criarImagensReforcadas: () => ({ imagemAdaptativa: criarImagemAdaptativa(canvas), imagemInvertida: criarImagemAdaptativa(canvas, true) }), largura: larguraDestino, altura: alturaDestino, origemX, origemY, larguraOrigem, alturaOrigem } satisfies CapturaCamera
   }, [])
 
   useEffect(() => parar, [parar])

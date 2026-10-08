@@ -1,6 +1,6 @@
 import { normalizarCandidatoMonetario } from './normalizarCandidatoMonetario'
 
-const sequenciaMonetaria = /(?:R\s*\$\s*)?[0-9O]+[,.][0-9O]{2}/gi
+const sequenciaMonetaria = /(?:R\s*\$\s*)?(?:(?:[0-9O]{1,3}[.])+[0-9O]{3}|[0-9O]+)[,.][0-9O]{2}/gi
 
 function fazParteDeSequenciaMaior(texto: string, inicio: number, fim: number) {
   return /[A-Z0-9O]/i.test(texto[inicio - 1] ?? '') || /[A-Z0-9O]/i.test(texto[fim] ?? '')

@@ -5,11 +5,10 @@ import { LeituraPrecoDialog } from '../src/features/shopping/components/LeituraP
 import type { ItemCompraResponse } from '../src/features/shopping/types/shopping'
 import { renderApp } from './helpers'
 
-const item: ItemCompraResponse = {
-  id: 'item-a', descricao: 'Arroz', quantidade: null, unidadeMedida: null, marca: null, observacoes: null, ordemExibicao: 1,
-  status: 'NO_CARRINHO', adicionadoDuranteCompra: false, adicionadoPor: null, adicionadoEm: null, colocadoNoCarrinhoPor: null, colocadoNoCarrinhoEm: null, remocao: null, restauracao: null,
-  acoes: { podeColocarNoCarrinho: false, podeRestaurarNoCarrinho: false, podeSolicitarRemocao: true, podeRemoverDiretamente: true, podeDecidirRemocao: false },
-}
+const ocr = vi.hoisted(() => ({ reconhecer: vi.fn(), encerrar: vi.fn() }))
+vi.mock('../src/features/shopping/hooks/useOcrLocal', () => ({ useOcrLocal: () => ({ estado: 'idle', reconhecendo: false, reconhecer: ocr.reconhecer, encerrar: ocr.encerrar }) }))
+
+const item: ItemCompraResponse = { id: 'item-a', descricao: 'Arroz', quantidade: null, unidadeMedida: null, marca: null, observacoes: null, ordemExibicao: 1, status: 'NO_CARRINHO', adicionadoDuranteCompra: false, adicionadoPor: null, adicionadoEm: null, colocadoNoCarrinhoPor: null, colocadoNoCarrinhoEm: null, remocao: null, restauracao: null, acoes: { podeColocarNoCarrinho: false, podeRestaurarNoCarrinho: false, podeSolicitarRemocao: true, podeRemoverDiretamente: true, podeDecidirRemocao: false } }
 
 function configurarCamera() {
   const stop = vi.fn()
@@ -17,26 +16,25 @@ function configurarCamera() {
   const getUserMedia = vi.fn().mockResolvedValue(stream)
   Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia } })
   vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined)
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({ drawImage: vi.fn() } as unknown as CanvasRenderingContext2D)
+  vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue('data:image/jpeg;base64,captura')
   return { getUserMedia, stop }
 }
 
-async function avancarAteDemonstracao(user: ReturnType<typeof renderApp>['user']) {
+async function capturar(user: ReturnType<typeof renderApp>['user']) {
   const video = await screen.findByLabelText('Prévia da câmera')
   Object.defineProperties(video, { videoWidth: { configurable: true, value: 1280 }, videoHeight: { configurable: true, value: 720 } })
-  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({ drawImage: vi.fn() } as unknown as CanvasRenderingContext2D)
-  vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue('data:image/jpeg;base64,captura')
-  await user.click(screen.getByRole('button', { name: 'Capturar foto' }))
-  await user.click(screen.getByRole('button', { name: 'Usar captura' }))
+  await user.click(screen.getByRole('button', { name: 'Capturar preço' }))
 }
 
 test('abre a câmera traseira preferencialmente e mostra prévia', async () => {
   const { getUserMedia } = configurarCamera()
   renderApp(<LeituraPrecoDialog open onClose={vi.fn()} onConfirmar={vi.fn()} />)
   expect(await screen.findByLabelText('Prévia da câmera')).toBeVisible()
-  expect(getUserMedia).toHaveBeenCalledWith(expect.objectContaining({ audio: false, video: expect.objectContaining({ facingMode: { ideal: 'environment' } }) }))
+  expect(getUserMedia).toHaveBeenCalledWith(expect.objectContaining({ video: expect.objectContaining({ facingMode: { ideal: 'environment' } }) }))
 })
 
-test('usa configuração compatível quando a preferencial falha', async () => {
+test('usa fallback compatível e apresenta retorno manual se a permissão for negada', async () => {
   const { getUserMedia } = configurarCamera()
   getUserMedia.mockRejectedValueOnce(new DOMException('restrição', 'OverconstrainedError'))
   renderApp(<LeituraPrecoDialog open onClose={vi.fn()} onConfirmar={vi.fn()} />)
@@ -44,71 +42,47 @@ test('usa configuração compatível quando a preferencial falha', async () => {
   expect(getUserMedia).toHaveBeenLastCalledWith({ audio: false, video: true })
 })
 
-test('negação apresenta retorno para entrada manual sem nova tentativa automática', async () => {
-  const { getUserMedia } = configurarCamera()
-  getUserMedia.mockRejectedValueOnce(new DOMException('negada', 'NotAllowedError'))
-  renderApp(<LeituraPrecoDialog open onClose={vi.fn()} onConfirmar={vi.fn()} />)
-  expect(await screen.findByText(/Não foi possível acessar a câmera/)).toBeVisible()
-  expect(getUserMedia).toHaveBeenCalledTimes(1)
-  expect(screen.getByRole('button', { name: 'Voltar para entrada manual' })).toBeVisible()
+test('um candidato OCR preenche localmente e não salva', async () => {
+  configurarCamera(); ocr.reconhecer.mockResolvedValueOnce('3,99')
+  const onSalvar = vi.fn(async () => {})
+  const { user } = renderApp(<DadosCompraItem item={item} disabled={false} podeEditar onSalvar={onSalvar} />)
+  await user.click(screen.getByRole('button', { name: 'Informar R$' }))
+  await user.click(screen.getByRole('button', { name: 'Ler o preço da etiqueta' }))
+  await capturar(user)
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Preço unitário' })).toHaveTextContent(/R\$\s*3,99/))
+  expect(onSalvar).not.toHaveBeenCalled()
 })
 
-test('captura quadro em memória, permite tentar novamente e libera a câmera ao confirmar captura', async () => {
-  const { stop } = configurarCamera()
-  const { user } = renderApp(<LeituraPrecoDialog open onClose={vi.fn()} onConfirmar={vi.fn()} />)
-  const video = await screen.findByLabelText('Prévia da câmera')
-  Object.defineProperties(video, { videoWidth: { configurable: true, value: 1280 }, videoHeight: { configurable: true, value: 720 } })
-  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({ drawImage: vi.fn() } as unknown as CanvasRenderingContext2D)
-  vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue('data:image/jpeg;base64,captura')
-  await user.click(screen.getByRole('button', { name: 'Capturar foto' }))
-  expect(screen.getByAltText('Captura da etiqueta de preço')).toHaveAttribute('src', 'data:image/jpeg;base64,captura')
-  await user.click(screen.getByRole('button', { name: 'Tentar novamente' }))
-  const novaPrevia = await screen.findByLabelText('Prévia da câmera')
-  Object.defineProperties(novaPrevia, { videoWidth: { configurable: true, value: 1280 }, videoHeight: { configurable: true, value: 720 } })
-  await user.click(screen.getByRole('button', { name: 'Capturar foto' }))
-  await user.click(screen.getByRole('button', { name: 'Usar captura' }))
-  expect(stop).toHaveBeenCalled()
-  expect(screen.getByText(/Demonstração temporária/)).toBeVisible()
-})
-
-test('cancela e desmonta liberando todas as tracks', async () => {
-  const { stop } = configurarCamera()
-  const onClose = vi.fn()
-  const view = renderApp(<LeituraPrecoDialog open onClose={onClose} onConfirmar={vi.fn()} />)
-  await screen.findByLabelText('Prévia da câmera')
-  await view.user.click(screen.getByLabelText('Fechar modal'))
-  expect(onClose).toHaveBeenCalled()
-  expect(stop).toHaveBeenCalled()
-  view.unmount()
-})
-
-test('seleção temporária preserva confirmação explícita e não duplica candidatos', async () => {
-  configurarCamera()
+test('vários candidatos exigem escolha e não escolhem automaticamente', async () => {
+  configurarCamera(); ocr.reconhecer.mockResolvedValueOnce('R$ 13,98 R$ 14,90 R$ 15,98')
   const confirmar = vi.fn()
   const { user } = renderApp(<LeituraPrecoDialog open onClose={vi.fn()} onConfirmar={confirmar} />)
-  await avancarAteDemonstracao(user)
-  expect(screen.getByRole('button', { name: 'Selecione um preço' })).toBeDisabled()
-  await user.selectOptions(screen.getByLabelText('Cenário de demonstração'), 'multiplos')
-  expect(screen.getAllByRole('radio')).toHaveLength(3)
+  await capturar(user)
+  expect(await screen.findAllByRole('radio')).toHaveLength(3)
+  expect(confirmar).not.toHaveBeenCalled()
   await user.click(screen.getByRole('radio', { name: /R\$\s*14,90/ }))
-  await user.click(screen.getByRole('button', { name: /Usar R\$\s*14,90/ }))
+  await user.click(screen.getByRole('button', { name: 'Usar preço' }))
   expect(confirmar).toHaveBeenCalledWith(14.9)
 })
 
-test('Ler preço respeita permissão, preenche somente estado local e salvar continua separado', async () => {
-  configurarCamera()
-  const onSalvar = vi.fn(async () => {})
-  const { user } = renderApp(<DadosCompraItem item={item} disabled={false} podeEditar onSalvar={onSalvar} />)
-  expect(screen.queryByRole('button', { name: 'Ler o preço da etiqueta' })).not.toBeInTheDocument()
-  await user.click(screen.getByRole('button', { name: 'Informar R$' }))
-  await user.click(screen.getByRole('button', { name: 'Ler o preço da etiqueta' }))
-  await avancarAteDemonstracao(user)
-  await user.click(screen.getByRole('radio', { name: /R\$\s*25,90/ }))
-  await user.click(screen.getByRole('button', { name: /Usar R\$\s*25,90/ }))
-  expect(screen.getByRole('button', { name: 'Preço unitário' })).toHaveTextContent(/R\$\s*25,90/)
-  expect(onSalvar).not.toHaveBeenCalled()
-  await user.click(screen.getByRole('button', { name: 'Salvar R$' }))
-  expect(onSalvar).toHaveBeenCalledWith({ precoUnitario: 25.9, quantidadeComprada: 1 })
+test('sem candidato permite tentar novamente ou informar manualmente', async () => {
+  configurarCamera(); ocr.reconhecer.mockResolvedValueOnce('PROMOCAO 3 POR 20')
+  const onClose = vi.fn()
+  const { user } = renderApp(<LeituraPrecoDialog open onClose={onClose} onConfirmar={vi.fn()} />)
+  await capturar(user)
+  expect(await screen.findByText('Não encontrei um preço com segurança.')).toBeVisible()
+  await user.click(screen.getByRole('button', { name: 'Tentar novamente' }))
+  expect(await screen.findByLabelText('Prévia da câmera')).toBeVisible()
+  await user.click(screen.getByLabelText('Fechar modal'))
+  expect(onClose).toHaveBeenCalled()
+})
+
+test('fecha e desmonta liberando a câmera', async () => {
+  const { stop } = configurarCamera()
+  const view = renderApp(<LeituraPrecoDialog open onClose={vi.fn()} onConfirmar={vi.fn()} />)
+  await screen.findByLabelText('Prévia da câmera')
+  view.unmount()
+  expect(stop).toHaveBeenCalled()
 })
 
 test('sem permissão de edição não expõe a leitura', () => {

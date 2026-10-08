@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Modal } from '../../../shared/components/Modal'
 import { useCameraStream, type CapturaCamera } from '../hooks/useCameraStream'
 import { useOcrLocal } from '../hooks/useOcrLocal'
+import { combinarCandidatosMonetarios } from '../utils/combinarCandidatosMonetarios'
 import { extrairCandidatosMonetarios } from '../utils/extrairCandidatosMonetarios'
 import { CameraPreview } from './CameraPreview'
 import { PrecosEncontrados } from './PrecosEncontrados'
@@ -42,10 +43,15 @@ export function LeituraPrecoDialog({ open, onClose, onConfirmar }: Props) {
     setEtapa('lendo')
     setSelecionado(null)
     try {
-      const resultado = await reconhecer(captura.imagem)
+      const resultado = await reconhecer(captura.imagem, captura.imagemProcessada)
       if (resultado === null) return
-      const encontrados = extrairCandidatosMonetarios(resultado.texto)
-      registrarDiagnostico(resultado.texto, encontrados, resultado.confidence, captura)
+      const listas = resultado.passagens.map((passagem) => {
+        const encontrados = extrairCandidatosMonetarios(passagem.texto)
+        registrarDiagnostico(passagem.estrategia, passagem.imagem, passagem.texto, encontrados, passagem.confidence, passagem.tempoMs, captura)
+        return encontrados
+      })
+      const encontrados = combinarCandidatosMonetarios(listas)
+      if (import.meta.env.DEV) console.info('[OCR preço - resultado combinado]', { candidatos: encontrados })
       setCandidatos(encontrados)
       if (encontrados.length === 1) {
         informarPreco(encontrados[0])
@@ -59,9 +65,9 @@ export function LeituraPrecoDialog({ open, onClose, onConfirmar }: Props) {
     }
   }
 
-  function registrarDiagnostico(rawText: string, encontrados: number[], confidence: number | null, captura: CapturaCamera) {
+  function registrarDiagnostico(estrategia: string, imagem: string, rawText: string, encontrados: number[], confidence: number | null, tempoMs: number, captura: CapturaCamera) {
     if (!import.meta.env.DEV) return
-    console.info('[OCR preço]', { rawText, textoNormalizado: rawText, candidatos: encontrados, confidence, imagem: { largura: captura.largura, altura: captura.altura, origemX: captura.origemX, origemY: captura.origemY, larguraOrigem: captura.larguraOrigem, alturaOrigem: captura.alturaOrigem } })
+    console.info(`[OCR preço - ${estrategia}]`, { imagem, rawText, textoNormalizado: rawText, candidatos: encontrados, confidence, tempoMs, dimensoes: { largura: captura.largura, altura: captura.altura, origemX: captura.origemX, origemY: captura.origemY, larguraOrigem: captura.larguraOrigem, alturaOrigem: captura.alturaOrigem } })
   }
 
   function tentarNovamente() {

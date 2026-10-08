@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest'
 import { extrairCandidatosMonetarios } from '../src/features/shopping/utils/extrairCandidatosMonetarios'
 import { normalizarCandidatoMonetario } from '../src/features/shopping/utils/normalizarCandidatoMonetario'
+import { combinarCandidatosMonetarios } from '../src/features/shopping/utils/combinarCandidatosMonetarios'
 
 test.each([
   ['R$ 25,90', [25.90]],
@@ -29,4 +30,8 @@ test('normaliza O apenas dentro do candidato monetário', () => {
   expect(normalizarCandidatoMonetario('1O,50')).toBe(10.50)
   expect(normalizarCandidatoMonetario('PROMOCAO')).toBeNull()
   expect(normalizarCandidatoMonetario('25,900')).toBeNull()
+})
+
+test('combina passagens preservando a ordem e removendo valores repetidos', () => {
+  expect(combinarCandidatosMonetarios([[1.39], [1.39, 2.78], [17.9, 12.5]])).toEqual([1.39, 2.78, 17.9, 12.5])
 })

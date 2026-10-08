@@ -9,6 +9,7 @@ const ocr = vi.hoisted(() => ({ reconhecer: vi.fn(), encerrar: vi.fn() }))
 vi.mock('../src/features/shopping/hooks/useOcrLocal', () => ({ useOcrLocal: () => ({ estado: 'idle', reconhecendo: false, reconhecer: ocr.reconhecer, encerrar: ocr.encerrar }) }))
 
 const item: ItemCompraResponse = { id: 'item-a', descricao: 'Arroz', quantidade: null, unidadeMedida: null, marca: null, observacoes: null, ordemExibicao: 1, status: 'NO_CARRINHO', adicionadoDuranteCompra: false, adicionadoPor: null, adicionadoEm: null, colocadoNoCarrinhoPor: null, colocadoNoCarrinhoEm: null, remocao: null, restauracao: null, acoes: { podeColocarNoCarrinho: false, podeRestaurarNoCarrinho: false, podeSolicitarRemocao: true, podeRemoverDiretamente: true, podeDecidirRemocao: false } }
+const resultadoOcr = (textoA: string, textoB = '') => ({ passagens: [{ estrategia: 'single-line' as const, imagem: 'original' as const, texto: textoA, confidence: 96, tempoMs: 100 }, { estrategia: 'multi-line' as const, imagem: 'processada' as const, texto: textoB, confidence: 90, tempoMs: 120 }] })
 
 function configurarCamera() {
   const stop = vi.fn()
@@ -43,7 +44,7 @@ test('usa fallback compatível e apresenta retorno manual se a permissão for ne
 })
 
 test('um candidato OCR preenche localmente e não salva', async () => {
-  configurarCamera(); ocr.reconhecer.mockResolvedValueOnce({ texto: '3,99', confidence: 96 })
+  configurarCamera(); ocr.reconhecer.mockResolvedValueOnce(resultadoOcr('3,99'))
   const onSalvar = vi.fn(async () => {})
   const { user } = renderApp(<DadosCompraItem item={item} disabled={false} podeEditar onSalvar={onSalvar} />)
   await user.click(screen.getByRole('button', { name: 'Informar R$' }))
@@ -54,7 +55,7 @@ test('um candidato OCR preenche localmente e não salva', async () => {
 })
 
 test('vários candidatos exigem escolha e não escolhem automaticamente', async () => {
-  configurarCamera(); ocr.reconhecer.mockResolvedValueOnce({ texto: 'R$ 13,98 R$ 14,90 R$ 15,98', confidence: 96 })
+  configurarCamera(); ocr.reconhecer.mockResolvedValueOnce(resultadoOcr('R$ 13,98 R$ 14,90 R$ 15,98'))
   const confirmar = vi.fn()
   const { user } = renderApp(<LeituraPrecoDialog open onClose={vi.fn()} onConfirmar={confirmar} />)
   await capturar(user)
@@ -65,8 +66,17 @@ test('vários candidatos exigem escolha e não escolhem automaticamente', async 
   expect(confirmar).toHaveBeenCalledWith(14.9)
 })
 
+test('combina candidatos de duas passagens sem duplicar valores', async () => {
+  configurarCamera(); ocr.reconhecer.mockResolvedValueOnce(resultadoOcr('R$ 1,39', 'R$ 1,39\nR$ 2,78 por litro'))
+  const { user } = renderApp(<LeituraPrecoDialog open onClose={vi.fn()} onConfirmar={vi.fn()} />)
+  await capturar(user)
+  expect(await screen.findAllByRole('radio')).toHaveLength(2)
+  expect(screen.getByRole('radio', { name: /R\$\s*1,39/ })).toBeVisible()
+  expect(screen.getByRole('radio', { name: /R\$\s*2,78/ })).toBeVisible()
+})
+
 test('sem candidato permite tentar novamente ou informar manualmente', async () => {
-  configurarCamera(); ocr.reconhecer.mockResolvedValueOnce({ texto: 'PROMOCAO 3 POR 20', confidence: 96 })
+  configurarCamera(); ocr.reconhecer.mockResolvedValueOnce(resultadoOcr('PROMOCAO 3 POR 20'))
   const onClose = vi.fn()
   const { user } = renderApp(<LeituraPrecoDialog open onClose={onClose} onConfirmar={vi.fn()} />)
   await capturar(user)

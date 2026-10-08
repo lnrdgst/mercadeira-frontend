@@ -1,13 +1,34 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 export type CameraError = 'unsupported' | 'permission' | 'unavailable' | 'busy' | 'unknown'
-export type CapturaCamera = { imagem: string; largura: number; altura: number; origemX: number; origemY: number; larguraOrigem: number; alturaOrigem: number }
+export type CapturaCamera = { imagem: string; imagemProcessada: string; largura: number; altura: number; origemX: number; origemY: number; larguraOrigem: number; alturaOrigem: number }
 
 const preferredConstraints: MediaStreamConstraints = {
   audio: false,
   video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
 }
 const fallbackConstraints: MediaStreamConstraints = { audio: false, video: true }
+
+function criarImagemProcessada(original: HTMLCanvasElement) {
+  const escala = Math.min(2, 1440 / Math.max(original.width, original.height))
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.max(1, Math.round(original.width * escala))
+  canvas.height = Math.max(1, Math.round(original.height * escala))
+  const contexto = canvas.getContext('2d', { willReadFrequently: true })
+  if (!contexto || typeof contexto.getImageData !== 'function') return original.toDataURL('image/png')
+  contexto.drawImage(original, 0, 0, canvas.width, canvas.height)
+  const imagem = contexto.getImageData(0, 0, canvas.width, canvas.height)
+  for (let indice = 0; indice < imagem.data.length; indice += 4) {
+    const cinza = imagem.data[indice] * 0.299 + imagem.data[indice + 1] * 0.587 + imagem.data[indice + 2] * 0.114
+    const contraste = Math.max(0, Math.min(255, (cinza - 128) * 1.65 + 128))
+    const binario = contraste > 175 ? 255 : 0
+    imagem.data[indice] = binario
+    imagem.data[indice + 1] = binario
+    imagem.data[indice + 2] = binario
+  }
+  contexto.putImageData(imagem, 0, 0)
+  return canvas.toDataURL('image/png')
+}
 
 function mapCameraError(error: unknown): CameraError {
   const name = error instanceof DOMException ? error.name : ''
@@ -80,7 +101,7 @@ export function useCameraStream() {
     const context = canvas.getContext('2d')
     if (!context) return null
     context.drawImage(video, origemX, origemY, larguraCorte, alturaCorte, 0, 0, larguraDestino, alturaDestino)
-    return { imagem: canvas.toDataURL('image/png'), largura: larguraDestino, altura: alturaDestino, origemX, origemY, larguraOrigem, alturaOrigem } satisfies CapturaCamera
+    return { imagem: canvas.toDataURL('image/png'), imagemProcessada: criarImagemProcessada(canvas), largura: larguraDestino, altura: alturaDestino, origemX, origemY, larguraOrigem, alturaOrigem } satisfies CapturaCamera
   }, [])
 
   useEffect(() => parar, [parar])

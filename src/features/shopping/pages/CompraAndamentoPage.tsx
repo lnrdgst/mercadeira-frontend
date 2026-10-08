@@ -397,6 +397,9 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
                     onReconciliar={reconciliarCompra}
                     podeInformarDadosCompra={podeRegistrarDadosCompra}
                     onAtualizarDadosCompra={atualizarDadosCompra}
+                    token={token}
+                    familiaId={familiaId}
+                    listaId={listaId}
                   />
                 ))}
             </ul>

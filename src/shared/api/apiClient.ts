@@ -84,7 +84,7 @@ async function executarRequisicao<T>(
 ): Promise<ApiResponse<T>> {
   const headers = new Headers({ Accept: 'application/json' })
 
-  if (body !== undefined) {
+  if (body !== undefined && !(body instanceof FormData)) {
     headers.set('Content-Type', 'application/json')
   }
 
@@ -99,7 +99,7 @@ async function executarRequisicao<T>(
       method,
       signal,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body),
     })
   } catch {
     throw createApiError('Não foi possível conectar ao servidor.')

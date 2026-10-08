@@ -6,11 +6,12 @@ import { combinarCandidatosMonetarios } from '../utils/combinarCandidatosMonetar
 import { extrairCandidatosMonetarios } from '../utils/extrairCandidatosMonetarios'
 import { CameraPreview } from './CameraPreview'
 import { PrecosEncontrados } from './PrecosEncontrados'
+import { lerPrecoIa } from '../api/shoppingApi'
 
-type Props = { open: boolean; onClose: () => void; onConfirmar: (valor: number) => void }
+type Props = { open: boolean; onClose: () => void; onConfirmar: (valor: number) => void; token?: string; familiaId?: string; listaId?: string; itemCompraId?: string }
 type Etapa = 'camera' | 'lendo' | 'semResultado' | 'erroOcr' | 'selecionar'
 
-export function LeituraPrecoDialog({ open, onClose, onConfirmar }: Props) {
+export function LeituraPrecoDialog({ open, onClose, onConfirmar, token, familiaId, listaId, itemCompraId }: Props) {
   const { stream, loading, error, iniciar, parar, capturar: capturarFrame } = useCameraStream()
   const { estado: estadoOcr, reconhecer, encerrar } = useOcrLocal()
   const [etapa, setEtapa] = useState<Etapa>('camera')
@@ -43,6 +44,13 @@ export function LeituraPrecoDialog({ open, onClose, onConfirmar }: Props) {
     setEtapa('lendo')
     setSelecionado(null)
     try {
+      const candidatosIa = await tentarIa(captura.imagem)
+      if (candidatosIa !== null && candidatosIa.length > 0) {
+        setCandidatos(candidatosIa)
+        if (candidatosIa.length === 1) informarPreco(candidatosIa[0])
+        else setEtapa('selecionar')
+        return
+      }
       const resultado = await reconhecer(captura.imagem, captura.imagemProcessada, captura.criarImagensReforcadas)
       if (resultado === null) return
       const listas = resultado.passagens.map((passagem) => {
@@ -62,6 +70,20 @@ export function LeituraPrecoDialog({ open, onClose, onConfirmar }: Props) {
       if (import.meta.env.DEV) console.error('[OCR preço] falha de reconhecimento', erro)
       setCandidatos([])
       setEtapa('erroOcr')
+    }
+  }
+
+  async function tentarIa(imagem: string): Promise<number[] | null> {
+    if (!token || !familiaId || !listaId || !itemCompraId) return []
+    try {
+      const blob = await (await fetch(imagem)).blob()
+      if (blob.size > 2 * 1024 * 1024) return []
+      return await lerPrecoIa(token, familiaId, listaId, itemCompraId, blob)
+    } catch (erro) {
+      const status = (erro as { status?: number }).status
+      if (status === 403 || status === 409) throw erro
+      if (import.meta.env.DEV) console.info('[Leitura preco] IA indisponivel; usando OCR local')
+      return []
     }
   }
 

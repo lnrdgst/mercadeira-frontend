@@ -26,7 +26,7 @@ function DataAutoria({ valor }: { valor: string | null }) {
   return valor ? <> · <time dateTime={valor}>{new Date(valor).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</time></> : null
 }
 
-type ItemCompraCardProps = { item: ItemCompraResponse } & ({
+type ItemCompraCardProps = { item: ItemCompraResponse; token?: string; familiaId?: string; listaId?: string } & ({
   somenteLeitura: true
   participante?: never
   onColocar?: never
@@ -46,7 +46,7 @@ type ItemCompraCardProps = { item: ItemCompraResponse } & ({
   onAtualizarDadosCompra?: (itemId: string, dados: AtualizarDadosItemCompraRequest) => Promise<void>
 })
 
-export function ItemCompraCard({ item, somenteLeitura, onColocar, onRestaurar, onRemover, onReconciliar, podeInformarDadosCompra, onAtualizarDadosCompra }: ItemCompraCardProps) {
+export function ItemCompraCard({ item, somenteLeitura, onColocar, onRestaurar, onRemover, onReconciliar, podeInformarDadosCompra, onAtualizarDadosCompra, token, familiaId, listaId }: ItemCompraCardProps) {
   const { logout } = useSession()
   const enviandoRef = useRef(false)
   const [enviando, setEnviando] = useState<keyof typeof acaoLabels | 'atualizar' | null>(null)
@@ -118,7 +118,7 @@ export function ItemCompraCard({ item, somenteLeitura, onColocar, onRestaurar, o
         ? <><p>Preço unitário: <strong className="text-foreground">{formatarValorMonetario(item.precoUnitario)}</strong></p><p>Quantidade: <strong className="text-foreground">{item.quantidadeComprada.toLocaleString('pt-BR')}</strong></p><p>Total: <strong className="text-foreground">{formatarValorMonetario(item.valorTotal)}</strong></p></>
         : <span>Preço não informado</span>}
     </div>}
-    {!somenteLeitura && noCarrinho && onAtualizarDadosCompra && <DadosCompraItem item={item} disabled={enviando !== null || precisaAtualizar} podeEditar={podeInformarDadosCompra === true} onSalvar={(dados) => onAtualizarDadosCompra(item.id, dados)} />}
+    {!somenteLeitura && noCarrinho && onAtualizarDadosCompra && token && familiaId && listaId && <DadosCompraItem item={item} disabled={enviando !== null || precisaAtualizar} podeEditar={podeInformarDadosCompra === true} onSalvar={(dados) => onAtualizarDadosCompra(item.id, dados)} token={token} familiaId={familiaId} listaId={listaId} />}
     {erro && <p role="alert" className="rounded-control bg-error/10 p-gutter text-error">{erro}</p>}
     {enviando && <p role="status" className="text-label-lg text-foreground-muted">{enviando === 'atualizar' ? 'Atualizando item...' : `${acaoLabels[enviando]}: processando...`}</p>}
     {precisaAtualizar && <button type="button" disabled={enviando !== null} onClick={() => void executar('atualizar')} className="min-h-touch rounded-control border border-current px-page font-semibold disabled:opacity-60">Atualizar item</button>}

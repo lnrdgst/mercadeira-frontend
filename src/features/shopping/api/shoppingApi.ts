@@ -127,6 +127,17 @@ export async function atualizarDadosItemCompra(token: string, familiaId: string,
   return response.data
 }
 
+export async function lerPrecoIa(token: string, familiaId: string, listaId: string, itemCompraId: string, imagem: Blob) {
+  const formData = new FormData()
+  formData.append('imagem', imagem, 'etiqueta.png')
+  const response = await apiRequest<{ precos: number[] }>(
+    `/familias/${familiaId}/listas/${listaId}/compra/itens/${itemCompraId}/leitura-preco-ia`,
+    { token, method: 'POST', body: formData },
+  )
+  if (response.status !== 200 || !response.data) throw new Error('Não foi possível identificar preços.')
+  return response.data.precos
+}
+
 export async function restaurarItemNoCarrinho(token: string, familiaId: string, listaId: string, itemCompraId: string) {
   const response = await apiRequest<ItemCompraResponse>(
     `/familias/${familiaId}/listas/${listaId}/compra/itens/${itemCompraId}/restaurar-no-carrinho`,

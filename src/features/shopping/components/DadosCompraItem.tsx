@@ -12,6 +12,9 @@ type Props = {
   disabled: boolean
   podeEditar: boolean
   onSalvar: (dados: AtualizarDadosItemCompraRequest) => Promise<void>
+  token?: string
+  familiaId?: string
+  listaId?: string
 }
 
 function formatarNumeroParaEdicao(valor: number | null | undefined, casasDecimais: number) {
@@ -19,7 +22,7 @@ function formatarNumeroParaEdicao(valor: number | null | undefined, casasDecimai
   return valor.toLocaleString('pt-BR', { useGrouping: false, maximumFractionDigits: casasDecimais })
 }
 
-export function DadosCompraItem({ item, disabled, podeEditar, onSalvar }: Props) {
+export function DadosCompraItem({ item, disabled, podeEditar, onSalvar, token, familiaId, listaId }: Props) {
   const [aberto, setAberto] = useState(false)
   const [preco, setPreco] = useState('')
   const [precoEmEdicao, setPrecoEmEdicao] = useState('')
@@ -163,6 +166,6 @@ export function DadosCompraItem({ item, disabled, podeEditar, onSalvar }: Props)
         </div>
       </div>
     </Modal>
-    <LeituraPrecoDialog open={leituraPrecoAberta} onClose={() => setLeituraPrecoAberta(false)} onConfirmar={usarPrecoLido} />
+    <LeituraPrecoDialog open={leituraPrecoAberta} onClose={() => setLeituraPrecoAberta(false)} onConfirmar={usarPrecoLido} token={token} familiaId={familiaId} listaId={listaId} itemCompraId={item.id} />
   </section>
 }

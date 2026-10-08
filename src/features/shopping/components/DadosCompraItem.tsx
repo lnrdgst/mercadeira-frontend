@@ -132,21 +132,23 @@ export function DadosCompraItem({ item, disabled, podeEditar, onSalvar }: Props)
         </button>
       </label>
       <div className="space-y-1">
-        <span className="font-semibold">Quantidade comprada <span className="font-normal text-foreground-muted">(opcional sem preço)</span></span>
+        <span className="font-semibold">Quantidade comprada <span className="font-normal text-foreground-muted">(opcional)</span></span>
         <div className="flex max-w-xs items-center gap-2">
           <button type="button" disabled={disabled || salvando || !converterNumeroBrasileiro(quantidade, 3)} onClick={() => alterarQuantidade(-1)} aria-label="Diminuir quantidade" className="min-h-touch w-12 rounded-control border border-foreground/20 font-semibold disabled:opacity-60">−</button>
           <input type="text" aria-label="Quantidade comprada" inputMode="decimal" pattern="[0-9]*[.,]?[0-9]*" enterKeyHint="done" autoComplete="off" value={quantidade} onChange={(event) => setQuantidade(event.target.value.replace(/[^0-9,.]/g, ''))} placeholder="0" className="min-h-touch min-w-0 flex-1 rounded-control border border-foreground/20 bg-surface px-gutter text-center" />
           <button type="button" disabled={disabled || salvando} onClick={() => alterarQuantidade(1)} aria-label="Aumentar quantidade" className="min-h-touch w-12 rounded-control border border-foreground/20 font-semibold disabled:opacity-60">+</button>
         </div>
       </div>
-      <button
-        type="button"
-        disabled={disabled || salvando}
-        onClick={() => void salvar()}
-        className="min-h-touch w-full rounded-control border border-primary bg-transparent px-page font-semibold text-primary transition-colors hover:bg-primary/5 disabled:opacity-60"
-      >
-        {salvando ? "Salvando..." : "Salvar R$"}
-      </button>
+      <div className="border-t border-foreground/15 pt-gutter">
+        <button
+          type="button"
+          disabled={disabled || salvando}
+          onClick={() => void salvar()}
+          className="min-h-touch w-full rounded-control border border-primary bg-transparent px-page font-semibold text-primary transition-colors hover:bg-primary/5 disabled:opacity-60"
+        >
+          {salvando ? "Salvando..." : "Salvar R$"}
+        </button>
+      </div>
     </div>}
     <Modal open={tecladoPrecoAberto} onClose={() => setTecladoPrecoAberto(false)} ariaLabelledBy="editar-preco-unitario-titulo" panelClassName="max-w-md">
       <div className="space-y-page overflow-y-auto p-page">

@@ -1218,7 +1218,7 @@ export function ListaDetalhePage() {
                 {listaItens.map((item, indice) => (
                   <li
                     key={item.id}
-                    className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-card bg-surface px-page py-gutter shadow-soft"
+                    className={`grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-card bg-surface px-page py-gutter shadow-soft ${emPreparacao ? "border-2 border-foreground" : ""}`}
                   >
                     {/* Mover item */}
                     {podeAlterar && (

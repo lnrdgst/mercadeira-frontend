@@ -71,6 +71,13 @@ export interface ContextoUsuarioListaResponse {
 export interface ListaCompraDetalheResponse extends ListaCompraResumoResponse {
   criador: CriadorListaResponse
   contextoUsuario: ContextoUsuarioListaResponse
+  estimativa?: EstimativaListaResponse | null
+}
+
+export interface EstimativaListaResponse {
+  valor: number
+  itensComReferencia: number
+  totalItens: number
 }
 
 export interface CriarListaCompraRequest {
@@ -114,6 +121,13 @@ export interface ItemListaCompraResponse {
   ordemExibicao: number
   criadoEm: string
   atualizadoEm: string
+  referenciaPreco: ReferenciaPrecoItemListaResponse | null
+}
+
+export interface ReferenciaPrecoItemListaResponse {
+  precoUnitario: number
+  data: string
+  estabelecimento: string | null
 }
 
 export interface SalvarItemListaRequest {

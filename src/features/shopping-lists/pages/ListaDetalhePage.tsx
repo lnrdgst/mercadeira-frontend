@@ -35,6 +35,7 @@ import {
 } from "../types/shoppingList";
 import { ConfirmacaoSensivelDialog } from "../../family/components/ConfirmacaoSensivelDialog";
 import { Modal } from "../../../shared/components/Modal";
+import { formatarValorMonetario } from "../../../shared/formatarValorMonetario";
 
 function nomeCompacto(
   nome: string,
@@ -1131,11 +1132,28 @@ export function ListaDetalhePage() {
               )}
 
               {emPreparacao && (
-                <p className="mt-2 text-label-lg text-foreground-muted">
-                  {listaItens.length === 1
-                    ? "1 item"
-                    : `${listaItens.length} itens`}
-                </p>
+                <div className="mt-2 space-y-2">
+                  <p className="text-label-lg text-foreground-muted">
+                    {listaItens.length === 1
+                      ? "1 item"
+                      : `${listaItens.length} itens`}
+                  </p>
+                  {lista.estimativa && (
+                    <div className="space-y-0.5 text-label-lg text-foreground-muted">
+                      <p>Estimativa da lista</p>
+                      <p className="text-body-lg font-semibold text-foreground">
+                        {formatarValorMonetario(lista.estimativa.valor)}
+                      </p>
+                      <p>
+                        {lista.estimativa.itensComReferencia} de {" "}
+                        {lista.estimativa.totalItens}{" "}
+                        {lista.estimativa.totalItens === 1
+                          ? "item com referência"
+                          : "itens com referência"}
+                      </p>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 
@@ -1274,6 +1292,23 @@ export function ListaDetalhePage() {
                         <p className="mt-1 line-clamp-2 text-label-md text-foreground-muted">
                           {item.observacoes}
                         </p>
+                      )}
+
+                      {emPreparacao && (
+                        item.referenciaPreco ? (
+                          <div className="mt-1 space-y-0.5 text-label-md text-foreground-muted">
+                            <p>
+                              Último preço:{" "}
+                              {formatarValorMonetario(item.referenciaPreco.precoUnitario)}
+                            </p>
+                            <p>
+                              Estimado:{" "}
+                              {formatarValorMonetario(
+                                (item.quantidade ?? 1) * item.referenciaPreco.precoUnitario,
+                              )}
+                            </p>
+                          </div>
+                        ) : <p className="mt-1 text-label-md text-foreground-muted">Sem preço anterior</p>
                       )}
                     </div>
 

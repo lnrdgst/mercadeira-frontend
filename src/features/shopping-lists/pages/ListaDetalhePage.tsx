@@ -1132,15 +1132,15 @@ export function ListaDetalhePage() {
               )}
 
               {emPreparacao && (
-                <div className="mt-2 space-y-2">
+                <div className="mt-2 flex flex-col items-center space-y-2 text-center">
                   <p className="text-label-lg text-foreground-muted">
                     {listaItens.length === 1
-                      ? "1 item"
-                      : `${listaItens.length} itens`}
+                      ? "1 item adicionado"
+                      : `${listaItens.length} itens adicionados`}
                   </p>
                   {lista.estimativa && (
                     <div className="space-y-0.5 text-label-lg text-foreground-muted">
-                      <p>Estimativa da lista</p>
+                      <p>Estimativa de gasto na compra</p>
                       <p className="text-body-lg font-semibold text-foreground">
                         {formatarValorMonetario(lista.estimativa.valor)}
                       </p>

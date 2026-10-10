@@ -62,6 +62,7 @@ export function FamiliaPage() {
   const [remocaoBloqueada, setRemocaoBloqueada] = useState<MembroFamiliaResponse | null>(null)
   const [permissaoEmProcessamentoId, setPermissaoEmProcessamentoId] = useState<string | null>(null)
   const [definindoPrincipal, setDefinindoPrincipal] = useState(false)
+  const [confirmandoPrincipal, setConfirmandoPrincipal] = useState(false)
 
   const carregarSolicitacoes = useCallback(async (mostrarCarregamento = true) => {
     if (!auth || !familiaSelecionada || familiaSelecionada.contextoUsuario?.podeGerenciarIntegrantes !== true) {
@@ -338,7 +339,7 @@ export function FamiliaPage() {
   }
 
   async function tornarFamiliaPrincipal() {
-    if (!auth || familia.principal || definindoPrincipal) return
+    if (!auth || familia.principal || definindoPrincipal) return false
 
     setDefinindoPrincipal(true)
     setFeedback(null)
@@ -347,13 +348,15 @@ export function FamiliaPage() {
       await definirFamiliaPrincipal(auth.token, familia.id)
       await recarregarFamilias(familia.id)
       setFeedback('Família definida como principal.')
+      return true
     } catch (error) {
       const apiError = error as ApiRequestError
       if (apiError.status === 401) {
         logout()
-        return
+        return false
       }
       setFeedback(apiError.message || 'Não foi possível definir a família principal.')
+      return false
     } finally {
       setDefinindoPrincipal(false)
     }
@@ -367,20 +370,26 @@ export function FamiliaPage() {
         </p>
         <div className="flex flex-wrap items-center gap-gutter">
           <h1 className="text-headline-lg font-bold">{familiaSelecionada.nome}</h1>
-          <span className="rounded-full bg-blue-100 px-gutter py-1 text-label-md font-semibold text-blue-700">
+          <span className="rounded-full bg-foreground/10 px-gutter py-1 text-label-md font-semibold text-foreground-muted">
             {papelLabel[familiaSelecionada.papel]}
           </span>
         </div>
         {familia.principal ? (
-          <p className="text-label-lg font-semibold text-primary">✓ Família principal</p>
+          <p className="inline-flex w-fit items-center rounded-full bg-amber-100 px-gutter py-1 text-label-lg font-semibold text-amber-900">
+            Família principal
+          </p>
         ) : (
           <button
             type="button"
-            onClick={() => void tornarFamiliaPrincipal()}
+            onClick={() => setConfirmandoPrincipal(true)}
             disabled={definindoPrincipal}
-            className="min-h-touch rounded-control border border-primary px-gutter text-label-lg font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex min-h-touch w-fit items-center gap-2 rounded-control px-1 text-label-lg font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {definindoPrincipal ? 'Definindo...' : 'Tornar família principal'}
+            <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4 fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 3v18" />
+              <path d="m5 10 7-7 7 7" />
+            </svg>
+            Tornar família principal
           </button>
         )}
       </header>
@@ -742,6 +751,41 @@ export function FamiliaPage() {
           onConfirmar={() => void confirmarAcaoSensivel()}
           onCancelar={() => { if (!processandoConfirmacaoSensivel) setConfirmacaoSensivel(null) }} />
       )}
+
+      <Modal
+        open={confirmandoPrincipal}
+        onClose={() => { if (!definindoPrincipal) setConfirmandoPrincipal(false) }}
+        closeDisabled={definindoPrincipal}
+        ariaLabelledBy="confirmar-familia-principal-titulo"
+        panelClassName="max-w-md space-y-gutter p-page"
+      >
+        <div>
+          <h2 id="confirmar-familia-principal-titulo" className="text-headline-md font-semibold">Tornar família principal</h2>
+          <p className="mt-1 text-body-md text-foreground-muted">
+            Deseja definir &quot;{familia.nome}&quot; como sua família principal?
+          </p>
+        </div>
+        <div className="grid gap-gutter border-t border-foreground/10 pt-gutter sm:grid-cols-2">
+          <button
+            type="button"
+            disabled={definindoPrincipal}
+            onClick={() => setConfirmandoPrincipal(false)}
+            className="min-h-touch rounded-control border border-foreground/20 px-page text-label-lg font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            disabled={definindoPrincipal}
+            onClick={() => void tornarFamiliaPrincipal().then((concluida) => {
+              if (concluida) setConfirmandoPrincipal(false)
+            })}
+            className="min-h-touch rounded-control bg-primary px-page text-label-lg font-semibold text-surface transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {definindoPrincipal ? 'Definindo...' : 'Confirmar'}
+          </button>
+        </div>
+      </Modal>
 
       {saidaBloqueada && <Modal open onClose={() => setSaidaBloqueada(null)} ariaLabelledBy="saida-bloqueada-titulo" panelClassName="max-w-md space-y-gutter p-page">
             <div>

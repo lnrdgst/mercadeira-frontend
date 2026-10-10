@@ -19,6 +19,14 @@ test('permite que um membro defina a família atual como principal', async () =>
   })
 
   await user.click(screen.getByRole('button', { name: 'Tornar família principal' }))
+  expect(screen.getByRole('dialog', { name: 'Tornar família principal' })).toHaveTextContent(
+    'Deseja definir "Família A" como sua família principal?',
+  )
+  expect(fetchMock).not.toHaveBeenCalledWith(
+    expect.stringMatching(/\/familias\/familia-a\/principal$/),
+    expect.anything(),
+  )
+  await user.click(screen.getByRole('button', { name: 'Confirmar' }))
   await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
     expect.stringMatching(/\/familias\/familia-a\/principal$/),
     expect.objectContaining({ method: 'PUT' }),
@@ -27,9 +35,20 @@ test('permite que um membro defina a família atual como principal', async () =>
   expect(screen.getByRole('status')).toHaveTextContent('Família definida como principal.')
 })
 
-test('mostra o selo quando a família atual já é principal', () => {
+test('mostra o selo âmbar quando a família atual já é principal', () => {
   const familia = familyFixture({ principal: true })
   renderApp(<FamiliaPage />, { family: familyContextFixture({ familiaSelecionada: familia, familias: [familia] }) })
-  expect(screen.getByText('✓ Família principal')).toBeVisible()
+  expect(screen.getByText('Família principal')).toBeVisible()
   expect(screen.queryByRole('button', { name: 'Tornar família principal' })).not.toBeInTheDocument()
+})
+
+test('cancelar a confirmação não chama o endpoint', async () => {
+  const familia = familyFixture({ principal: false })
+  const { user } = renderApp(<FamiliaPage />, {
+    family: familyContextFixture({ familiaSelecionada: familia, familias: [familia] }),
+  })
+
+  await user.click(screen.getByRole('button', { name: 'Tornar família principal' }))
+  await user.click(screen.getByRole('button', { name: 'Cancelar' }))
+  expect(screen.queryByRole('dialog', { name: 'Tornar família principal' })).not.toBeInTheDocument()
 })

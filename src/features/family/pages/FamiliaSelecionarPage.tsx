@@ -204,11 +204,20 @@ export function FamiliaSelecionarPage() {
       {feedback && <p role="status" className="rounded-card bg-primary/10 p-gutter text-body-md text-primary">{feedback}</p>}
 
       <section className="grid gap-gutter border-t border-foreground/10 pt-page sm:grid-cols-2">
-        <button type="button" onClick={() => abrir('criar')} className="min-h-touch rounded-control bg-primary px-page text-label-lg font-semibold text-surface hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
-          Criar nova família
+        <button type="button" onClick={() => abrir('criar')} className="inline-flex min-h-touch items-center justify-center gap-2 rounded-control bg-primary px-page text-label-lg font-semibold text-surface hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+          <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5 fill-none stroke-current" strokeWidth="2" strokeLinecap="round">
+            <path d="M12 5v14" />
+            <path d="M5 12h14" />
+          </svg>
+          <span>Criar nova família</span>
         </button>
-        <button type="button" onClick={() => abrir('ingressar')} className="min-h-touch rounded-control border border-primary px-page text-label-lg font-semibold text-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
-          Ingressar com código
+        <button type="button" onClick={() => abrir('ingressar')} className="inline-flex min-h-touch items-center justify-center gap-2 rounded-control border border-primary px-page text-label-lg font-semibold text-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+          <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5 fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="8" cy="15" r="3" />
+            <path d="m10.5 12.5 7-7 2 2-7 7" />
+            <path d="m16 7 2 2" />
+          </svg>
+          <span>Ingressar com código</span>
         </button>
       </section>
 

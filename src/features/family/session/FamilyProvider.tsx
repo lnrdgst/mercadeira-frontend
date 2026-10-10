@@ -44,6 +44,15 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
     [familias],
   )
 
+  const atualizarFamilia = useCallback((familiaAtualizada: FamiliaResponse) => {
+    setFamilias((atuais) => atuais.map((familia) => (
+      familia.id === familiaAtualizada.id ? familiaAtualizada : familia
+    )))
+    setFamiliaSelecionada((atual) => (
+      atual?.id === familiaAtualizada.id ? familiaAtualizada : atual
+    ))
+  }, [])
+
   const recarregarFamilias = useCallback(async (familiaIdPreferido?: string) => {
     if (!auth) {
       limparContexto()
@@ -109,6 +118,7 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
         loading: carregandoFamilias,
         error,
         selecionarFamilia,
+        atualizarFamilia,
         recarregarFamilias,
       }}
     >

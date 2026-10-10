@@ -17,6 +17,14 @@ export function definirFamiliaPrincipal(token: string, familiaId: string) {
   return apiRequest<void>(`/familias/${familiaId}/principal`, { method: 'PUT', token })
 }
 
+export function atualizarNomeFamilia(token: string, familiaId: string, nome: string) {
+  return apiRequest<FamiliaResponse>(`/familias/${familiaId}`, {
+    method: 'PATCH',
+    body: { nome },
+    token,
+  })
+}
+
 export function buscarMembrosFamilia(token: string, familiaId: string, signal?: AbortSignal) {
   return apiRequest<MembroFamiliaResponse[]>(`/familias/${familiaId}/membros`, { token, signal })
 }

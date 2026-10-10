@@ -42,7 +42,7 @@ export function familyContextFixture(overrides: Partial<FamilyContextValue> = {}
   const familia = familyFixture()
   return {
     familias: [familia], familiaSelecionada: familia, loading: false, error: false,
-    selecionarFamilia: vi.fn(), recarregarFamilias: vi.fn(async () => familia), ...overrides,
+    selecionarFamilia: vi.fn(), atualizarFamilia: vi.fn(), recarregarFamilias: vi.fn(async () => familia), ...overrides,
   }
 }
 

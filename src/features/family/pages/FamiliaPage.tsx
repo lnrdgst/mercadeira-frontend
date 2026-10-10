@@ -14,6 +14,7 @@ import {
   transferirAdministracaoFamilia,
   atualizarPermissaoIniciarCompra,
   definirFamiliaPrincipal,
+  atualizarNomeFamilia,
 } from '../api/familyApi'
 import { ConfirmacaoSensivelDialog } from '../components/ConfirmacaoSensivelDialog'
 import { Modal } from '../../../shared/components/Modal'
@@ -40,7 +41,7 @@ function formatarData(data: string) {
 
 export function FamiliaPage() {
   const { auth, logout } = useSession()
-  const { familiaSelecionada, recarregarFamilias } = useFamilyContext()
+  const { familiaSelecionada, atualizarFamilia, recarregarFamilias } = useFamilyContext()
   const navigate = useNavigate()
   const [solicitacoes, setSolicitacoes] = useState<SolicitacaoFamiliaResponse[]>([])
   const [solicitacoesFamiliaId, setSolicitacoesFamiliaId] = useState<string | null>(null)
@@ -63,6 +64,10 @@ export function FamiliaPage() {
   const [permissaoEmProcessamentoId, setPermissaoEmProcessamentoId] = useState<string | null>(null)
   const [definindoPrincipal, setDefinindoPrincipal] = useState(false)
   const [confirmandoPrincipal, setConfirmandoPrincipal] = useState(false)
+  const [editandoNome, setEditandoNome] = useState(false)
+  const [nomeFamilia, setNomeFamilia] = useState('')
+  const [salvandoNome, setSalvandoNome] = useState(false)
+  const [erroNome, setErroNome] = useState<string | null>(null)
 
   const carregarSolicitacoes = useCallback(async (mostrarCarregamento = true) => {
     if (!auth || !familiaSelecionada || familiaSelecionada.contextoUsuario?.podeGerenciarIntegrantes !== true) {
@@ -362,6 +367,37 @@ export function FamiliaPage() {
     }
   }
 
+  function abrirEdicaoNome() {
+    setNomeFamilia(familia.nome)
+    setErroNome(null)
+    setEditandoNome(true)
+  }
+
+  async function salvarNomeFamilia(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const nome = nomeFamilia.trim()
+    if (!auth || !nome || salvandoNome) return
+
+    setSalvandoNome(true)
+    setErroNome(null)
+    try {
+      const response = await atualizarNomeFamilia(auth.token, familia.id, nome)
+      if (!response.data) throw new Error('Não foi possível atualizar o nome da família.')
+      atualizarFamilia(response.data)
+      setEditandoNome(false)
+      setFeedback('Nome da família atualizado.')
+    } catch (error) {
+      const apiError = error as ApiRequestError
+      if (apiError.status === 401) {
+        logout()
+        return
+      }
+      setErroNome(apiError.message || 'Não foi possível atualizar o nome da família.')
+    } finally {
+      setSalvandoNome(false)
+    }
+  }
+
   return (
     <section className="mx-auto max-w-2xl space-y-page py-page">
       <header className="flex flex-col items-center space-y-2 text-center">
@@ -369,7 +405,23 @@ export function FamiliaPage() {
           Família
         </p>
         <div className="flex flex-col items-center gap-2">
+          <div className="relative inline-flex items-center">
           <h1 className="text-headline-lg font-bold">{familiaSelecionada.nome}</h1>
+          {familia.papel === 'ADMINISTRADOR' && (
+            <button
+              type="button"
+              onClick={abrirEdicaoNome}
+              aria-label="Alterar nome da família"
+              title="Alterar nome da família"
+              className="absolute left-full ml-2 inline-flex min-h-touch min-w-touch items-center justify-center rounded-control text-foreground-muted transition-colors hover:bg-foreground/5 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4 fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z" />
+              </svg>
+            </button>
+          )}
+          </div>
         </div>
         {familia.principal ? (
           <p className="inline-flex w-fit items-center rounded-full bg-amber-100 px-gutter py-1 text-label-lg font-semibold text-amber-900">
@@ -751,6 +803,51 @@ export function FamiliaPage() {
           onConfirmar={() => void confirmarAcaoSensivel()}
           onCancelar={() => { if (!processandoConfirmacaoSensivel) setConfirmacaoSensivel(null) }} />
       )}
+
+      <Modal
+        open={editandoNome}
+        onClose={() => { if (!salvandoNome) setEditandoNome(false) }}
+        closeDisabled={salvandoNome}
+        ariaLabelledBy="alterar-nome-familia-titulo"
+        panelClassName="max-w-md space-y-gutter p-page"
+      >
+        <form onSubmit={(event) => void salvarNomeFamilia(event)} className="space-y-gutter">
+          <div>
+            <h2 id="alterar-nome-familia-titulo" className="text-headline-md font-semibold">Alterar nome da família</h2>
+            <p className="mt-1 text-body-md text-foreground-muted">Escolha como sua família será identificada no Mercadeira.</p>
+          </div>
+          <label className="block text-label-lg font-semibold" htmlFor="nome-familia">
+            Nome da família
+            <input
+              id="nome-familia"
+              value={nomeFamilia}
+              onChange={(event) => setNomeFamilia(event.target.value)}
+              maxLength={120}
+              autoFocus
+              disabled={salvandoNome}
+              className="mt-1 min-h-touch w-full rounded-control border border-foreground/20 bg-surface px-gutter text-body-md outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60"
+            />
+          </label>
+          {erroNome && <p role="alert" className="rounded-card bg-error/10 p-gutter text-body-md text-error">{erroNome}</p>}
+          <div className="grid gap-gutter border-t border-foreground/10 pt-gutter sm:grid-cols-2">
+            <button
+              type="button"
+              disabled={salvandoNome}
+              onClick={() => setEditandoNome(false)}
+              className="min-h-touch rounded-control border border-foreground/20 px-page text-label-lg font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={salvandoNome || !nomeFamilia.trim()}
+              className="min-h-touch rounded-control bg-primary px-page text-label-lg font-semibold text-surface transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {salvandoNome ? 'Salvando...' : 'Salvar'}
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       <Modal
         open={confirmandoPrincipal}

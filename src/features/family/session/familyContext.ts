@@ -7,6 +7,7 @@ export interface FamilyContextValue {
   loading: boolean
   error: boolean
   selecionarFamilia: (familiaId: string) => void
+  atualizarFamilia: (familia: FamiliaResponse) => void
   recarregarFamilias: (familiaIdPreferido?: string) => Promise<FamiliaResponse | null>
 }
 

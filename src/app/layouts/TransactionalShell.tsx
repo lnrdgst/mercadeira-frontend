@@ -96,8 +96,9 @@ export function TransactionalShell() {
                         Responsável operacional
                       </dt>
                       <dd className="text-foreground-muted">
-                        É a pessoa que coordena operacionalmente esta compra. A responsabilidade
-                        pode ser transferida para outro participante que esteja no mercado.
+                        Coordena a compra. Pode aprovar solicitações de presença, transferir a
+                        responsabilidade para outra pessoa que esteja no mercado e executar as
+                        decisões operacionais da compra.
                       </dd>
                     </div>
 
@@ -106,8 +107,9 @@ export function TransactionalShell() {
                         No mercado
                       </dt>
                       <dd className="text-foreground-muted">
-                        Indica que a presença do participante foi confirmada. Participantes no
-                        mercado podem executar as ações presenciais permitidas na compra.
+                        Está fisicamente no local da compra. Pode marcar itens como colocados no
+                        carrinho, restaurar itens e executar ações presenciais, mas não coordena
+                        a compra nem aprova solicitações enquanto não for o responsável operacional.
                       </dd>
                     </div>
 
@@ -116,9 +118,9 @@ export function TransactionalShell() {
                         À distância / Remoto
                       </dt>
                       <dd className="text-foreground-muted">
-                        Indica que o participante informou que não está fisicamente no mercado.
-                        Ele continua acompanhando a compra e pode realizar as ações remotas
-                        permitidas.
+                        Não está fisicamente no local. Pode acompanhar a compra, adicionar novos
+                        itens pendentes e solicitar remoções, mas não pode marcar itens como
+                        comprados nem executar ações presenciais.
                       </dd>
                     </div>
 
@@ -127,19 +129,9 @@ export function TransactionalShell() {
                         Presença não informada
                       </dt>
                       <dd className="text-foreground-muted">
-                        Indica que o participante ainda não informou como está participando.
-                        Nesse estado, ele pode acompanhar a compra e escolher entre solicitar
-                        presença no mercado ou informar que está remoto.
-                      </dd>
-                    </div>
-
-                    <div className="pt-gutter">
-                      <dt className="font-semibold">
-                        Administrador da família
-                      </dt>
-                      <dd className="text-foreground-muted">
-                        Administra a família, mas não recebe automaticamente poderes
-                        operacionais na compra.
+                        Ainda não disse se está no mercado ou participando à distância. Pode
+                        acompanhar a compra, mas precisa informar sua situação antes de executar
+                        ações operacionais.
                       </dd>
                     </div>
                   </dl>

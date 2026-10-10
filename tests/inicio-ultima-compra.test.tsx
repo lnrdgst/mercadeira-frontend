@@ -116,6 +116,7 @@ test('omite as seções de retomada quando não há Compra em andamento nem List
   vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json([]))
   renderizarInicio()
   expect(await screen.findByRole('link', { name: 'Minha família' })).toBeVisible()
+  expect(screen.getByRole('link', { name: 'Trocar família' })).toHaveAttribute('href', '/familia/selecionar')
   expect(screen.queryByRole('heading', { name: 'Compra em andamento' })).not.toBeInTheDocument()
   expect(screen.queryByRole('heading', { name: 'Lista em preparação' })).not.toBeInTheDocument()
 })

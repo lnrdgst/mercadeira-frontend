@@ -364,15 +364,12 @@ export function FamiliaPage() {
 
   return (
     <section className="mx-auto max-w-2xl space-y-page py-page">
-      <header className="space-y-2">
+      <header className="flex flex-col items-center space-y-2 text-center">
         <p className="text-label-lg font-semibold uppercase tracking-wide text-primary">
           Família
         </p>
-        <div className="flex flex-wrap items-center gap-gutter">
+        <div className="flex flex-col items-center gap-2">
           <h1 className="text-headline-lg font-bold">{familiaSelecionada.nome}</h1>
-          <span className="rounded-full bg-foreground/10 px-gutter py-1 text-label-md font-semibold text-foreground-muted">
-            {papelLabel[familiaSelecionada.papel]}
-          </span>
         </div>
         {familia.principal ? (
           <p className="inline-flex w-fit items-center rounded-full bg-amber-100 px-gutter py-1 text-label-lg font-semibold text-amber-900">
@@ -392,6 +389,9 @@ export function FamiliaPage() {
             Tornar família principal
           </button>
         )}
+        <span className="rounded-full bg-foreground/10 px-gutter py-1 text-label-md font-semibold text-foreground-muted">
+          {papelLabel[familiaSelecionada.papel]}
+        </span>
       </header>
 
       {feedback && (

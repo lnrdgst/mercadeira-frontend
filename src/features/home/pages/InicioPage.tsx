@@ -254,12 +254,18 @@ export function InicioPage() {
             <p>{familiaSelecionada.nome}</p>
           </div>
 
-          <div className="mt-2 flex flex-col items-start gap-1 leading-tight">
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-x-page gap-y-1 leading-tight">
             <Link
               to="/familia"
-              className="text-label-lg font-semibold text-primary"
+              className="inline-flex min-h-touch items-center py-1 text-label-lg font-semibold text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               Minha família
+            </Link>
+            <Link
+              to="/familia/selecionar"
+              className="inline-flex min-h-touch items-center py-1 text-label-lg font-semibold text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              Trocar família
             </Link>
           </div>
           {historicoCarregado && !erroHistorico && (

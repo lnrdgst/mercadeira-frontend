@@ -20,7 +20,9 @@ test('mostra o lápis somente para administrador e pré-preenche o nome atual', 
   const { user } = preparar()
   await user.click(screen.getByRole('button', { name: 'Alterar nome da família' }))
   const dialogo = screen.getByRole('dialog', { name: 'Alterar nome da família' })
-  expect(screen.getByLabelText('Nome da família')).toHaveValue('Família atual')
+  expect(screen.getByLabelText('Novo nome da família')).toHaveValue('Família atual')
+  expect(dialogo).toHaveTextContent('Digite abaixo o novo nome da família.')
+  expect(screen.getByRole('button', { name: 'Salvar' })).toBeDisabled()
   expect(dialogo).toBeVisible()
 })
 
@@ -49,8 +51,8 @@ test('salva o nome normalizado retornado pelo backend e atualiza o contexto', as
   })
 
   await user.click(screen.getByRole('button', { name: 'Alterar nome da família' }))
-  await user.clear(screen.getByLabelText('Nome da família'))
-  await user.type(screen.getByLabelText('Nome da família'), '  nome atualizado  ')
+  await user.clear(screen.getByLabelText('Novo nome da família'))
+  await user.type(screen.getByLabelText('Novo nome da família'), '  nome atualizado  ')
   await user.click(screen.getByRole('button', { name: 'Salvar' }))
 
   await waitFor(() => expect(atualizarFamilia).toHaveBeenCalledWith(resposta))
@@ -68,7 +70,19 @@ test('mantém a modal aberta ao receber erro', async () => {
   })
 
   await user.click(screen.getByRole('button', { name: 'Alterar nome da família' }))
+  await user.clear(screen.getByLabelText('Novo nome da família'))
+  await user.type(screen.getByLabelText('Novo nome da família'), 'Nome em uso')
   await user.click(screen.getByRole('button', { name: 'Salvar' }))
   expect(await screen.findByRole('alert')).toHaveTextContent('Nome indisponível.')
   expect(screen.getByRole('dialog', { name: 'Alterar nome da família' })).toBeVisible()
+})
+
+test('mantém salvar desabilitado para nome vazio ou somente espaços', async () => {
+  const { user } = preparar()
+  await user.click(screen.getByRole('button', { name: 'Alterar nome da família' }))
+  const campo = screen.getByLabelText('Novo nome da família')
+  await user.clear(campo)
+  expect(screen.getByRole('button', { name: 'Salvar' })).toBeDisabled()
+  await user.type(campo, '   ')
+  expect(screen.getByRole('button', { name: 'Salvar' })).toBeDisabled()
 })

@@ -187,6 +187,8 @@ export function FamiliaPage() {
     if (primeiro.papel !== segundo.papel) return primeiro.papel === 'ADMINISTRADOR' ? -1 : 1
     return primeiro.nome.localeCompare(segundo.nome, 'pt-BR') || primeiro.membroFamiliaId.localeCompare(segundo.membroFamiliaId)
   })
+  const nomeEfetivo = nomeFamilia.trim()
+  const nomeFoiAlterado = nomeEfetivo !== familia.nome.trim()
 
   async function copiarCodigo(mensagemSucesso = 'Código copiado.') {
     if (await copiarTexto(familia.codigoIngresso)) {
@@ -375,7 +377,7 @@ export function FamiliaPage() {
 
   async function salvarNomeFamilia(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const nome = nomeFamilia.trim()
+    const nome = nomeEfetivo
     if (!auth || !nome || salvandoNome) return
 
     setSalvandoNome(true)
@@ -809,27 +811,29 @@ export function FamiliaPage() {
         onClose={() => { if (!salvandoNome) setEditandoNome(false) }}
         closeDisabled={salvandoNome}
         ariaLabelledBy="alterar-nome-familia-titulo"
-        panelClassName="max-w-md space-y-gutter p-page"
+        panelClassName="max-w-md p-0"
       >
-        <form onSubmit={(event) => void salvarNomeFamilia(event)} className="space-y-gutter">
-          <div>
+        <form onSubmit={(event) => void salvarNomeFamilia(event)} className="flex min-h-0 flex-1 flex-col">
+          <div className="shrink-0 px-page pt-page">
             <h2 id="alterar-nome-familia-titulo" className="text-headline-md font-semibold">Alterar nome da família</h2>
-            <p className="mt-1 text-body-md text-foreground-muted">Escolha como sua família será identificada no Mercadeira.</p>
+            <p className="mt-1 text-body-md text-foreground-muted">Digite abaixo o novo nome da família.</p>
           </div>
-          <label className="block text-label-lg font-semibold" htmlFor="nome-familia">
-            Nome da família
-            <input
-              id="nome-familia"
-              value={nomeFamilia}
-              onChange={(event) => setNomeFamilia(event.target.value)}
-              maxLength={120}
-              autoFocus
-              disabled={salvandoNome}
-              className="mt-1 min-h-touch w-full rounded-control border border-foreground/20 bg-surface px-gutter text-body-md outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60"
-            />
-          </label>
-          {erroNome && <p role="alert" className="rounded-card bg-error/10 p-gutter text-body-md text-error">{erroNome}</p>}
-          <div className="grid gap-gutter border-t border-foreground/10 pt-gutter sm:grid-cols-2">
+          <div className="min-h-0 flex-1 overflow-y-auto px-page py-gutter">
+            <label className="block text-label-lg font-semibold" htmlFor="nome-familia">
+              Novo nome da família
+              <input
+                id="nome-familia"
+                value={nomeFamilia}
+                onChange={(event) => setNomeFamilia(event.target.value)}
+                maxLength={120}
+                autoFocus
+                disabled={salvandoNome}
+                className="mt-1 min-h-touch w-full rounded-control border border-foreground/20 bg-surface px-gutter text-body-md outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60"
+              />
+            </label>
+            {erroNome && <p role="alert" className="mt-gutter rounded-card bg-error/10 p-gutter text-body-md text-error">{erroNome}</p>}
+          </div>
+          <div className="sticky bottom-0 grid shrink-0 gap-gutter border-t border-foreground/10 bg-surface px-page py-gutter pb-[calc(var(--spacing-gutter)+env(safe-area-inset-bottom))] sm:grid-cols-2">
             <button
               type="button"
               disabled={salvandoNome}
@@ -840,7 +844,7 @@ export function FamiliaPage() {
             </button>
             <button
               type="submit"
-              disabled={salvandoNome || !nomeFamilia.trim()}
+              disabled={salvandoNome || !nomeEfetivo || !nomeFoiAlterado}
               className="min-h-touch rounded-control bg-primary px-page text-label-lg font-semibold text-surface transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {salvandoNome ? 'Salvando...' : 'Salvar'}

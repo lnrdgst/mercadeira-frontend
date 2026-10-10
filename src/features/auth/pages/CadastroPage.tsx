@@ -5,6 +5,7 @@ import { cadastrarUsuario } from '../api/authApi'
 import { PasswordField } from '../components/PasswordField'
 import { GoogleSignInButton } from '../components/GoogleSignInButton'
 import { useSession } from '../session/sessionContext'
+import cadastroUsuario from '../../../assets/branding/mercadeira/cadastro-usuario.png'
 
 export function CadastroPage() {
   const navigate = useNavigate()
@@ -56,7 +57,12 @@ export function CadastroPage() {
   return (
     <main className="flex min-h-[100svh] items-center justify-center bg-background px-page py-page text-foreground">
       <div className="w-full max-w-md space-y-page">
-        <div className="space-y-1 text-center">
+        <div className="space-y-2 text-center">
+          <img
+            src={cadastroUsuario}
+            alt="Mercadeira — Crie seu cadastro no sistema"
+            className="mx-auto w-full max-w-[260px] sm:max-w-xs"
+          />
           <h1 className="text-headline-lg font-bold">Cadastro</h1>
           <p className="text-body-md text-foreground-muted">
             Crie sua conta para começar.

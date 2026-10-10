@@ -20,7 +20,8 @@ test('mostra o lápis somente para administrador e pré-preenche o nome atual', 
   const { user } = preparar()
   await user.click(screen.getByRole('button', { name: 'Alterar nome da família' }))
   const dialogo = screen.getByRole('dialog', { name: 'Alterar nome da família' })
-  expect(screen.getByLabelText('Novo nome da família')).toHaveValue('Família atual')
+  expect(screen.getByLabelText('Novo nome da família')).toHaveValue('atual')
+  expect(dialogo).toHaveTextContent('Família')
   expect(dialogo).toHaveTextContent('Digite abaixo o novo nome da família.')
   expect(screen.getByRole('button', { name: 'Salvar' })).toBeDisabled()
   expect(dialogo).toBeVisible()
@@ -56,6 +57,10 @@ test('salva o nome normalizado retornado pelo backend e atualiza o contexto', as
   await user.click(screen.getByRole('button', { name: 'Salvar' }))
 
   await waitFor(() => expect(atualizarFamilia).toHaveBeenCalledWith(resposta))
+  const chamadaPatch = vi.mocked(globalThis.fetch).mock.calls.find(([input, options]) => (
+    String(input).endsWith(`/familias/${familia.id}`) && options?.method === 'PATCH'
+  ))
+  expect(chamadaPatch?.[1]?.body).toBe(JSON.stringify({ nome: 'nome atualizado' }))
   expect(screen.queryByRole('dialog', { name: 'Alterar nome da família' })).not.toBeInTheDocument()
 })
 

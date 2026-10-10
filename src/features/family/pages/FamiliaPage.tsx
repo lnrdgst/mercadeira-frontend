@@ -39,6 +39,10 @@ function formatarData(data: string) {
   }).format(value)
 }
 
+function removerPrefixoFamilia(nome: string) {
+  return nome.trim().replace(/^fam[ií]lia(?:\s+|$)/i, '').trim()
+}
+
 export function FamiliaPage() {
   const { auth, logout } = useSession()
   const { familiaSelecionada, atualizarFamilia, recarregarFamilias } = useFamilyContext()
@@ -188,7 +192,7 @@ export function FamiliaPage() {
     return primeiro.nome.localeCompare(segundo.nome, 'pt-BR') || primeiro.membroFamiliaId.localeCompare(segundo.membroFamiliaId)
   })
   const nomeEfetivo = nomeFamilia.trim()
-  const nomeFoiAlterado = nomeEfetivo !== familia.nome.trim()
+  const nomeFoiAlterado = nomeEfetivo !== removerPrefixoFamilia(familia.nome)
 
   async function copiarCodigo(mensagemSucesso = 'Código copiado.') {
     if (await copiarTexto(familia.codigoIngresso)) {
@@ -370,7 +374,7 @@ export function FamiliaPage() {
   }
 
   function abrirEdicaoNome() {
-    setNomeFamilia(familia.nome)
+    setNomeFamilia(removerPrefixoFamilia(familia.nome))
     setErroNome(null)
     setEditandoNome(true)
   }
@@ -821,15 +825,19 @@ export function FamiliaPage() {
           <div className="min-h-0 flex-1 overflow-y-auto px-page py-gutter">
             <label className="block text-label-lg font-semibold" htmlFor="nome-familia">
               Novo nome da família
-              <input
-                id="nome-familia"
-                value={nomeFamilia}
-                onChange={(event) => setNomeFamilia(event.target.value)}
-                maxLength={120}
-                autoFocus
-                disabled={salvandoNome}
-                className="mt-1 min-h-touch w-full rounded-control border border-foreground/20 bg-surface px-gutter text-body-md outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60"
-              />
+              <div className="mt-1 flex min-h-touch w-full items-center rounded-card border border-foreground/20 bg-surface">
+                <span className="pl-gutter font-medium text-foreground-muted">Família</span>
+                <input
+                  id="nome-familia"
+                  aria-label="Novo nome da família"
+                  value={nomeFamilia}
+                  onChange={(event) => setNomeFamilia(event.target.value)}
+                  maxLength={120}
+                  autoFocus
+                  disabled={salvandoNome}
+                  className="min-w-0 flex-1 bg-transparent px-2 text-body-md outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                />
+              </div>
             </label>
             {erroNome && <p role="alert" className="mt-gutter rounded-card bg-error/10 p-gutter text-body-md text-error">{erroNome}</p>}
           </div>

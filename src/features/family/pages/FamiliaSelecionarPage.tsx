@@ -16,7 +16,7 @@ const papelLabel = {
 export function FamiliaSelecionarPage() {
   const navigate = useNavigate()
   const { auth, logout } = useSession()
-  const { familias, selecionarFamilia, recarregarFamilias } = useFamilyContext()
+  const { familias, familiaSelecionada, selecionarFamilia, recarregarFamilias } = useFamilyContext()
   const [acaoAberta, setAcaoAberta] = useState<'criar' | 'ingressar' | null>(null)
   const [nome, setNome] = useState('')
   const [codigo, setCodigo] = useState('')
@@ -156,20 +156,32 @@ export function FamiliaSelecionarPage() {
       </header>
 
       <ul className="space-y-gutter">
-        {familias.map((familia) => (
+        {familias.map((familia) => {
+          const selecionada = familiaSelecionada?.id === familia.id
+
+          return (
           <li key={familia.id}>
             <button
               type="button"
               onClick={() => handleSelect(familia.id)}
-              className="w-full rounded-card border border-foreground/20 bg-surface p-page text-left transition-colors hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              aria-current={selecionada ? 'true' : undefined}
+              className={`w-full rounded-card border p-page text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${selecionada
+                ? 'border-primary bg-primary/10 hover:border-primary'
+                : 'border-foreground/20 bg-surface hover:border-primary'}`}
             >
               <p className="text-label-lg font-semibold">{familia.nome}</p>
               <p className="mt-1 text-body-md text-foreground-muted">
-                {papelLabel[familia.papel]}{familia.principal ? ' · Principal' : ''}
+                {papelLabel[familia.papel]}
               </p>
+              {familia.principal && (
+                <span className="mt-2 inline-flex rounded-full bg-amber-100 px-gutter py-1 text-label-md font-semibold text-amber-900">
+                  Família principal
+                </span>
+              )}
             </button>
           </li>
-        ))}
+          )
+        })}
       </ul>
 
       {solicitacoesPendentes.length > 0 && (

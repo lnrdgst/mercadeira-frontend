@@ -19,11 +19,15 @@ function preparar() {
   return { ...view, familiaA, familiaB, recarregarFamilias, selecionarFamilia }
 }
 
-test('mantém as famílias atuais e abre os dois fluxos adicionais', async () => {
+test('destaca a família selecionada, marca a principal e abre os dois fluxos adicionais', async () => {
   const { familiaA, familiaB, user } = preparar()
-  expect(screen.getByRole('button', { name: new RegExp(familiaA.nome) })).toBeVisible()
-  expect(screen.getByRole('button', { name: new RegExp(familiaB.nome) })).toBeVisible()
-  expect(screen.getByRole('button', { name: new RegExp(`${familiaB.nome}.*Principal`) })).toBeVisible()
+  const cardSelecionado = screen.getByRole('button', { name: new RegExp(familiaA.nome) })
+  const cardPrincipal = screen.getByRole('button', { name: new RegExp(familiaB.nome) })
+  expect(cardSelecionado).toBeVisible()
+  expect(cardSelecionado).toHaveAttribute('aria-current', 'true')
+  expect(cardSelecionado).toHaveClass('border-primary', 'bg-primary/10')
+  expect(cardPrincipal).toBeVisible()
+  expect(cardPrincipal).toHaveTextContent('Família principal')
   await user.click(screen.getByRole('button', { name: 'Criar nova família' }))
   expect(screen.getByRole('dialog', { name: 'Criar nova família' })).toBeVisible()
   await user.click(screen.getByRole('button', { name: 'Cancelar' }))

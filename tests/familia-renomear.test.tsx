@@ -91,3 +91,22 @@ test('mantém salvar desabilitado para nome vazio ou somente espaços', async ()
   await user.type(campo, '   ')
   expect(screen.getByRole('button', { name: 'Salvar' })).toBeDisabled()
 })
+
+test.each([
+  { nome: 'M', habilitado: false },
+  { nome: 'MM', habilitado: true },
+  { nome: 'Família', habilitado: false },
+  { nome: 'Familia', habilitado: false },
+  { nome: 'Família Teste', habilitado: false },
+  { nome: 'familia teste', habilitado: false },
+  { nome: 'Casa', habilitado: true },
+])('valida o complemento "$nome" antes de habilitar salvar', async ({ nome, habilitado }) => {
+  const { user } = preparar()
+  await user.click(screen.getByRole('button', { name: 'Alterar nome da família' }))
+  const campo = screen.getByLabelText('Novo nome da família')
+  await user.clear(campo)
+  await user.type(campo, nome)
+
+  if (habilitado) expect(screen.getByRole('button', { name: 'Salvar' })).toBeEnabled()
+  else expect(screen.getByRole('button', { name: 'Salvar' })).toBeDisabled()
+})

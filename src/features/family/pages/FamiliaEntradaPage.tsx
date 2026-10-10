@@ -10,6 +10,7 @@ import {
 import { useFamilyContext } from "../session/familyContext";
 import type { MinhaSolicitacaoPendenteResponse } from "../types/family";
 import mascote from '../../../assets/branding/mercadeira/mascote-mercadeira.png'
+import { normalizarNomeFamilia, validarNomeFamilia } from '../utils/nomeFamilia'
 
 type FormMode = "overview" | "create" | "join";
 
@@ -17,16 +18,6 @@ const mensagemNomeFamiliaInvalido =
   "Ops! Parece que você não digitou um nome válido. Por favor, tente novamente.";
 const mensagemCodigoIngressoInvalido =
   "Ops! Parece que o código digitado não é válido. Por favor tente novamente.";
-
-function normalizarNomeFamilia(nome: string) {
-  return nome.trim();
-}
-
-function contemPalavraFamilia(nome: string) {
-  return /\bfamilia\b/i.test(
-    nome.normalize("NFD").replace(/[\u0300-\u036f]/g, ""),
-  );
-}
 
 export function FamiliaEntradaPage() {
   const { auth, logout } = useSession();
@@ -71,7 +62,7 @@ export function FamiliaEntradaPage() {
     if (!auth) return;
     const nome = normalizarNomeFamilia(nomeFamilia);
 
-    if (nome.length < 2 || contemPalavraFamilia(nome)) {
+    if (!validarNomeFamilia(nome).valido) {
       setErrorMessage(mensagemNomeFamiliaInvalido);
       return;
     }
@@ -157,9 +148,7 @@ export function FamiliaEntradaPage() {
   }
 
   const nomeFamiliaNormalizado = normalizarNomeFamilia(nomeFamilia);
-  const nomeFamiliaValido =
-    nomeFamiliaNormalizado.length >= 2 &&
-    !contemPalavraFamilia(nomeFamiliaNormalizado);
+  const nomeFamiliaValido = validarNomeFamilia(nomeFamiliaNormalizado).valido;
   const codigoIngressoValido = codigoIngresso.trim().length > 0;
 
   if (isLoading) {

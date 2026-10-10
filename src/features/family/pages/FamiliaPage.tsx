@@ -20,6 +20,7 @@ import { ConfirmacaoSensivelDialog } from '../components/ConfirmacaoSensivelDial
 import { Modal } from '../../../shared/components/Modal'
 import { useFamilyContext } from '../session/familyContext'
 import type { MembroFamiliaResponse, SolicitacaoFamiliaResponse } from '../types/family'
+import { normalizarNomeFamilia, validarNomeFamilia } from '../utils/nomeFamilia'
 
 const papelLabel = {
   ADMINISTRADOR: 'Administrador(a)',
@@ -191,8 +192,10 @@ export function FamiliaPage() {
     if (primeiro.papel !== segundo.papel) return primeiro.papel === 'ADMINISTRADOR' ? -1 : 1
     return primeiro.nome.localeCompare(segundo.nome, 'pt-BR') || primeiro.membroFamiliaId.localeCompare(segundo.membroFamiliaId)
   })
-  const nomeEfetivo = nomeFamilia.trim()
+  const validacaoNome = validarNomeFamilia(nomeFamilia)
+  const nomeEfetivo = validacaoNome.nome
   const nomeFoiAlterado = nomeEfetivo !== removerPrefixoFamilia(familia.nome)
+  const mensagemValidacaoNome = nomeFamilia ? validacaoNome.mensagem : null
 
   async function copiarCodigo(mensagemSucesso = 'Código copiado.') {
     if (await copiarTexto(familia.codigoIngresso)) {
@@ -381,8 +384,12 @@ export function FamiliaPage() {
 
   async function salvarNomeFamilia(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const nome = nomeEfetivo
-    if (!auth || !nome || salvandoNome) return
+    const nome = normalizarNomeFamilia(nomeFamilia)
+    if (!auth || salvandoNome) return
+    if (!validacaoNome.valido) {
+      setErroNome(validacaoNome.mensagem)
+      return
+    }
 
     setSalvandoNome(true)
     setErroNome(null)
@@ -831,7 +838,7 @@ export function FamiliaPage() {
                   id="nome-familia"
                   aria-label="Novo nome da família"
                   value={nomeFamilia}
-                  onChange={(event) => setNomeFamilia(event.target.value)}
+                  onChange={(event) => { setNomeFamilia(event.target.value); setErroNome(null) }}
                   maxLength={120}
                   autoFocus
                   disabled={salvandoNome}
@@ -839,7 +846,7 @@ export function FamiliaPage() {
                 />
               </div>
             </label>
-            {erroNome && <p role="alert" className="mt-gutter rounded-card bg-error/10 p-gutter text-body-md text-error">{erroNome}</p>}
+            {(erroNome || mensagemValidacaoNome) && <p role="alert" className="mt-gutter rounded-card bg-error/10 p-gutter text-body-md text-error">{erroNome || mensagemValidacaoNome}</p>}
           </div>
           <div className="sticky bottom-0 grid shrink-0 gap-gutter border-t border-foreground/10 bg-surface px-page py-gutter pb-[calc(var(--spacing-gutter)+env(safe-area-inset-bottom))] sm:grid-cols-2">
             <button
@@ -852,7 +859,7 @@ export function FamiliaPage() {
             </button>
             <button
               type="submit"
-              disabled={salvandoNome || !nomeEfetivo || !nomeFoiAlterado}
+              disabled={salvandoNome || !validacaoNome.valido || !nomeFoiAlterado}
               className="min-h-touch rounded-control bg-primary px-page text-label-lg font-semibold text-surface transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {salvandoNome ? 'Salvando...' : 'Salvar'}

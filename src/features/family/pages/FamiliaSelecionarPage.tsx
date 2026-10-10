@@ -7,6 +7,7 @@ import { useFamilyContext } from '../session/familyContext'
 import type { MinhaSolicitacaoPendenteResponse } from '../types/family'
 import trocaFamilia from '../../../assets/branding/mercadeira/troca-familia.png'
 import { Modal } from '../../../shared/components/Modal'
+import { validarNomeFamilia } from '../utils/nomeFamilia'
 
 const papelLabel = {
   ADMINISTRADOR: 'Administrador(a)',
@@ -59,7 +60,7 @@ export function FamiliaSelecionarPage() {
   }
 
   const nomeNormalizado = nome.trim()
-  const nomeValido = nomeNormalizado.length >= 2 && !/\bfamilia\b/i.test(nomeNormalizado.normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
+  const nomeValido = validarNomeFamilia(nomeNormalizado).valido
 
   function abrir(acao: 'criar' | 'ingressar') {
     setErro(null)

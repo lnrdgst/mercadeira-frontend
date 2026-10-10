@@ -13,6 +13,10 @@ export function buscarFamilias(token: string) {
   return apiRequest<FamiliaResponse[]>('/familias', { token })
 }
 
+export function definirFamiliaPrincipal(token: string, familiaId: string) {
+  return apiRequest<void>(`/familias/${familiaId}/principal`, { method: 'PUT', token })
+}
+
 export function buscarMembrosFamilia(token: string, familiaId: string, signal?: AbortSignal) {
   return apiRequest<MembroFamiliaResponse[]>(`/familias/${familiaId}/membros`, { token, signal })
 }

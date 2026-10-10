@@ -28,7 +28,7 @@ type FamiliaFixtureOverrides = Partial<Omit<FamiliaResponse, 'contextoUsuario'>>
 
 export function familyFixture(overrides: FamiliaFixtureOverrides = {}): FamiliaResponse {
   return {
-    id: 'familia-a', nome: 'Família A', codigoIngresso: 'TESTE-A', status: 'ATIVA', papel: 'MEMBRO',
+    id: 'familia-a', nome: 'Família A', codigoIngresso: 'TESTE-A', status: 'ATIVA', papel: 'MEMBRO', principal: false,
     ...overrides,
     contextoUsuario: overrides.contextoUsuario && {
       podeGerenciarIntegrantes: false,

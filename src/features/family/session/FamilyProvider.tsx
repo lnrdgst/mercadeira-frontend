@@ -3,8 +3,13 @@ import { useSession } from '../../auth/session/sessionContext'
 import { buscarFamilias } from '../api/familyApi'
 import type { FamiliaResponse } from '../types/family'
 import { FamilyContext } from './familyContext'
-
-const storageKey = 'mercadeira.familia.selecionada'
+import {
+  clearFamilySelectionStorage,
+  hasManualFamilySelection,
+  persistInitialFamilySelection,
+  persistManualFamilySelection,
+  readSelectedFamilyId,
+} from './familySelectionStorage'
 
 export function FamilyProvider({ children }: { children: React.ReactNode }) {
   const { auth } = useSession()
@@ -17,7 +22,7 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
   const carregandoFamilias = Boolean(auth && tokenCarregado !== auth.token && !error) || loading
 
   const limparContexto = useCallback(() => {
-    localStorage.removeItem(storageKey)
+    clearFamilySelectionStorage()
     setFamilias([])
     setFamiliaSelecionada(null)
     setError(false)
@@ -33,7 +38,7 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
         return
       }
 
-      localStorage.setItem(storageKey, familia.id)
+      persistManualFamilySelection(familia.id)
       setFamiliaSelecionada(familia)
     },
     [familias],
@@ -51,27 +56,32 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
     try {
       const response = await buscarFamilias(auth.token)
       const items = response.data || []
-      const storedId = localStorage.getItem(storageKey)
+      const storedId = readSelectedFamilyId()
       const familiaPreferida = items.find((item) => item.id === familiaIdPreferido) || null
-      const familiaPersistida = items.find((item) => item.id === storedId) || null
+      const familiaManual = hasManualFamilySelection()
+        ? items.find((item) => item.id === storedId) || null
+        : null
+      const familiaPrincipal = items.find((item) => item.principal) || null
       let selecionada: FamiliaResponse | null = null
 
       setFamilias(items)
 
       if (items.length === 0) {
-        localStorage.removeItem(storageKey)
+        clearFamilySelectionStorage()
       } else if (items.length === 1) {
         selecionada = items[0]
       } else if (familiaPreferida) {
         selecionada = familiaPreferida
-      } else if (familiaPersistida) {
-        selecionada = familiaPersistida
+      } else if (familiaManual) {
+        selecionada = familiaManual
+      } else if (familiaPrincipal) {
+        selecionada = familiaPrincipal
       }
 
       if (selecionada) {
-        localStorage.setItem(storageKey, selecionada.id)
+        persistInitialFamilySelection(selecionada.id)
       } else {
-        localStorage.removeItem(storageKey)
+        clearFamilySelectionStorage()
       }
 
       setFamiliaSelecionada(selecionada)

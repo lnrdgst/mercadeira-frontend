@@ -165,7 +165,7 @@ export function FamiliaSelecionarPage() {
             >
               <p className="text-label-lg font-semibold">{familia.nome}</p>
               <p className="mt-1 text-body-md text-foreground-muted">
-                {papelLabel[familia.papel]}
+                {papelLabel[familia.papel]}{familia.principal ? ' · Principal' : ''}
               </p>
             </button>
           </li>

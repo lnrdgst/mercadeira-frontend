@@ -5,7 +5,7 @@ import { familyContextFixture, familyFixture, renderApp } from './helpers'
 
 function preparar() {
   const familiaA = familyFixture({ id: 'familia-a', nome: 'Família A', papel: 'ADMINISTRADOR' })
-  const familiaB = familyFixture({ id: 'familia-b', nome: 'Família B', papel: 'MEMBRO' })
+  const familiaB = familyFixture({ id: 'familia-b', nome: 'Família B', papel: 'MEMBRO', principal: true })
   const recarregarFamilias = vi.fn(async () => familiaA)
   const selecionarFamilia = vi.fn()
   const view = renderApp(<FamiliaSelecionarPage />, {
@@ -23,6 +23,7 @@ test('mantém as famílias atuais e abre os dois fluxos adicionais', async () =>
   const { familiaA, familiaB, user } = preparar()
   expect(screen.getByRole('button', { name: new RegExp(familiaA.nome) })).toBeVisible()
   expect(screen.getByRole('button', { name: new RegExp(familiaB.nome) })).toBeVisible()
+  expect(screen.getByRole('button', { name: new RegExp(`${familiaB.nome}.*Principal`) })).toBeVisible()
   await user.click(screen.getByRole('button', { name: 'Criar nova família' }))
   expect(screen.getByRole('dialog', { name: 'Criar nova família' })).toBeVisible()
   await user.click(screen.getByRole('button', { name: 'Cancelar' }))

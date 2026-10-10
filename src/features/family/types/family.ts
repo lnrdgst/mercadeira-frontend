@@ -10,6 +10,7 @@ export interface FamiliaResponse {
   codigoIngresso: string
   status: FamiliaStatus
   papel: PapelFamilia
+  principal: boolean
   contextoUsuario?: ContextoUsuarioFamiliaResponse
 }
 

@@ -13,6 +13,7 @@ import {
   excluirFamilia,
   transferirAdministracaoFamilia,
   atualizarPermissaoIniciarCompra,
+  definirFamiliaPrincipal,
 } from '../api/familyApi'
 import { ConfirmacaoSensivelDialog } from '../components/ConfirmacaoSensivelDialog'
 import { Modal } from '../../../shared/components/Modal'
@@ -60,6 +61,7 @@ export function FamiliaPage() {
   const [saidaBloqueada, setSaidaBloqueada] = useState<{ motivo: 'ADMINISTRADOR_UNICO' | 'COMPRA_EM_ANDAMENTO'; membroFamiliaId: string } | null>(null)
   const [remocaoBloqueada, setRemocaoBloqueada] = useState<MembroFamiliaResponse | null>(null)
   const [permissaoEmProcessamentoId, setPermissaoEmProcessamentoId] = useState<string | null>(null)
+  const [definindoPrincipal, setDefinindoPrincipal] = useState(false)
 
   const carregarSolicitacoes = useCallback(async (mostrarCarregamento = true) => {
     if (!auth || !familiaSelecionada || familiaSelecionada.contextoUsuario?.podeGerenciarIntegrantes !== true) {
@@ -335,6 +337,28 @@ export function FamiliaPage() {
     }
   }
 
+  async function tornarFamiliaPrincipal() {
+    if (!auth || familia.principal || definindoPrincipal) return
+
+    setDefinindoPrincipal(true)
+    setFeedback(null)
+
+    try {
+      await definirFamiliaPrincipal(auth.token, familia.id)
+      await recarregarFamilias(familia.id)
+      setFeedback('Família definida como principal.')
+    } catch (error) {
+      const apiError = error as ApiRequestError
+      if (apiError.status === 401) {
+        logout()
+        return
+      }
+      setFeedback(apiError.message || 'Não foi possível definir a família principal.')
+    } finally {
+      setDefinindoPrincipal(false)
+    }
+  }
+
   return (
     <section className="mx-auto max-w-2xl space-y-page py-page">
       <header className="space-y-2">
@@ -347,6 +371,18 @@ export function FamiliaPage() {
             {papelLabel[familiaSelecionada.papel]}
           </span>
         </div>
+        {familia.principal ? (
+          <p className="text-label-lg font-semibold text-primary">✓ Família principal</p>
+        ) : (
+          <button
+            type="button"
+            onClick={() => void tornarFamiliaPrincipal()}
+            disabled={definindoPrincipal}
+            className="min-h-touch rounded-control border border-primary px-gutter text-label-lg font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {definindoPrincipal ? 'Definindo...' : 'Tornar família principal'}
+          </button>
+        )}
       </header>
 
       {feedback && (

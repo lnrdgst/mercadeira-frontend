@@ -6,6 +6,7 @@ import { registerAuthRecovery } from '../../../shared/api/authRecovery'
 import { clearStoredAuthSession, hasValidFutureExpiration, persistAuthSession, readStoredAuthSession } from './authStorage'
 import { SessionContext } from './sessionContext'
 import { removerFiltrosDoUsuarioAtual } from '../../shopping-lists/session/listasFiltersStorage'
+import { clearFamilySelectionStorage } from '../../family/session/familySelectionStorage'
 
 export type SessionStatus = 'initializing' | 'unauthenticated' | 'authenticated'
 
@@ -29,6 +30,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
   const encerrarSessao = useCallback(() => {
     removerFiltrosDoUsuarioAtual()
+    clearFamilySelectionStorage()
     clearStoredAuthSession()
     atualizarSessao('unauthenticated', null)
   }, [atualizarSessao])

@@ -6,6 +6,7 @@ import { ListasPage } from '../src/features/shopping-lists/pages/ListasPage'
 import { deferred, familyFixture, renderApp } from './helpers'
 
 const storageKey = 'mercadeira.familia.selecionada'
+const manualSelectionSessionKey = 'mercadeira.familia.selecao-manual'
 const familiaA = familyFixture()
 const familiaB = familyFixture({ id: 'familia-b', nome: 'Família B', codigoIngresso: 'TESTE-B' })
 
@@ -17,12 +18,12 @@ function SeletorFamilia() {
   </>
 }
 
-test('restaura apenas o ID persistido, usando os dados atuais retornados pela API', async () => {
+test('a família principal prevalece sobre um ID antigo persistido na entrada', async () => {
   localStorage.setItem(storageKey, familiaB.id)
-  const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json([familiaA, { ...familiaB, nome: 'Nome atualizado' }]))
+  const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json([{ ...familiaA, principal: true }, { ...familiaB, nome: 'Nome atualizado' }]))
   renderApp(<FamilyProvider><SeletorFamilia /></FamilyProvider>)
-  await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Nome atualizado'))
-  expect(localStorage.getItem(storageKey)).toBe(familiaB.id)
+  await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent(familiaA.nome))
+  expect(localStorage.getItem(storageKey)).toBe(familiaA.id)
   expect(fetchMock).toHaveBeenCalledWith(expect.stringMatching(/\/familias$/), expect.objectContaining({ method: 'GET' }))
 })
 
@@ -40,6 +41,7 @@ test.each([
 
 test('trocar família persiste a escolha e descarta da tela as listas do contexto anterior', async () => {
   localStorage.setItem(storageKey, familiaA.id)
+  sessionStorage.setItem(manualSelectionSessionKey, 'true')
   const listasB = deferred<Response>()
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
     const path = String(input)
@@ -61,4 +63,12 @@ test('trocar família persiste a escolha e descarta da tela as listas do context
   ])))
   expect(await screen.findByRole('heading', { name: 'Compras exclusivas B' })).toBeInTheDocument()
   expect(screen.queryByRole('heading', { name: 'Compras exclusivas A' })).not.toBeInTheDocument()
+})
+
+test('preserva a troca manual após reload na mesma sessão', async () => {
+  localStorage.setItem(storageKey, familiaB.id)
+  sessionStorage.setItem(manualSelectionSessionKey, 'true')
+  vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json([{ ...familiaA, principal: true }, familiaB]))
+  renderApp(<FamilyProvider><SeletorFamilia /></FamilyProvider>)
+  await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent(familiaB.nome))
 })

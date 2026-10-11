@@ -7,7 +7,7 @@ import { buscarSugestoesItens } from '../../shopping-lists/api/shoppingListsApi'
 import type { AdicionarItemCompraRequest } from '../types/shopping'
 import type { CategoriaCompra } from '../../shopping-lists/types/shoppingList'
 
-export function AdicionarItemCompraDialog({ onAdicionar, listaId, categoria }: { onAdicionar: (data: AdicionarItemCompraRequest) => Promise<void>; listaId: string; categoria: CategoriaCompra }) {
+export function AdicionarItemCompraDialog({ onAdicionar, listaId, categoria, solicitacaoRemota = false, bloqueada = false }: { onAdicionar: (data: AdicionarItemCompraRequest) => Promise<void>; listaId: string; categoria: CategoriaCompra; solicitacaoRemota?: boolean; bloqueada?: boolean }) {
   const { auth, logout } = useSession()
   const { familiaSelecionada } = useFamilyContext()
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -44,16 +44,16 @@ export function AdicionarItemCompraDialog({ onAdicionar, listaId, categoria }: {
     } catch (error) {
       const apiError = error as ApiRequestError
       if (apiError.status === 401) logout()
-      else setErro(apiError.message || 'Não foi possível adicionar o item.')
+      else setErro(apiError.message || (solicitacaoRemota ? 'Não foi possível enviar a solicitação.' : 'Não foi possível adicionar o item.'))
     } finally { enviandoRef.current = false; setEnviando(false) }
   }
 
   return <>
-    <button ref={openerRef} type="button" onClick={() => { 
+    <button ref={openerRef} type="button" disabled={bloqueada} onClick={() => {
       scrollRef.current = window.scrollY; setErro(null); setAberto(true); dialogRef.current?.showModal() }} 
                   className="mt-gutter flex min-h-touch w-full items-center justify-center gap-2 rounded-control border-2 border-primary bg-surface px-page font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
 
-  Adicionar novo item à compra
+  {solicitacaoRemota ? '+ Solicitar novo item' : 'Adicionar novo item à compra'}
   <svg
                     aria-hidden="true"
                     viewBox="0 0 24 24"
@@ -65,9 +65,9 @@ export function AdicionarItemCompraDialog({ onAdicionar, listaId, categoria }: {
                     <path d="m6 9 6 6 6-6" />
                   </svg>
 </button>
-    <dialog ref={dialogRef} aria-label="Adicionar item à compra" onCancel={(event) => { if (enviandoRef.current) event.preventDefault() }} onClose={() => { setAberto(false); requestAnimationFrame(() => { window.scrollTo({ top: scrollRef.current, behavior: 'auto' }); openerRef.current?.focus({ preventScroll: true }) }) }} className="m-auto flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-xl flex-col overflow-hidden rounded-card bg-surface p-0 text-foreground shadow-soft backdrop:bg-foreground/40">
+    <dialog ref={dialogRef} aria-label={solicitacaoRemota ? 'Solicitar novo item' : 'Adicionar item à compra'} onCancel={(event) => { if (enviandoRef.current) event.preventDefault() }} onClose={() => { setAberto(false); requestAnimationFrame(() => { window.scrollTo({ top: scrollRef.current, behavior: 'auto' }); openerRef.current?.focus({ preventScroll: true }) }) }} className="m-auto flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-xl flex-col overflow-hidden rounded-card bg-surface p-0 text-foreground shadow-soft backdrop:bg-foreground/40">
       {erro && <p role="alert" className="mx-page mt-page rounded-control bg-error/10 p-gutter text-error">{erro}</p>}
-      {aberto && <ItemFieldsForm stickyActions submitting={enviando} loadSuggestions={carregarSugestoes} onCancel={fechar} onSubmit={adicionar} />}
+      {aberto && <ItemFieldsForm stickyActions solicitacaoRemota={solicitacaoRemota} submitting={enviando || bloqueada} loadSuggestions={carregarSugestoes} onCancel={fechar} onSubmit={adicionar} />}
     </dialog>
   </>
 }

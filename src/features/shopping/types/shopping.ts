@@ -34,6 +34,8 @@ export interface ContextoUsuarioCompraResponse {
   podeAdicionarItemDuranteCompra?: boolean
   podeTransferirResponsabilidade?: boolean
   podeGerenciarRegistrosFinanceiros?: boolean
+  podeSolicitarItemRemoto?: boolean
+  podeDecidirSolicitacoesItens?: boolean
 }
 
 export interface ReferenciaParticipanteCompra {
@@ -117,6 +119,21 @@ export interface AdicionarItemCompraRequest {
   observacoes: string | null
 }
 
+export type SolicitarItemCompraRequest = Pick<AdicionarItemCompraRequest, 'descricao' | 'quantidade' | 'unidadeMedida'>
+
+export interface SolicitacaoItemCompraResponse {
+  id: string
+  descricao: string
+  quantidade: number | null
+  unidadeMedida: UnidadeMedida | null
+  status: 'PENDENTE' | 'APROVADA' | 'RECUSADA'
+  criadoEm: string
+  solicitanteParticipanteCompraId: string
+  solicitante: { id: string; nome: string }
+  decididoEm: string | null
+  decisor: { id: string; nome: string } | null
+}
+
 export interface ItemCompraResponse {
   id: string
   itemListaOrigemId?: string | null
@@ -157,6 +174,7 @@ export interface CompraResponse {
   solicitacoesPresencaPendentes?: SolicitacaoPresencaResponse[]
   minhaSolicitacaoResponsabilidade?: SolicitacaoResponsabilidadeResponse | null
   solicitacoesResponsabilidadePendentes?: SolicitacaoResponsabilidadeResponse[]
+  solicitacoesItensPendentes?: SolicitacaoItemCompraResponse[]
   participantes: ParticipanteCompraResponse[]
   itens: ItemCompraResponse[]
   registrosFinanceiros?: RegistroFinanceiroCompraResponse[]

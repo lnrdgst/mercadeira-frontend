@@ -1128,3 +1128,8 @@ Não exclua itens `REMOVIDO` da coleção local.
 Não infira ausência de histórico de remoção apenas pelo status `NO_CARRINHO`.
 
 Use o `ItemCompraResponse` completo como fonte da mutação confirmada e o GET da Compra como fonte de recuperação e reconciliação.
+
+## Solicitação de item remoto
+
+Fluxo na Compra em andamento, contrato e validação:
+[Solicitação de item remoto](docs/solicitacao-item-remoto.md).

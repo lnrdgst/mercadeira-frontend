@@ -16,27 +16,42 @@ interface ItemFieldsFormProps {
   item?: ItemFieldsValues
   submitting: boolean
   stickyActions?: boolean
+  solicitacaoRemota?: boolean
   onCancel: () => void
   onSubmit: (data: ItemFieldsValues) => Promise<void>
 }
 
 const unidades = Object.keys(unidadeMedidaLabels) as UnidadeMedida[]
 
-export function ItemFieldsForm({ item, submitting, stickyActions = false, onCancel, onSubmit, loadSuggestions }: ItemFieldsFormProps) {
+export function ItemFieldsForm({ item, submitting, stickyActions = false, solicitacaoRemota = false, onCancel, onSubmit, loadSuggestions }: ItemFieldsFormProps) {
   const [descricao, setDescricao] = useState(item?.descricao || '')
   const [unidadeMedida, setUnidadeMedida] = useState<UnidadeMedida | ''>(item?.unidadeMedida || '')
   const [marca, setMarca] = useState(item?.marca || '')
   const [observacoes, setObservacoes] = useState(item?.observacoes || '')
 
   const [quantidade, setQuantidade] = useState(item?.quantidade?.toString() ?? '')
+  const [erroValidacao, setErroValidacao] = useState<string | null>(null)
+  const quantidadeMaxima = solicitacaoRemota ? 999999999.999 : 99999
+  const titulo = solicitacaoRemota ? 'Solicitar novo item' : item ? 'Modficar item' : 'Adicionar item'
+  const textoConfirmar = solicitacaoRemota ? 'Enviar solicitação' : item ? 'Salvar alterações' : 'Adicionar'
 
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (submitting) return
+    setErroValidacao(null)
     const quantidadeNumerica = quantidade.trim() === '' ? null : Number(quantidade)
 
     if (quantidadeNumerica !== null && !Number.isFinite(quantidadeNumerica)) {
+      return
+    }
+
+    if (solicitacaoRemota && (!descricao.trim() || descricao.trim().length > 200)) {
+      setErroValidacao('Informe uma descrição de até 200 caracteres.')
+      return
+    }
+    if (solicitacaoRemota && quantidadeNumerica !== null && (quantidadeNumerica < 0.001 || quantidadeNumerica > quantidadeMaxima || !/^\d+(?:\.\d{1,3})?$/.test(quantidade))) {
+      setErroValidacao('Informe uma quantidade positiva com até três casas decimais, ou deixe em branco.')
       return
     }
 
@@ -53,19 +68,21 @@ export function ItemFieldsForm({ item, submitting, stickyActions = false, onCanc
     const atual = Number(quantidade) || 0
 
     const novaQuantidade = Math.min(
-      99999,
+      quantidadeMaxima,
       Math.max(0, atual + delta),
     )
 
     setQuantidade(
-      String(Math.round(novaQuantidade * 10) / 10),
+      String(solicitacaoRemota ? Math.round(novaQuantidade * 1000) / 1000 : Math.round(novaQuantidade * 10) / 10),
     )
   }
 
   return (
     <form onSubmit={handleSubmit} className={stickyActions ? 'flex min-h-0 flex-1 flex-col' : 'space-y-gutter'}>
       <div className={stickyActions ? 'min-h-0 flex-1 space-y-gutter overflow-y-auto p-page' : 'space-y-gutter'}>
-        <h2 className="text-headline-md font-semibold">{item ? 'Modficar item' : 'Adicionar item'}</h2>
+        <h2 className="text-headline-md font-semibold">{titulo}</h2>
+        {solicitacaoRemota && <p className="text-foreground-muted">O responsável pela compra poderá aprovar ou recusar.</p>}
+        {erroValidacao && <p role="alert" className="text-error">{erroValidacao}</p>}
         <div className="space-y-1">
           <label htmlFor="item-descricao" className="block text-label-lg font-semibold">Descrição</label>
           {loadSuggestions ? <ItemDescriptionCombobox value={descricao} disabled={submitting} load={loadSuggestions} onChange={setDescricao} onSelect={(item) => { setDescricao(item.descricao); setUnidadeMedida(item.unidadeMedida || '') }} /> : <input id="item-descricao" value={descricao} onChange={(event) => setDescricao(event.target.value)} required autoFocus disabled={submitting} className="min-h-touch w-full rounded-card border border-foreground/20 bg-background px-gutter focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60" />}
@@ -108,14 +125,14 @@ export function ItemFieldsForm({ item, submitting, stickyActions = false, onCanc
 
                     const numero = Number(valor)
 
-                    if (numero >= 0 && numero <= 99999) {
+                    if (numero >= 0 && numero <= quantidadeMaxima) {
                       setQuantidade(valor)
                     }
                   }}
                   type="number"
-                  min="0"
-                  max="99999"
-                  step="0.5"
+                  min={solicitacaoRemota ? '0.001' : '0'}
+                  max={quantidadeMaxima}
+                  step={solicitacaoRemota ? '0.001' : '0.5'}
                   disabled={submitting}
                   placeholder="0"
                   className="min-w-0 flex-1 bg-transparent px-1 text-center font-semibold outline-none disabled:opacity-60"
@@ -124,7 +141,7 @@ export function ItemFieldsForm({ item, submitting, stickyActions = false, onCanc
                 <button
                   type="button"
                   onClick={() => alterarQuantidade(0.5)}
-                  disabled={submitting || Number(quantidade) >= 99999}
+                  disabled={submitting || Number(quantidade) >= quantidadeMaxima}
                   aria-label="Aumentar quantidade"
                   className="flex min-w-touch items-center justify-center border-l border-foreground/20 text-xl font-semibold text-foreground transition-colors hover:bg-foreground/5 disabled:opacity-40"
                 >
@@ -162,6 +179,7 @@ export function ItemFieldsForm({ item, submitting, stickyActions = false, onCanc
             </div>
           </div>
         </div>
+        {!solicitacaoRemota && <>
         <div className="space-y-1">
           <label htmlFor="item-marca" className="block text-label-lg font-semibold">Marca</label>
           <input id="item-marca" value={marca} onChange={(event) => setMarca(event.target.value)} disabled={submitting} className="min-h-touch w-full rounded-card border border-foreground/20 bg-background px-gutter focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60" />
@@ -170,9 +188,10 @@ export function ItemFieldsForm({ item, submitting, stickyActions = false, onCanc
           <label htmlFor="item-observacoes" className="block text-label-lg font-semibold">Observações</label>
           <textarea id="item-observacoes" value={observacoes} onChange={(event) => setObservacoes(event.target.value)} disabled={submitting} rows={3} className="w-full rounded-card border border-foreground/20 bg-background p-gutter focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60" />
         </div>
+        </>}
       </div>
       <div className={stickyActions ? 'sticky bottom-0 grid shrink-0 grid-cols-2 gap-gutter border-t border-foreground/10 bg-surface px-page pt-gutter pb-[max(env(safe-area-inset-bottom),1rem)]' : 'grid gap-gutter sm:grid-cols-2'}>
-        <button type="submit" disabled={submitting} className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60">{submitting ? 'Salvando...' : item ? 'Salvar alterações' : 'Adicionar'}</button>
+        <button type="submit" disabled={submitting} className="min-h-touch rounded-control bg-primary px-page font-semibold text-surface disabled:opacity-60">{submitting ? (solicitacaoRemota ? 'Enviando...' : 'Salvando...') : textoConfirmar}</button>
         <button type="button" onClick={onCancel} disabled={submitting} className="min-h-touch rounded-control border border-foreground/20 px-page font-semibold text-foreground">Cancelar</button>
       </div>
     </form>

@@ -6,8 +6,9 @@ import { useSession } from '../../auth/session/sessionContext'
 import { useAuthenticatedUser } from '../../auth/user/AuthenticatedUserContext'
 import { useFamilyContext } from '../../family/session/familyContext'
 import { categoriaCompraLabels } from '../../shopping-lists/types/shoppingList'
-import { adicionarItemCompra, alterarMinhaPresenca, atualizarDadosItemCompra, buscarCompra, cancelarSolicitacaoPresenca, cancelarSolicitacaoResponsabilidade, colocarItemNoCarrinho, decidirSolicitacaoPresenca, decidirSolicitacaoResponsabilidade, removerItemCompra, restaurarItemNoCarrinho, solicitarMinhaPresenca, solicitarResponsabilidade, transferirResponsabilidade } from '../api/shoppingApi'
+import { adicionarItemCompra, alterarMinhaPresenca, atualizarDadosItemCompra, buscarCompra, cancelarSolicitacaoPresenca, cancelarSolicitacaoResponsabilidade, colocarItemNoCarrinho, decidirSolicitacaoItemCompra, decidirSolicitacaoPresenca, decidirSolicitacaoResponsabilidade, removerItemCompra, restaurarItemNoCarrinho, solicitarItemCompra, solicitarMinhaPresenca, solicitarResponsabilidade, transferirResponsabilidade } from '../api/shoppingApi'
 import { AdicionarItemCompraDialog } from '../components/AdicionarItemCompraDialog'
+import { SolicitacoesItensCompra } from '../components/SolicitacoesItensCompra'
 import { ItemCompraCard } from '../components/ItemCompraCard'
 import { CompraProgresso } from '../components/CompraProgresso'
 import { MinhaPresenca } from '../components/MinhaPresenca'
@@ -36,6 +37,8 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
   const ultimaOperacao = useRef(0)
   const finalRef = useRef<HTMLDivElement>(null)
   const [ocupada, setOcupada] = useState(false)
+  const [feedbackSolicitacao, setFeedbackSolicitacao] = useState<string | null>(null)
+  const [erroAtualizacaoSolicitacoes, setErroAtualizacaoSolicitacoes] = useState<string | null>(null)
   useEffect(() => { ativo.current = true; return () => { ativo.current = false } }, [])
 
   // Serializar comandos e reconciliações evita aplicar GET anterior a uma mutação posterior.
@@ -106,6 +109,7 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
         const atualizada = await buscarCompra(token, familiaId, listaId, controller.signal)
         if (encerrado || controller.signal.aborted || versao !== geracao.current) return
         setResultado((atual) => atual?.chave === chave && atual.token === token && atual.compra?.id === atualizada.id ? { ...atual, compra: atualizada } : atual)
+        setErroAtualizacaoSolicitacoes(null)
         if (atualizada.status !== 'EM_ANDAMENTO') { encerrado = true; clearInterval(timer) }
       } catch (error) {
         if (encerrado || controller.signal.aborted || versao !== geracao.current) return
@@ -179,11 +183,47 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
 
   function atualizarCompra(atualizada: CompraResponse) {
     if (!ativo.current) return
+    setErroAtualizacaoSolicitacoes(null)
     setResultado((atual) => atual?.chave === chave && atual.token === token && atual.compra?.id === atualizada.id ? { ...atual, compra: atualizada } : atual)
   }
 
   async function reconciliarCompra() {
     await executar(async () => atualizarCompra(await buscarCompra(token, familiaId, listaId)))
+  }
+
+  // Um POST confirmado não deve ser reenviado se somente o GET de reconciliação falhar.
+  async function atualizarAposSolicitacao() {
+    try { atualizarCompra(await buscarCompra(token, familiaId, listaId)) }
+    catch (error) {
+      if (!ativo.current) return
+      if ((error as ApiRequestError).status === 401) { logout(); return }
+      setErroAtualizacaoSolicitacoes('A operação foi confirmada, mas não foi possível atualizar a compra. Atualize para conferir o resultado.')
+    }
+  }
+
+  async function solicitarNovoItem(data: AdicionarItemCompraRequest) {
+    if (compra?.contextoUsuario.podeSolicitarItemRemoto !== true || erroAtualizacaoSolicitacoes) throw new Error('A solicitação de item não está disponível. Atualize a compra.')
+    await executar(async () => {
+      await solicitarItemCompra(token, compra.id, data)
+      if (ativo.current) setFeedbackSolicitacao('Solicitação enviada. O responsável pela compra poderá aprovar ou recusar.')
+      await atualizarAposSolicitacao()
+    })
+  }
+
+  async function decidirNovoItem(id: string, decisao: 'aprovar' | 'recusar') {
+    if (compra?.contextoUsuario.podeDecidirSolicitacoesItens !== true || erroAtualizacaoSolicitacoes) throw new Error('A decisão não está disponível. Atualize a compra.')
+    await executar(async () => {
+      await decidirSolicitacaoItemCompra(token, compra.id, id, decisao)
+      await atualizarAposSolicitacao()
+    })
+  }
+
+  async function tentarAtualizarSolicitacoes() {
+    try { await reconciliarCompra() }
+    catch (error) {
+      if ((error as ApiRequestError).status === 401) logout()
+      else if (ativo.current) setErroAtualizacaoSolicitacoes('Não foi possível atualizar a compra. Tente novamente.')
+    }
   }
 
   async function solicitarPresenca() {
@@ -347,6 +387,13 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
 
           <CompraProgresso itens={compra.itens} totalItensComprados={compra.totalItensComprados} quantidadeItensNoCarrinhoSemPreco={compra.quantidadeItensNoCarrinhoSemPreco} />
 
+          {feedbackSolicitacao && <p role="status" className="rounded-card bg-primary/10 p-gutter text-primary">{feedbackSolicitacao}</p>}
+          {erroAtualizacaoSolicitacoes && <div role="alert" className="space-y-2 rounded-card bg-error/10 p-gutter text-error">
+            <p>{erroAtualizacaoSolicitacoes}</p>
+            <button type="button" disabled={ocupada} onClick={() => void tentarAtualizarSolicitacoes()} className="min-h-touch rounded-control border border-current px-page font-semibold disabled:opacity-60">Atualizar compra</button>
+          </div>}
+          <SolicitacoesItensCompra compra={compra} usuarioId={!usuarioCarregando && !usuarioErro ? usuario?.id : undefined} bloqueada={ocupada || erroAtualizacaoSolicitacoes !== null} onDecidir={decidirNovoItem} />
+
           <EncerramentoAdministrativoCompra compra={compra} token={token} familiaId={familiaId} listaId={listaId} bloqueada={ocupada} executar={executar} onSucesso={() => navigate('/inicio', { replace: true })} onReconciliar={reconciliarCompra} onNaoAutorizado={logout} />
 
           <fieldset
@@ -354,7 +401,9 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
             className="min-w-0 space-y-gutter"
             aria-labelledby="compra-itens"
           >
-            {(compra.contextoUsuario.podeAdicionarItemDuranteCompra ?? compra.contextoUsuario.participanteCompra) && (
+            {compra.contextoUsuario.podeSolicitarItemRemoto === true ? (
+              <AdicionarItemCompraDialog key={`${chave}:solicitacao`} listaId={listaId} categoria={compra.categoria} solicitacaoRemota bloqueada={ocupada || erroAtualizacaoSolicitacoes !== null} onAdicionar={solicitarNovoItem} />
+            ) : (compra.contextoUsuario.podeAdicionarItemDuranteCompra ?? compra.contextoUsuario.participanteCompra) && (
               <AdicionarItemCompraDialog
                 key={chave}
                 listaId={listaId}

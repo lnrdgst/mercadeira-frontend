@@ -1,5 +1,24 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import type { AcaoRemocaoItemCompra, AdicionarItemCompraRequest, AdicionarRegistroFinanceiroCompraRequest, AtualizarDadosItemCompraRequest, CompraResponse, DeclaracaoPresenca, ItemCompraResponse } from '../types/shopping'
+import type { AcaoRemocaoItemCompra, AdicionarItemCompraRequest, AdicionarRegistroFinanceiroCompraRequest, AtualizarDadosItemCompraRequest, CompraResponse, DeclaracaoPresenca, ItemCompraResponse, SolicitacaoItemCompraResponse, SolicitarItemCompraRequest } from '../types/shopping'
+
+export async function solicitarItemCompra(token: string, compraId: string, data: SolicitarItemCompraRequest) {
+  const { descricao, quantidade, unidadeMedida } = data
+  const response = await apiRequest<SolicitacaoItemCompraResponse>(
+    `/compras/${compraId}/solicitacoes-itens`,
+    { token, method: 'POST', body: { descricao, quantidade, unidadeMedida } },
+  )
+  if (response.status !== 201 || !response.data) throw new Error('Não foi possível confirmar a solicitação. Atualize a compra antes de tentar novamente.')
+  return response.data
+}
+
+export async function decidirSolicitacaoItemCompra(token: string, compraId: string, solicitacaoId: string, decisao: 'aprovar' | 'recusar') {
+  const response = await apiRequest<SolicitacaoItemCompraResponse>(
+    `/compras/${compraId}/solicitacoes-itens/${solicitacaoId}/${decisao}`,
+    { token, method: 'POST' },
+  )
+  if (response.status !== 200 || !response.data) throw new Error('Não foi possível confirmar a decisão. Atualize a compra antes de tentar novamente.')
+  return response.data
+}
 
 export async function alterarMinhaPresenca(token: string, familiaId: string, listaId: string, estado: DeclaracaoPresenca) {
   const response = await apiRequest<CompraResponse>(

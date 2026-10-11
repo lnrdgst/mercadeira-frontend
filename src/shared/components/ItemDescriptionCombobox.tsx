@@ -2,12 +2,13 @@ import { useEffect, useId, useRef, useState } from 'react'
 import type { UnidadeMedida } from '../../features/shopping-lists/types/shoppingList'
 import { unidadeMedidaLabels } from '../../features/shopping-lists/types/shoppingList'
 
-export interface ItemSuggestion { descricao: string; unidadeMedida: UnidadeMedida | null }
+export interface ItemSuggestion { descricao: string; unidadeMedida?: UnidadeMedida | null }
 export type LoadItemSuggestions = (termo: string) => Promise<ItemSuggestion[]>
 
-export function ItemDescriptionCombobox({ value, disabled, onChange, onSelect, load }: {
+export function ItemDescriptionCombobox({ value, disabled, onChange, onSelect, load, id: inputId = 'item-descricao', placeholder, required = true, permitirTextoLivre = true, mostrarUnidade = true }: {
   value: string; disabled: boolean; onChange: (value: string) => void
   onSelect: (item: ItemSuggestion) => void; load: LoadItemSuggestions
+  id?: string; placeholder?: string; required?: boolean; permitirTextoLivre?: boolean; mostrarUnidade?: boolean
 }) {
   const id = useId()
   const input = useRef<HTMLInputElement>(null)
@@ -45,9 +46,9 @@ export function ItemDescriptionCombobox({ value, disabled, onChange, onSelect, l
   }
 
   return <div className="relative z-10">
-    <input ref={input} id="item-descricao" role="combobox" aria-autocomplete="list" aria-expanded={expanded}
+    <input ref={input} id={inputId} role="combobox" aria-autocomplete="list" aria-expanded={expanded}
       aria-controls={expanded ? id : undefined} aria-activedescendant={expanded && items[active] ? `${id}-${active}` : undefined}
-      aria-describedby={`${id}-hint`} autoComplete="off" value={value} required disabled={disabled} maxLength={200}
+      aria-describedby={`${id}-hint`} autoComplete="off" value={value} required={required} disabled={disabled} maxLength={200} placeholder={placeholder}
       onFocus={() => { setResult(null); setOpen(true) }} onBlur={() => { setOpen(false); setActive(-1) }}
       onChange={(event) => { onChange(event.target.value); setActive(-1); setOpen(true) }}
       onKeyDown={(event) => {
@@ -58,15 +59,15 @@ export function ItemDescriptionCombobox({ value, disabled, onChange, onSelect, l
           if (items.length) setActive((previous) => event.key === 'ArrowDown' ? (previous + 1) % items.length : (previous <= 0 ? items.length : previous) - 1)
         } else if (event.key === 'Enter' && expanded && items[active]) { event.preventDefault(); select(items[active]) }
       }} className="min-h-touch w-full rounded-card border border-foreground/20 bg-background px-gutter focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60" />
-    <p id={`${id}-hint`} className="text-label-md text-foreground-muted">Escolha uma sugestão ou digite um novo item.</p>
-    {expanded && <div className="relative z-10 mt-1 rounded-card border border-foreground/20 bg-surface p-2">
+    <p id={`${id}-hint`} className="text-label-md text-foreground-muted">{permitirTextoLivre ? 'Escolha uma sugestão ou digite um novo item.' : 'Escolha uma sugestão para filtrar as listas.'}</p>
+    {expanded && <div className="relative z-20 mt-1 rounded-card border border-foreground/20 bg-surface p-2">
       <p className="text-label-md text-foreground-muted">Sugestões da família</p>
-      <p role="status" className="text-label-md text-foreground-muted">{!podeBuscar ? 'Digite ao menos 2 caracteres para buscar sugestões.' : loading ? 'Buscando sugestões...' : result?.error ? 'Não foi possível carregar sugestões. Você pode continuar digitando.' : items.length === 0 ? 'Nenhuma sugestão. Você pode cadastrar um novo item.' : ''}</p>
+      <p role="status" className="text-label-md text-foreground-muted">{!podeBuscar ? 'Digite ao menos 2 caracteres para buscar sugestões.' : loading ? 'Buscando sugestões...' : result?.error ? permitirTextoLivre ? 'Não foi possível carregar sugestões. Você pode continuar digitando.' : 'Não foi possível carregar sugestões.' : items.length === 0 ? permitirTextoLivre ? 'Nenhuma sugestão. Você pode cadastrar um novo item.' : 'Nenhum item encontrado.' : ''}</p>
       <ul ref={list} id={id} role="listbox" aria-label="Sugestões de itens" className="max-h-56 overflow-y-auto">
         {items.map((item, index) => <li key={item.descricao} id={`${id}-${index}`} role="option" aria-selected={active === index}
           onPointerDown={(event) => event.preventDefault()} onClick={() => select(item)}
           className={`flex min-h-touch cursor-pointer items-center justify-between gap-2 rounded-card px-gutter ${active === index ? 'bg-primary/10 text-primary' : 'hover:bg-foreground/5'}`}>
-          <span>{item.descricao}</span><span className="text-label-md">{item.unidadeMedida ? unidadeMedidaLabels[item.unidadeMedida] : 'Sem unidade'}</span>
+          <span>{item.descricao}</span>{mostrarUnidade && <span className="text-label-md">{item.unidadeMedida ? unidadeMedidaLabels[item.unidadeMedida] : 'Sem unidade'}</span>}
         </li>)}
       </ul>
     </div>}

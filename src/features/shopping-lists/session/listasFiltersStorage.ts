@@ -2,7 +2,7 @@ import type { FiltrosListas } from '../api/shoppingListsApi'
 
 const prefixo = 'mercadeira:listas:filtros:'
 const usuarioAtualKey = 'mercadeira:listas:filtros:usuario-atual'
-const campos = ['criadaDe', 'criadaAte', 'criadaPorUsuarioId', 'participanteMembroFamiliaId'] as const
+const campos = ['criadaDe', 'criadaAte', 'item', 'participanteMembroFamiliaId'] as const
 
 function chave(usuarioId: string, familiaId: string) { return `${prefixo}${usuarioId}:${familiaId}` }
 

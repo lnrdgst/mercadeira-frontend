@@ -10,8 +10,10 @@ import {
     buscarHistoricoListas,
     buscarListas,
     buscarMembrosFamilia,
+    buscarSugestoesItensDaFamilia,
     type FiltrosListas,
 } from "../api/shoppingListsApi";
+import { ItemDescriptionCombobox } from "../../../shared/components/ItemDescriptionCombobox";
 import { useFamilyContext } from "../../family/session/familyContext";
 import type {
     HistoricoListaCompraItemResponse,
@@ -96,7 +98,7 @@ export function ListasPage() {
     const [filtros, setFiltros] = useState<FiltrosListas>(() => ({
         criadaDe: searchParams.get("dataInicial") || undefined,
         criadaAte: searchParams.get("dataFinal") || undefined,
-        criadaPorUsuarioId: searchParams.get("criadaPor") || undefined,
+        item: searchParams.get("item") || undefined,
         participanteMembroFamiliaId:
             searchParams.get("participante") || undefined,
     }));
@@ -110,6 +112,7 @@ export function ListasPage() {
         final: "",
     });
     const [tentouAplicar, setTentouAplicar] = useState(false);
+    const [textoItem, setTextoItem] = useState("");
     const [listas, setListas] = useState<ListaCompraResumoResponse[]>([]);
     const [familiaCarregadaId, setFamiliaCarregadaId] = useState<string | null>(
         null,
@@ -130,13 +133,13 @@ export function ListasPage() {
     const filtrosDaUrl = useCallback((): FiltrosListas => ({
         criadaDe: searchParams.get('dataInicial') || undefined,
         criadaAte: searchParams.get('dataFinal') || undefined,
-        criadaPorUsuarioId: searchParams.get('criadaPor') || undefined,
+        item: searchParams.get('item') || undefined,
         participanteMembroFamiliaId: searchParams.get('participante') || undefined,
     }), [searchParams]);
 
     useEffect(() => {
         if (!auth || !usuario?.id || !familiaSelecionada) return;
-        const urlExplicita = ['dataInicial', 'dataFinal', 'criadaPor', 'participante'].some((parametro) => searchParams.has(parametro));
+        const urlExplicita = ['dataInicial', 'dataFinal', 'item', 'participante'].some((parametro) => searchParams.has(parametro));
         const candidata = urlExplicita ? filtrosDaUrl() : lerFiltrosListas(usuario.id, familiaSelecionada.id);
         void buscarMembrosFamilia(auth.token, familiaSelecionada.id).then((resposta) => {
             const integrantes = resposta.data || [];
@@ -144,7 +147,7 @@ export function ListasPage() {
             const saneados: FiltrosListas = {
                 criadaDe: dataValida(candidata.criadaDe) ? candidata.criadaDe : undefined,
                 criadaAte: dataValida(candidata.criadaAte) ? candidata.criadaAte : undefined,
-                criadaPorUsuarioId: integrantes.some((membro) => membro.usuarioId === candidata.criadaPorUsuarioId) ? candidata.criadaPorUsuarioId : undefined,
+                item: candidata.item?.trim() || undefined,
                 participanteMembroFamiliaId: integrantes.some((membro) => membro.membroFamiliaId === candidata.participanteMembroFamiliaId) ? candidata.participanteMembroFamiliaId : undefined,
             };
             setFiltros(saneados);
@@ -258,13 +261,12 @@ export function ListasPage() {
 
     useEffect(() => {
         const precisaResolverMembros = modalFiltrosAberto
-            || Boolean(filtros.participanteMembroFamiliaId)
-            || Boolean(filtros.criadaPorUsuarioId);
+            || Boolean(filtros.participanteMembroFamiliaId);
         if (!auth || !familiaSelecionada || !precisaResolverMembros) return;
         void buscarMembrosFamilia(auth.token, familiaSelecionada.id)
             .then((response) => setMembros(response.data || []))
             .catch(() => setMembros([]));
-    }, [auth, familiaSelecionada, modalFiltrosAberto, filtros.participanteMembroFamiliaId, filtros.criadaPorUsuarioId]);
+    }, [auth, familiaSelecionada, modalFiltrosAberto, filtros.participanteMembroFamiliaId]);
 
     function atualizarFiltros(parcial: Partial<FiltrosListas>) {
         const proximos = { ...filtros, ...parcial };
@@ -273,8 +275,7 @@ export function ListasPage() {
         const parametros = new URLSearchParams();
         if (proximos.criadaDe) parametros.set("dataInicial", proximos.criadaDe);
         if (proximos.criadaAte) parametros.set("dataFinal", proximos.criadaAte);
-        if (proximos.criadaPorUsuarioId)
-            parametros.set("criadaPor", proximos.criadaPorUsuarioId);
+        if (proximos.item) parametros.set("item", proximos.item);
         if (proximos.participanteMembroFamiliaId)
             parametros.set(
                 "participante",
@@ -297,6 +298,7 @@ export function ListasPage() {
         (!!dataInicialIso && !!dataFinalIso && dataInicialIso > dataFinalIso);
     function abrirFiltros() {
         setFiltrosTemporarios(filtros);
+        setTextoItem(filtros.item || "");
         setRascunhosDatas({
             inicial: formatarDataBr(filtros.criadaDe),
             final: formatarDataBr(filtros.criadaAte),
@@ -319,15 +321,17 @@ export function ListasPage() {
         atualizarFiltros({
             criadaDe: undefined,
             criadaAte: undefined,
-            criadaPorUsuarioId: undefined,
+            item: undefined,
             participanteMembroFamiliaId: undefined,
         });
         if (usuario?.id && familiaSelecionada) removerFiltrosListas(usuario.id, familiaSelecionada.id);
+        setFiltrosTemporarios({});
+        setTextoItem("");
         setModalFiltrosAberto(false);
     }
     function nomeMembro(
         id: string | undefined,
-        tipo: "usuarioId" | "membroFamiliaId",
+        tipo: "membroFamiliaId",
     ) {
         return membros.find((membro) => membro[tipo] === id)?.nome || "Participante selecionado";
     }
@@ -423,13 +427,9 @@ export function ListasPage() {
                                     </span>
                                 )}
 
-                                {filtros.criadaPorUsuarioId && (
+                                {filtros.item && (
                                     <span className="rounded-full bg-surface px-gutter py-1 text-label-md">
-                                        Criada por:{" "}
-                                        {nomeMembro(
-                                            filtros.criadaPorUsuarioId,
-                                            "usuarioId",
-                                        )}
+                                        Item: {filtros.item}
                                     </span>
                                 )}
 
@@ -502,33 +502,41 @@ export function ListasPage() {
                                     }))
                                 }
                             />
-                            <label className="space-y-2 text-label-lg font-semibold">
-                                Criada por
-                                <select
-                                    value={
-                                        filtrosTemporarios.criadaPorUsuarioId ||
-                                        ""
-                                    }
-                                    onChange={(event) =>
+                            <div className="space-y-2 text-label-lg font-semibold">
+                                <label htmlFor="filtro-item">Item(ns)</label>
+                                <ItemDescriptionCombobox
+                                    id="filtro-item"
+                                    value={textoItem}
+                                    disabled={!auth || !familiaSelecionada}
+                                    placeholder="Digite um item"
+                                    required={false}
+                                    permitirTextoLivre={false}
+                                    mostrarUnidade={false}
+                                    load={async (texto) => {
+                                        if (!auth || !familiaSelecionada) return [];
+                                        const response = await buscarSugestoesItensDaFamilia(
+                                            auth.token,
+                                            familiaSelecionada.id,
+                                            texto,
+                                        );
+                                        return response.data || [];
+                                    }}
+                                    onChange={(value) => {
+                                        setTextoItem(value);
                                         setFiltrosTemporarios((atual) => ({
                                             ...atual,
-                                            criadaPorUsuarioId:
-                                                event.target.value || undefined,
-                                        }))
-                                    }
-                                    className="min-h-touch w-full rounded-card border border-foreground/20 bg-background px-gutter"
-                                >
-                                    <option value="">Todas</option>
-                                    {membros.map((membro) => (
-                                        <option
-                                            key={membro.usuarioId}
-                                            value={membro.usuarioId}
-                                        >
-                                            {membro.nome}
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
+                                            item: undefined,
+                                        }));
+                                    }}
+                                    onSelect={(item) => {
+                                        setTextoItem(item.descricao);
+                                        setFiltrosTemporarios((atual) => ({
+                                            ...atual,
+                                            item: item.descricao,
+                                        }));
+                                    }}
+                                />
+                            </div>
                             <label className="space-y-2 text-label-lg font-semibold">
                                 Participante
                                 <select

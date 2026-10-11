@@ -15,14 +15,19 @@ function listasPath(familiaId: string) {
   return `/familias/${familiaId}/listas`
 }
 
-export interface SugestaoItem { descricao: string; unidadeMedida: import('../types/shoppingList').UnidadeMedida | null }
+export interface SugestaoItem { descricao: string; unidadeMedida?: import('../types/shoppingList').UnidadeMedida | null }
 
 export function buscarSugestoesItens(token: string, familiaId: string, listaId: string, categoria: CategoriaCompra, termo: string) {
   const params = new URLSearchParams({ listaId, categoria, termo })
   return apiRequest<SugestaoItem[]>(`/familias/${familiaId}/itens/sugestoes?${params}`, { token })
 }
 
-export interface FiltrosListas { criadaDe?: string; criadaAte?: string; criadaPorUsuarioId?: string; participanteMembroFamiliaId?: string; page?: string; size?: string }
+export function buscarSugestoesItensDaFamilia(token: string, familiaId: string, texto: string) {
+  const params = new URLSearchParams({ texto })
+  return apiRequest<SugestaoItem[]>(`/familias/${familiaId}/itens/sugestoes?${params}`, { token })
+}
+
+export interface FiltrosListas { criadaDe?: string; criadaAte?: string; item?: string; participanteMembroFamiliaId?: string; page?: string; size?: string }
 function comFiltros(path: string, filtros: FiltrosListas = {}) {
   const params = new URLSearchParams()
   for (const [chave, valor] of Object.entries(filtros)) if (valor) params.set(chave, valor)

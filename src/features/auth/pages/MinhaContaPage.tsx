@@ -117,7 +117,7 @@ export function MinhaContaPage() {
                         autoComplete="name"
                         value={nome}
                         onChange={(e) => setNome(e.target.value)}
-                        className="min-h-touch w-full rounded-card border border-foreground/20 px-gutter"
+                        className="min-h-touch w-full rounded-card border border-foreground/20 bg-white px-gutter"
                         required
                     />
                 </label>
@@ -130,7 +130,7 @@ export function MinhaContaPage() {
                         onChange={(e) => setEmail(e.target.value)}
                         readOnly={!podeAlterarEmail}
                         aria-readonly={!podeAlterarEmail}
-                        className="min-h-touch w-full rounded-card border border-foreground/20 px-gutter"
+                        className="min-h-touch w-full rounded-card border border-foreground/20 bg-white px-gutter"
                         required
                     />
                 </label>

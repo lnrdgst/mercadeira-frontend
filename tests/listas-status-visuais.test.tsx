@@ -7,16 +7,21 @@ test('mantém preparação neutra, apresenta andamento em verde e finalizada em 
   vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json([
     { id: 'preparacao', nome: 'Preparação', categoria: 'SUPERMERCADO', estabelecimento: null, status: 'EM_PREPARACAO', criadaEm: '2026-09-01T10:00:00Z', atualizadaEm: '2026-09-01T10:00:00Z' },
     { id: 'andamento', nome: 'Andamento', categoria: 'SUPERMERCADO', estabelecimento: null, status: 'EM_COMPRA', criadaEm: '2026-09-01T10:00:00Z', atualizadaEm: '2026-09-01T10:00:00Z' },
-    { id: 'finalizada', nome: 'Finalizada', categoria: 'SUPERMERCADO', estabelecimento: null, status: 'FINALIZADA', criadaEm: '2026-09-01T10:00:00Z', atualizadaEm: '2026-09-01T10:00:00Z' },
+    { id: 'finalizada', nome: 'Finalizada', categoria: 'SUPERMERCADO', estabelecimento: null, status: 'FINALIZADA', criadaEm: '2026-09-01T10:00:00Z', atualizadaEm: '2026-09-01T10:00:00Z', finalizadaEm: '2026-10-07T16:34:00-03:00' },
+    { id: 'finalizada-sem-data', nome: 'Finalizada sem data', categoria: 'SUPERMERCADO', estabelecimento: null, status: 'FINALIZADA', criadaEm: '2026-09-01T10:00:00Z', atualizadaEm: '2026-09-01T10:00:00Z' },
   ]))
   renderApp(<ListasPage />)
 
   const preparacao = (await screen.findByRole('heading', { name: 'Preparação' })).closest('a')!
   const andamento = screen.getByRole('heading', { name: 'Andamento' }).closest('a')!
   const finalizada = screen.getByRole('heading', { name: 'Finalizada' }).closest('a')!
+  const finalizadaSemData = screen.getByRole('heading', { name: 'Finalizada sem data' }).closest('a')!
   expect(screen.getByText('Em preparação')).toBeVisible()
   expect(screen.getByText('Em andamento')).toBeVisible()
   expect(within(finalizada).getAllByText('Finalizada')).toHaveLength(2)
+  expect(finalizada).toHaveTextContent('Finalizada em 07/10/2026 às 16:34')
+  expect(andamento).not.toHaveTextContent('Finalizada em')
+  expect(finalizadaSemData).not.toHaveTextContent('Finalizada em')
   expect(screen.getByRole('link', { name: 'Nova lista de compras' })).toBeVisible()
   expect(preparacao).toHaveClass('border-2', 'border-foreground', 'bg-surface')
   expect(andamento).toHaveClass('border-primary/20', 'bg-primary/5')

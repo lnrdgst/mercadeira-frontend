@@ -32,6 +32,15 @@ function formatarDataBr(data?: string) {
     return ano && mes && dia ? `${dia}/${mes}/${ano}` : "";
 }
 
+function formatarDataHoraBr(data: string) {
+    const dataHora = new Date(data);
+    if (Number.isNaN(dataHora.getTime())) return "";
+    return `${dataHora.toLocaleDateString("pt-BR")} às ${dataHora.toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+    })}`;
+}
+
 function isoDaDataBr(data: string) {
     const encontrado = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(data);
     if (!encontrado) return undefined;
@@ -429,7 +438,7 @@ export function ListasPage() {
 
                                 {filtros.item && (
                                     <span className="rounded-full bg-surface px-gutter py-1 text-label-md">
-                                        Item: {filtros.item}
+                                        Produto: {filtros.item}
                                     </span>
                                 )}
 
@@ -503,12 +512,12 @@ export function ListasPage() {
                                 }
                             />
                             <div className="space-y-2 text-label-lg font-semibold">
-                                <label htmlFor="filtro-item">Item(ns)</label>
+                                <label htmlFor="filtro-item">Produto</label>
                                 <ItemDescriptionCombobox
                                     id="filtro-item"
                                     value={textoItem}
                                     disabled={!auth || !familiaSelecionada}
-                                    placeholder="Digite um item"
+                                    placeholder="Digite um produto"
                                     required={false}
                                     permitirTextoLivre={false}
                                     mostrarUnidade={false}
@@ -705,6 +714,15 @@ export function ListasPage() {
                                         {lista.estabelecimento && (
                                             <p className="mt-1 text-body-md text-foreground-muted">
                                                 {lista.estabelecimento}
+                                            </p>
+                                        )}
+
+                                        {finalizada && lista.finalizadaEm && (
+                                            <p className="mt-1 text-body-md text-foreground-muted">
+                                                Finalizada em{" "}
+                                                <time dateTime={lista.finalizadaEm}>
+                                                    {formatarDataHoraBr(lista.finalizadaEm)}
+                                                </time>
                                             </p>
                                         )}
                                     </div>

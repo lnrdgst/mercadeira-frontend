@@ -23,7 +23,8 @@ test('filtra listas e histórico por item selecionado, junto aos demais filtros'
 
   const dialog = screen.getByRole('dialog', { name: 'Filtrar listas' })
   expect(within(dialog).queryByText('Criada por')).not.toBeInTheDocument()
-  const item = within(dialog).getByRole('combobox', { name: 'Item(ns)' })
+  const item = within(dialog).getByRole('combobox', { name: 'Produto' })
+  expect(item).toHaveAttribute('placeholder', 'Digite um produto')
   await user.type(item, 'a')
   await new Promise((resolve) => setTimeout(resolve, 250))
   expect(fetchMock.mock.calls.some(([url]) => String(url).includes('/itens/sugestoes?'))).toBe(false)
@@ -38,7 +39,7 @@ test('filtra listas e histórico por item selecionado, junto aos demais filtros'
     const href = String(url)
     return href.includes('/listas?') && href.includes('item=Arroz+integral') && href.includes('criadaDe=2026-09-01') && href.includes('participanteMembroFamiliaId=membro-a')
   })).toBe(true))
-  expect(screen.getByText('Item: Arroz integral')).toBeVisible()
+  expect(screen.getByText('Produto: Arroz integral')).toBeVisible()
 
   await user.click(screen.getByRole('button', { name: /Compras anteriores/ }))
   await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => String(url).includes('/listas/historico?') && String(url).includes('item=Arroz+integral'))).toBe(true))
@@ -46,7 +47,7 @@ test('filtra listas e histórico por item selecionado, junto aos demais filtros'
   await user.click(screen.getByRole('button', { name: /Busca de listas com/ }))
   await user.click(within(screen.getByRole('dialog', { name: 'Filtrar listas' })).getByRole('button', { name: 'Limpar filtros' }))
   await user.click(screen.getByRole('button', { name: /Toque para buscar listas/ }))
-  expect(screen.getByRole('combobox', { name: 'Item(ns)' })).toHaveValue('')
+  expect(screen.getByRole('combobox', { name: 'Produto' })).toHaveValue('')
 })
 
 test('apresenta estado vazio das sugestões sem aplicar texto não selecionado', async () => {
@@ -61,7 +62,7 @@ test('apresenta estado vazio das sugestões sem aplicar texto não selecionado',
   const { user } = renderApp(<ListasPage />)
   await user.click(await screen.findByRole('button', { name: /Toque para buscar listas/ }))
   const dialog = screen.getByRole('dialog', { name: 'Filtrar listas' })
-  await user.type(within(dialog).getByRole('combobox', { name: 'Item(ns)' }), 'feijao')
+  await user.type(within(dialog).getByRole('combobox', { name: 'Produto' }), 'feijao')
   expect(await within(dialog).findByText('Nenhum item encontrado.')).toBeVisible()
   await user.click(within(dialog).getByRole('button', { name: 'Buscar' }))
 

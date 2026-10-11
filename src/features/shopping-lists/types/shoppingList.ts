@@ -31,6 +31,7 @@ export interface ListaCompraResumoResponse {
   status: StatusListaCompra
   criadaEm: string
   atualizadaEm: string
+  finalizadaEm?: string | null
   criadaPorUsuarioId?: string
   resumoFinanceiro?: ResumoFinanceiroCompraResponse | null
   alertaContinuidade?: AlertaContinuidadeCompraResponse | null

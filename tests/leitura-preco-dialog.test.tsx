@@ -4,6 +4,7 @@ import { DadosCompraItem } from '../src/features/shopping/components/DadosCompra
 import { LeituraPrecoDialog } from '../src/features/shopping/components/LeituraPrecoDialog'
 import type { ItemCompraResponse } from '../src/features/shopping/types/shopping'
 import { renderApp } from './helpers'
+import * as shoppingApi from '../src/features/shopping/api/shoppingApi'
 
 const ocr = vi.hoisted(() => ({ reconhecer: vi.fn(), encerrar: vi.fn() }))
 vi.mock('../src/features/shopping/hooks/useOcrLocal', () => ({ useOcrLocal: () => ({ estado: 'idle', reconhecendo: false, reconhecer: ocr.reconhecer, encerrar: ocr.encerrar }) }))
@@ -43,15 +44,18 @@ test('usa fallback compatível e apresenta retorno manual se a permissão for ne
   expect(getUserMedia).toHaveBeenLastCalledWith({ audio: false, video: true })
 })
 
-test('um candidato OCR preenche localmente e não salva', async () => {
+test('um candidato OCR só é salvo após confirmação explícita', async () => {
   configurarCamera(); ocr.reconhecer.mockResolvedValueOnce(resultadoOcr('3,99'))
   const onSalvar = vi.fn(async () => {})
   const { user } = renderApp(<DadosCompraItem item={item} disabled={false} podeEditar onSalvar={onSalvar} />)
   await user.click(screen.getByRole('button', { name: 'Informar R$' }))
   await user.click(screen.getByRole('button', { name: 'Ler o preço da etiqueta' }))
   await capturar(user)
-  await waitFor(() => expect(screen.getByRole('button', { name: 'Preço unitário' })).toHaveTextContent(/R\$\s*3,99/))
+  await screen.findByRole('button', { name: 'Usar preço' })
   expect(onSalvar).not.toHaveBeenCalled()
+  await user.click(screen.getByRole('button', { name: 'Usar preço' }))
+  expect(onSalvar).toHaveBeenCalledOnce()
+  expect(onSalvar).toHaveBeenCalledWith({ precoUnitario: 3.99, quantidadeComprada: 1 })
 })
 
 test('vários candidatos exigem escolha e não escolhem automaticamente', async () => {
@@ -64,6 +68,39 @@ test('vários candidatos exigem escolha e não escolhem automaticamente', async 
   await user.click(screen.getByRole('radio', { name: /R\$\s*14,90/ }))
   await user.click(screen.getByRole('button', { name: 'Usar preço' }))
   expect(confirmar).toHaveBeenCalledWith(14.9)
+})
+
+test.each([false, true])('IA exige confirmação e preserva quantidade e preço em falha (%s)', async (falhar) => {
+  configurarCamera()
+  vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('imagem'))
+  vi.spyOn(shoppingApi, 'lerPrecoIa').mockResolvedValue([5.9])
+  const onSalvar = vi.fn(async () => { if (falhar) throw new Error('Falha no preço') })
+  const { user } = renderApp(<DadosCompraItem item={{ ...item, quantidadeComprada: 3 }} disabled={false} podeEditar onSalvar={onSalvar} token="token" familiaId="familia" listaId="lista" />)
+  await user.click(screen.getByRole('button', { name: 'Alterar R$' }))
+  await user.click(screen.getByRole('button', { name: 'Ler o preço da etiqueta' }))
+  await capturar(user)
+  await screen.findByRole('button', { name: 'Usar preço' })
+  expect(onSalvar).not.toHaveBeenCalled()
+  await user.click(screen.getByRole('button', { name: 'Usar preço' }))
+  expect(onSalvar).toHaveBeenCalledOnce()
+  expect(onSalvar).toHaveBeenCalledWith({ precoUnitario: 5.9, quantidadeComprada: 3 })
+  if (falhar) {
+    expect(await screen.findByRole('alert')).toHaveTextContent('Falha no preço')
+    expect(screen.getByRole('button', { name: 'Preço unitário' })).toHaveTextContent('5,90')
+    expect(screen.getByRole('button', { name: 'Salvar R$' })).toBeEnabled()
+  }
+})
+
+test('cancelar a leitura após receber preço não salva', async () => {
+  configurarCamera(); ocr.reconhecer.mockResolvedValueOnce(resultadoOcr('3,99'))
+  const onSalvar = vi.fn(async () => {})
+  const { user } = renderApp(<DadosCompraItem item={item} disabled={false} podeEditar onSalvar={onSalvar} />)
+  await user.click(screen.getByRole('button', { name: 'Informar R$' }))
+  await user.click(screen.getByRole('button', { name: 'Ler o preço da etiqueta' }))
+  await capturar(user)
+  await screen.findByRole('button', { name: 'Usar preço' })
+  await user.click(screen.getByRole('button', { name: 'Informar manualmente' }))
+  expect(onSalvar).not.toHaveBeenCalled()
 })
 
 test('combina candidatos de duas passagens sem duplicar valores', async () => {

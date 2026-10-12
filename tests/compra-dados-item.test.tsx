@@ -1,10 +1,10 @@
-import { screen } from '@testing-library/react'
+import { act, screen } from '@testing-library/react'
 import { expect, test, vi } from 'vitest'
 import { atualizarDadosItemCompra } from '../src/features/shopping/api/shoppingApi'
 import { DadosCompraItem } from '../src/features/shopping/components/DadosCompraItem'
 import { converterNumeroBrasileiro } from '../src/features/shopping/components/dadosCompraItemValor'
 import type { ItemCompraResponse } from '../src/features/shopping/types/shopping'
-import { renderApp } from './helpers'
+import { deferred, renderApp } from './helpers'
 
 const itemBase: ItemCompraResponse = {
   id: 'item-a', descricao: 'Arroz', quantidade: null, unidadeMedida: null, marca: null, observacoes: null, ordemExibicao: 1,
@@ -30,13 +30,15 @@ test('ao informar preço, inicia localmente a quantidade em 1 e apresenta o tota
   await user.click(preco)
   expect(screen.getByRole('dialog')).toHaveTextContent('Preço unitário')
   for (const tecla of ['2', '7', ',', '0', '0']) await user.click(screen.getByRole('button', { name: tecla === ',' ? 'Vírgula decimal' : `Número ${tecla}` }))
+  expect(onSalvar).not.toHaveBeenCalled()
   await user.click(screen.getByRole('button', { name: 'Confirmar' }))
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   expect(preco).toHaveTextContent(/R\$\s*27,00/)
-  expect(onSalvar).not.toHaveBeenCalled()
+  expect(onSalvar).toHaveBeenCalledTimes(1)
   expect(screen.getByRole('textbox', { name: 'Quantidade comprada' })).toHaveValue('1')
   await user.click(screen.getByRole('button', { name: 'Salvar R$' }))
 
+  expect(onSalvar).toHaveBeenCalledTimes(1)
   expect(onSalvar).toHaveBeenCalledWith({ precoUnitario: 27, quantidadeComprada: 1 })
   rerender(<DadosCompraItem item={{ ...itemBase, precoUnitario: 27, quantidadeComprada: 2, valorTotal: 54 }} disabled={false} podeEditar onSalvar={onSalvar} />)
   const resumo = screen.getByLabelText('Dados da compra: Arroz')
@@ -61,7 +63,7 @@ test('não sobrescreve quantidade previamente informada ao digitar preço', asyn
   expect(screen.getByRole('textbox', { name: 'Quantidade comprada' })).toHaveValue('3')
 })
 
-test('confirma preço localmente no teclado monetário e permite alterar quantidade', async () => {
+test('confirma preço no teclado monetário e salva alterações posteriores de quantidade', async () => {
   const onSalvar = vi.fn(async () => {})
   const { user } = renderApp(<DadosCompraItem item={{ ...itemBase, precoUnitario: 0.89, quantidadeComprada: 10, valorTotal: 8.9 }} disabled={false} podeEditar onSalvar={onSalvar} />)
 
@@ -73,9 +75,44 @@ test('confirma preço localmente no teclado monetário e permite alterar quantid
   await user.click(screen.getByRole('button', { name: 'Vírgula decimal' }))
   await user.click(screen.getByRole('button', { name: 'Número 9' }))
   await user.click(screen.getByRole('button', { name: 'Confirmar' }))
-  expect(onSalvar).not.toHaveBeenCalled()
-  await user.click(screen.getByRole('button', { name: 'Salvar R$' }))
   expect(onSalvar).toHaveBeenCalledWith({ precoUnitario: 0.9, quantidadeComprada: 9 })
+  await user.click(screen.getByRole('button', { name: 'Aumentar quantidade' }))
+  await user.click(screen.getByRole('button', { name: 'Salvar R$' }))
+  expect(onSalvar).toHaveBeenLastCalledWith({ precoUnitario: 0.9, quantidadeComprada: 10 })
+  expect(onSalvar).toHaveBeenCalledTimes(2)
+})
+
+test('falha na confirmação preserva preço e permite repetir pelo botão', async () => {
+  const onSalvar = vi.fn().mockRejectedValueOnce(new Error('Falha ao salvar')).mockResolvedValueOnce(undefined)
+  const { user } = renderApp(<DadosCompraItem item={itemBase} disabled={false} podeEditar onSalvar={onSalvar} />)
+  await user.click(screen.getByRole('button', { name: 'Informar R$' }))
+  await user.click(screen.getByRole('button', { name: 'Preço unitário' }))
+  await user.click(screen.getByRole('button', { name: 'Número 5' }))
+  await user.click(screen.getByRole('button', { name: 'Confirmar' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent('Falha ao salvar')
+  expect(screen.getByRole('button', { name: 'Preço unitário' })).toHaveTextContent('5')
+  await user.click(screen.getByRole('button', { name: 'Salvar R$' }))
+  expect(onSalvar).toHaveBeenCalledTimes(2)
+  expect(onSalvar).toHaveBeenLastCalledWith({ precoUnitario: 5, quantidadeComprada: 1 })
+})
+
+test('bloqueia envios concorrentes e permite confirmar outro preço depois', async () => {
+  const pendente = deferred<void>()
+  const onSalvar = vi.fn().mockImplementationOnce(() => pendente.promise).mockResolvedValue(undefined)
+  const { user } = renderApp(<DadosCompraItem item={itemBase} disabled={false} podeEditar onSalvar={onSalvar} />)
+  await user.click(screen.getByRole('button', { name: 'Informar R$' }))
+  await user.click(screen.getByRole('button', { name: 'Preço unitário' }))
+  await user.click(screen.getByRole('button', { name: 'Número 5' }))
+  await user.dblClick(screen.getByRole('button', { name: 'Confirmar' }))
+  expect(onSalvar).toHaveBeenCalledTimes(1)
+  expect(screen.getByRole('button', { name: 'Salvando...' })).toBeDisabled()
+  await act(async () => pendente.resolve())
+  await user.click(screen.getByRole('button', { name: 'Preço unitário' }))
+  await user.click(screen.getByRole('button', { name: 'Apagar último dígito' }))
+  await user.click(screen.getByRole('button', { name: 'Número 7' }))
+  await user.click(screen.getByRole('button', { name: 'Confirmar' }))
+  expect(onSalvar).toHaveBeenCalledTimes(2)
+  expect(onSalvar).toHaveBeenLastCalledWith({ precoUnitario: 7, quantidadeComprada: 1 })
 })
 
 test('fecha o editor pelo ícone sem persistir dados locais', async () => {

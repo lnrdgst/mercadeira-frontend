@@ -136,8 +136,13 @@ test('pendência própria é visível, sem mostrar pedidos de terceiros nem aç�
 
 test('responsável MEMBRO vê nome histórico e decisões pela capability, sem depender de papel', async () => {
   const inicial = compra('PRESENTE', true); inicial.solicitacoesItensPendentes = [pedido('s-b', 'p-b')]
+  inicial.solicitacoesItensPendentes[0].descricao = 'Tesoura para acabamento de tecidos e trabalhos artesanais com descrição longa'
   await preparar(inicial)
   expect(screen.getByText('Novo item solicitado')).toBeVisible()
+  const card = screen.getByText('Novo item solicitado').closest('li')!
+  expect(card).toHaveClass('rounded-card', 'bg-surface', 'w-full', 'min-w-0', '[overflow-wrap:anywhere]')
+  expect(card).not.toHaveClass('rounded-control', 'rounded-full')
+  expect(card).toHaveTextContent('Tesoura para acabamento de tecidos e trabalhos artesanais com descrição longa')
   expect(screen.getByText('Solicitado por Camila')).toBeVisible()
   expect(screen.getByRole('button', { name: 'Aprovar' })).toBeEnabled()
   expect(screen.getByRole('button', { name: 'Recusar' })).toBeEnabled()

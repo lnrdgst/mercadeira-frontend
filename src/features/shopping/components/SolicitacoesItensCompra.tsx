@@ -40,7 +40,7 @@ export function SolicitacoesItensCompra({ compra, usuarioId, bloqueada, onDecidi
     {pedidos.length > 0 && <>
       <h2 className="text-headline-md font-semibold text-primary">{podeDecidir ? 'Novos itens solicitados' : 'Meus itens solicitados'}</h2>
       <ul className="space-y-gutter">
-        {pedidos.map((pedido) => <li key={pedido.id} className="space-y-2 rounded-control bg-surface p-gutter" aria-busy={decidindo === pedido.id}>
+        {pedidos.map((pedido) => <li key={pedido.id} className="min-w-0 w-full space-y-2 rounded-card bg-surface p-gutter [overflow-wrap:anywhere]" aria-busy={decidindo === pedido.id}>
           <p className="text-label-md font-semibold text-primary">{podeDecidir ? 'Novo item solicitado' : 'Aguardando aprovação'}</p>
           <p className="break-words font-semibold">{pedido.descricao}</p>
           {(pedido.quantidade !== null || pedido.unidadeMedida !== null) && <p className="text-foreground-muted">{pedido.quantidade?.toLocaleString('pt-BR', { maximumFractionDigits: 3 })}{pedido.unidadeMedida ? ` ${unidadeMedidaLabels[pedido.unidadeMedida]}` : ''}</p>}

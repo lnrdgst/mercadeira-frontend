@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Modal } from '../../../shared/components/Modal'
 import { formatarValorMonetario } from '../../../shared/formatarValorMonetario'
 import type { AtualizarDadosItemCompraRequest, ItemCompraResponse } from '../types/shopping'
@@ -31,9 +31,14 @@ export function DadosCompraItem({ item, disabled, podeEditar, onSalvar, token, f
   const [quantidade, setQuantidade] = useState('')
   const [erro, setErro] = useState<string | null>(null)
   const [salvando, setSalvando] = useState(false)
+  const enviando = useRef(false)
+  const ultimoSalvo = useRef<string | null>(null)
+  const [salvo, setSalvo] = useState(false)
   const possuiDados = (item.precoUnitario !== null && item.precoUnitario !== undefined) || (item.quantidadeComprada !== null && item.quantidadeComprada !== undefined)
 
   function abrir() {
+    ultimoSalvo.current = null
+    setSalvo(false)
     setPreco(formatarNumeroParaEdicao(item.precoUnitario, 4))
     setPrecoEmEdicao('')
     setTecladoPrecoAberto(false)
@@ -43,6 +48,7 @@ export function DadosCompraItem({ item, disabled, podeEditar, onSalvar, token, f
   }
 
   function alterarQuantidade(delta: -1 | 1) {
+    setSalvo(false)
     const atual = converterNumeroBrasileiro(quantidade, 3) ?? 0
     const proximo = Math.max(0, atual + delta)
     setQuantidade(proximo === 0 ? '' : formatarNumeroParaEdicao(proximo, 3))
@@ -60,8 +66,10 @@ export function DadosCompraItem({ item, disabled, podeEditar, onSalvar, token, f
   }
 
   function confirmarPreco() {
+    if (enviando.current || disabled || !podeEditar) return
     alterarPreco(precoEmEdicao)
     setTecladoPrecoAberto(false)
+    void salvar(precoEmEdicao, false)
   }
 
   function fecharEditor() {
@@ -71,18 +79,23 @@ export function DadosCompraItem({ item, disabled, podeEditar, onSalvar, token, f
   }
 
   function usarPrecoLido(valor: number) {
-    alterarPreco(valor.toFixed(2).replace('.', ','))
+    if (enviando.current || disabled || !podeEditar) return
+    const valorFormatado = valor.toFixed(2).replace('.', ',')
+    alterarPreco(valorFormatado)
     setLeituraPrecoAberta(false)
+    void salvar(valorFormatado, false)
   }
 
-  async function salvar() {
-    const precoUnitario = converterNumeroBrasileiro(preco, 4)
-    const quantidadeComprada = converterNumeroBrasileiro(quantidade, 3)
-    if (preco.trim() && precoUnitario === null) {
+  async function salvar(valorPreco = preco, fecharAposSalvar = true) {
+    if (enviando.current || disabled || !podeEditar) return
+    const precoUnitario = converterNumeroBrasileiro(valorPreco, 4)
+    const quantidadeAtual = precoUnitario !== null && !quantidade.trim() ? '1' : quantidade
+    const quantidadeComprada = converterNumeroBrasileiro(quantidadeAtual, 3)
+    if (valorPreco.trim() && precoUnitario === null) {
       setErro('Informe um preço unitário maior que zero.')
       return
     }
-    if (quantidade.trim() && quantidadeComprada === null) {
+    if (quantidadeAtual.trim() && quantidadeComprada === null) {
       setErro('Informe uma quantidade maior que zero.')
       return
     }
@@ -90,14 +103,25 @@ export function DadosCompraItem({ item, disabled, podeEditar, onSalvar, token, f
       setErro('Informe a quantidade comprada junto com o preço.')
       return
     }
+    const dados = { precoUnitario, quantidadeComprada }
+    const chave = JSON.stringify(dados)
+    if (ultimoSalvo.current === chave) {
+      if (fecharAposSalvar) setAberto(false)
+      return
+    }
+    enviando.current = true
     setSalvando(true)
+    setSalvo(false)
     setErro(null)
     try {
-      await onSalvar({ precoUnitario, quantidadeComprada })
-      setAberto(false)
+      await onSalvar(dados)
+      ultimoSalvo.current = chave
+      setSalvo(true)
+      if (fecharAposSalvar) setAberto(false)
     } catch (error) {
       setErro(error instanceof Error && error.message ? error.message : 'Não foi possível atualizar os dados deste item.')
     } finally {
+      enviando.current = false
       setSalvando(false)
     }
   }
@@ -122,6 +146,7 @@ export function DadosCompraItem({ item, disabled, podeEditar, onSalvar, token, f
       <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5 fill-none stroke-current" strokeWidth="2.25" strokeLinecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
     </button>}
     {aberto && podeEditar && <div className="space-y-3 pt-1">
+      {salvo && <p role="status" className="text-label-md text-primary">Dados salvos.</p>}
       {erro && <p role="alert" className="w-full break-words rounded-control bg-error/10 p-gutter text-error">{erro}</p>}
       <button type="button" disabled={disabled || salvando} onClick={() => setLeituraPrecoAberta(true)} className="inline-flex min-h-touch items-center gap-2 rounded-control px-2 text-left font-semibold text-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60">
         <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5 shrink-0 fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7.5h3l1.5-2h7L17 7.5h3A1.5 1.5 0 0 1 21.5 9v9A1.5 1.5 0 0 1 20 19.5H4A1.5 1.5 0 0 1 2.5 18V9A1.5 1.5 0 0 1 4 7.5Z" /><circle cx="12" cy="13.5" r="3.25" /></svg>
@@ -138,7 +163,7 @@ export function DadosCompraItem({ item, disabled, podeEditar, onSalvar, token, f
         <span className="font-semibold">Quantidade comprada <span className="font-normal text-foreground-muted">(opcional)</span></span>
         <div className="flex max-w-xs items-center gap-2">
           <button type="button" disabled={disabled || salvando || !converterNumeroBrasileiro(quantidade, 3)} onClick={() => alterarQuantidade(-1)} aria-label="Diminuir quantidade" className="min-h-touch w-12 rounded-control border border-foreground/20 font-semibold disabled:opacity-60">−</button>
-          <input type="text" aria-label="Quantidade comprada" inputMode="decimal" pattern="[0-9]*[.,]?[0-9]*" enterKeyHint="done" autoComplete="off" value={quantidade} onChange={(event) => setQuantidade(event.target.value.replace(/[^0-9,.]/g, ''))} placeholder="0" className="min-h-touch min-w-0 flex-1 rounded-control border border-foreground/20 bg-surface px-gutter text-center" />
+          <input type="text" aria-label="Quantidade comprada" disabled={disabled || salvando} inputMode="decimal" pattern="[0-9]*[.,]?[0-9]*" enterKeyHint="done" autoComplete="off" value={quantidade} onChange={(event) => { setSalvo(false); setQuantidade(event.target.value.replace(/[^0-9,.]/g, '')) }} placeholder="0" className="min-h-touch min-w-0 flex-1 rounded-control border border-foreground/20 bg-surface px-gutter text-center" />
           <button type="button" disabled={disabled || salvando} onClick={() => alterarQuantidade(1)} aria-label="Aumentar quantidade" className="min-h-touch w-12 rounded-control border border-foreground/20 font-semibold disabled:opacity-60">+</button>
         </div>
       </div>

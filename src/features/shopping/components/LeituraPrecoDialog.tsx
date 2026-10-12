@@ -47,8 +47,8 @@ export function LeituraPrecoDialog({ open, onClose, onConfirmar, token, familiaI
       const candidatosIa = await tentarIa(captura.imagem)
       if (candidatosIa !== null && candidatosIa.length > 0) {
         setCandidatos(candidatosIa)
-        if (candidatosIa.length === 1) informarPreco(candidatosIa[0])
-        else setEtapa('selecionar')
+        setSelecionado(candidatosIa.length === 1 ? candidatosIa[0] : null)
+        setEtapa('selecionar')
         return
       }
       const resultado = await reconhecer(captura.imagem, captura.imagemProcessada, captura.criarImagensReforcadas)
@@ -61,11 +61,8 @@ export function LeituraPrecoDialog({ open, onClose, onConfirmar, token, familiaI
       const encontrados = combinarCandidatosMonetarios(listas)
       if (import.meta.env.DEV) console.info('[OCR preço - resultado combinado]', { candidatos: encontrados })
       setCandidatos(encontrados)
-      if (encontrados.length === 1) {
-        informarPreco(encontrados[0])
-      } else {
-        setEtapa(encontrados.length === 0 ? 'semResultado' : 'selecionar')
-      }
+      setSelecionado(encontrados.length === 1 ? encontrados[0] : null)
+      setEtapa(encontrados.length === 0 ? 'semResultado' : 'selecionar')
     } catch (erro) {
       if (import.meta.env.DEV) console.error('[OCR preço] falha de reconhecimento', erro)
       setCandidatos([])

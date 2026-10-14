@@ -141,11 +141,14 @@ test('responsável MEMBRO vê nome histórico e decisões pela capability, sem d
   expect(screen.getByText('Novo item solicitado')).toBeVisible()
   const card = screen.getByText('Novo item solicitado').closest('li')!
   expect(card).toHaveClass('rounded-card', 'bg-surface', 'w-full', 'min-w-0', '[overflow-wrap:anywhere]')
+  expect(card).toHaveClass('border-orange-200')
   expect(card).not.toHaveClass('rounded-control', 'rounded-full')
   expect(card).toHaveTextContent('Tesoura para acabamento de tecidos e trabalhos artesanais com descrição longa')
   expect(screen.getByText('Solicitado por Camila')).toBeVisible()
   expect(screen.getByRole('button', { name: 'Aprovar' })).toBeEnabled()
   expect(screen.getByRole('button', { name: 'Recusar' })).toBeEnabled()
+  expect(screen.getByRole('button', { name: 'Aprovar' })).toHaveClass('bg-orange-800')
+  expect(screen.getByRole('button', { name: 'Recusar' })).toHaveClass('border-orange-800', 'text-orange-800')
 })
 
 test.each(['Aprovar', 'Recusar'])('%s chama endpoint, recarrega Compra e remove pendência; somente aprovação recebe ItemCompra', async (acao) => {

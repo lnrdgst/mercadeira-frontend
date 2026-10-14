@@ -1,10 +1,10 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import { Route, Routes } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { IniciarCompraButton } from '../src/features/shopping/components/IniciarCompraButton'
 import { MinhaPresenca } from '../src/features/shopping/components/MinhaPresenca'
 import type { CompraResponse } from '../src/features/shopping/types/shopping'
-import { renderApp } from './helpers'
+import { deferred, renderApp } from './helpers'
 
 const showModalOriginal = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, 'showModal')
 const closeOriginal = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, 'close')
@@ -50,7 +50,9 @@ test('inicia diretamente com participante único e envia um único POST compatí
 
   await user.click(screen.getByRole('button', { name: 'Iniciar compra' }))
 
-  expect(screen.queryByRole('dialog', { name: 'Quem está com você?' })).not.toBeInTheDocument()
+  const dialog = screen.getByRole('dialog', { name: 'Iniciar compra?' })
+  expect(fetch).not.toHaveBeenCalled()
+  await user.click(within(dialog).getByRole('button', { name: 'Iniciar compra' }))
   await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1))
   expect(fetch.mock.calls[0][1]).toMatchObject({ method: 'POST', body: JSON.stringify({ participantesPresentesIds: [] }) })
   expect(await screen.findByText('Compra iniciada')).toBeInTheDocument()
@@ -61,12 +63,28 @@ test('preserva o diálogo e a seleção quando há dois ou mais participantes', 
   const { user } = iniciar([ana, bia])
 
   await user.click(screen.getByRole('button', { name: 'Iniciar compra' }))
-  const dialog = screen.getByRole('dialog', { name: 'Quem está com você?' })
+  const dialog = screen.getByRole('dialog', { name: 'Iniciar compra?' })
   await user.click(within(dialog).getByRole('checkbox', { name: 'Bia' }))
   await user.click(within(dialog).getByRole('button', { name: 'Iniciar compra' }))
 
   await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1))
   expect(fetch.mock.calls[0][1]).toMatchObject({ method: 'POST', body: JSON.stringify({ participantesPresentesIds: ['m-b'] }) })
+})
+
+test('protege a confirmação contra duplo clique enquanto inicia a compra', async () => {
+  const resposta = deferred<Response>()
+  const fetch = vi.spyOn(globalThis, 'fetch').mockReturnValue(resposta.promise)
+  const { user } = iniciar()
+
+  await user.click(screen.getByRole('button', { name: 'Iniciar compra' }))
+  const dialog = screen.getByRole('dialog', { name: 'Iniciar compra?' })
+  const confirmar = within(dialog).getByRole('button', { name: 'Iniciar compra' })
+  await user.click(confirmar)
+  expect(confirmar).toBeDisabled()
+  await user.click(confirmar)
+  expect(fetch).toHaveBeenCalledTimes(1)
+
+  await act(async () => resposta.resolve(Response.json({ id: 'compra-a' }, { status: 201 })))
 })
 
 test('oculta ficar remoto para a Compra com um participante e preserva para múltiplos', () => {

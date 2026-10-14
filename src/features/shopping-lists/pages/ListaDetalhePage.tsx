@@ -344,6 +344,7 @@ export function ListaDetalhePage() {
   const listaParticipantes = participantesKey === chave ? participantes : [];
   const listaItens = itensKey === chave ? itens : [];
   const itensProntos = itensKey === chave && !carregandoItens && !erroItens;
+  const deveExibirInicioCompra = listaItens.length > 0 || carregandoItens || !!erroItens;
   const emPreparacao = lista?.status === "EM_PREPARACAO";
   const podeIniciarCompra = lista?.contextoUsuario.podeIniciarCompra !== false;
   const podeGerenciar =
@@ -1367,8 +1368,7 @@ export function ListaDetalhePage() {
 
           {emPreparacao &&
             lista.contextoUsuario.participanteAtivo &&
-            itensProntos &&
-            listaItens.length > 0 && podeIniciarCompra
+            deveExibirInicioCompra
             && (
               <div className="space-y-gutter pt-page">
                 <div className="w-full [&>button]:w-full">
@@ -1381,6 +1381,7 @@ export function ListaDetalhePage() {
                     onMutacao={atualizarEstadoMutacao}
                     disabled={
                       !podeIniciarCompra ||
+                      !itensProntos ||
                       operacaoParticipante !== null ||
                       operacaoItem !== null ||
                       reordenando ||
@@ -1393,7 +1394,7 @@ export function ListaDetalhePage() {
             )}
           {!podeIniciarCompra && (
             <p className="text-center text-body-md text-foreground-muted">
-              Você ainda não tem permissão para iniciar esta compra.
+              Você não possui permissão para iniciar compras nesta família.
             </p>
           )}
         </>

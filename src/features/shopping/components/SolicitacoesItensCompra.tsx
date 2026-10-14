@@ -36,19 +36,19 @@ export function SolicitacoesItensCompra({ compra, usuarioId, bloqueada, onDecidi
   }
 
   if (!pedidos.length && !mensagem) return null
-  return <section aria-label="Solicitações de novos itens" className="space-y-gutter rounded-card border border-primary/20 bg-primary/5 p-page">
+  return <section aria-label="Solicitações de novos itens" className="space-y-gutter rounded-card border border-orange-200 bg-orange-50 p-page">
     {pedidos.length > 0 && <>
-      <h2 className="text-headline-md font-semibold text-primary">{podeDecidir ? 'Novos itens solicitados' : 'Meus itens solicitados'}</h2>
+      <h2 className="text-headline-md font-semibold text-orange-800">{podeDecidir ? 'Novos itens solicitados' : 'Meus itens solicitados'}</h2>
       <ul className="space-y-gutter">
-        {pedidos.map((pedido) => <li key={pedido.id} className="min-w-0 w-full space-y-2 rounded-card bg-surface p-gutter [overflow-wrap:anywhere]" aria-busy={decidindo === pedido.id}>
-          <p className="text-label-md font-semibold text-primary">{podeDecidir ? 'Novo item solicitado' : 'Aguardando aprovação'}</p>
+        {pedidos.map((pedido) => <li key={pedido.id} className="min-w-0 w-full space-y-2 rounded-card border border-orange-200 bg-surface p-gutter [overflow-wrap:anywhere]" aria-busy={decidindo === pedido.id}>
+          <p className="text-label-md font-semibold text-orange-800">{podeDecidir ? 'Novo item solicitado' : 'Aguardando aprovação'}</p>
           <p className="break-words font-semibold">{pedido.descricao}</p>
           {(pedido.quantidade !== null || pedido.unidadeMedida !== null) && <p className="text-foreground-muted">{pedido.quantidade?.toLocaleString('pt-BR', { maximumFractionDigits: 3 })}{pedido.unidadeMedida ? ` ${unidadeMedidaLabels[pedido.unidadeMedida]}` : ''}</p>}
           {podeDecidir && <>
             <p className="break-words text-foreground-muted">Solicitado por {pedido.solicitante.nome}</p>
             <div className="grid grid-cols-2 gap-gutter">
-              <button type="button" disabled={bloqueada || decidindo !== null} onClick={() => void decidir(pedido.id, 'recusar')} className="min-h-touch rounded-control border border-primary px-gutter font-semibold text-primary disabled:opacity-60">Recusar</button>
-              <button type="button" disabled={bloqueada || decidindo !== null} onClick={() => void decidir(pedido.id, 'aprovar')} className="min-h-touch rounded-control bg-primary px-gutter font-semibold text-surface disabled:opacity-60">Aprovar</button>
+              <button type="button" disabled={bloqueada || decidindo !== null} onClick={() => void decidir(pedido.id, 'recusar')} className="min-h-touch rounded-control border border-orange-800 px-gutter font-semibold text-orange-800 disabled:opacity-60">Recusar</button>
+              <button type="button" disabled={bloqueada || decidindo !== null} onClick={() => void decidir(pedido.id, 'aprovar')} className="min-h-touch rounded-control bg-orange-800 px-gutter font-semibold text-surface disabled:opacity-60">Aprovar</button>
             </div>
           </>}
           {decidindo === pedido.id && <p role="status" className="text-label-md text-foreground-muted">Atualizando solicitação...</p>}

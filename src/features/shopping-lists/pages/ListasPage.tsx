@@ -711,7 +711,7 @@ export function ListasPage() {
 
                                         {finalizada && lista.finalizadaEm && (
                                             <p className="mt-1 text-body-md text-foreground-muted">
-                                                Finalizada em{" "}
+                                                Finalizada{" "}
                                                 <time dateTime={lista.finalizadaEm}>
                                                     {formatarDataContextual(lista.finalizadaEm, { incluirHora: true })}
                                                 </time>

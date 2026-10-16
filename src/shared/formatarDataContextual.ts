@@ -7,6 +7,9 @@ function iniciarDiaLocal(data: Date) {
   return Date.UTC(data.getFullYear(), data.getMonth(), data.getDate())
 }
 
+function capitalizar(valor: string) {
+  return valor ? `${valor[0].toUpperCase()}${valor.slice(1)}` : valor
+}
 
 /** Formata datas de apresentação pelo calendário local do dispositivo. */
 export function formatarDataContextual(valor: string | Date, opcoes: OpcoesFormatacaoDataContextual = {}) {
@@ -21,10 +24,10 @@ export function formatarDataContextual(valor: string | Date, opcoes: OpcoesForma
     year: 'numeric',
   }).format(data)
   const prefixo = diferencaEmDias === 0
-    ? 'hoje'
+    ? 'Hoje'
     : diferencaEmDias === 1
-      ? 'ontem'
-      : (new Intl.DateTimeFormat('pt-BR', { weekday: 'long' }).format(data))
+      ? 'Ontem'
+      : capitalizar(new Intl.DateTimeFormat('pt-BR', { weekday: 'long' }).format(data))
   const horario = opcoes.incluirHora
     ? ` às ${new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(data)}`
     : ''

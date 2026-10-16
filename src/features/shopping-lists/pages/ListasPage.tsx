@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Modal } from "../../../shared/components/Modal";
+import { formatarDataContextual } from "../../../shared/formatarDataContextual";
 import { AlertaContinuidadeCompraModal } from "../../shopping/components/AlertaContinuidadeCompraModal";
 import { ResumoFinanceiroCompraCard } from "../components/ResumoFinanceiroCompraCard";
 import type { ApiRequestError } from "../../../shared/api/apiClient";
@@ -30,15 +31,6 @@ function formatarDataBr(data?: string) {
     if (!data) return "";
     const [ano, mes, dia] = data.split("-");
     return ano && mes && dia ? `${dia}/${mes}/${ano}` : "";
-}
-
-function formatarDataHoraBr(data: string) {
-    const dataHora = new Date(data);
-    if (Number.isNaN(dataHora.getTime())) return "";
-    return `${dataHora.toLocaleDateString("pt-BR")} às ${dataHora.toLocaleTimeString("pt-BR", {
-        hour: "2-digit",
-        minute: "2-digit",
-    })}`;
 }
 
 function isoDaDataBr(data: string) {
@@ -721,7 +713,7 @@ export function ListasPage() {
                                             <p className="mt-1 text-body-md text-foreground-muted">
                                                 Finalizada em{" "}
                                                 <time dateTime={lista.finalizadaEm}>
-                                                    {formatarDataHoraBr(lista.finalizadaEm)}
+                                                    {formatarDataContextual(lista.finalizadaEm, { incluirHora: true })}
                                                 </time>
                                             </p>
                                         )}

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import type { ApiRequestError } from '../../../shared/api/apiClient'
 import { Modal } from '../../../shared/components/Modal'
+import { formatarDataContextual } from '../../../shared/formatarDataContextual'
 import { buscarCompra, continuarCompra, encerrarCompraProlongada } from '../api/shoppingApi'
 import type { AlertaContinuidadeCompraResponse, CompraResponse } from '../types/shopping'
 
@@ -58,13 +59,12 @@ export function AlertaContinuidadeCompraModal({ alerta, token, familiaId, listaI
     }
   }
 
-  const iniciadaEm = alerta?.iniciadaEm ? new Date(alerta.iniciadaEm) : null
   return <Modal open={aberto} onClose={() => undefined} closeDisabled={enviando} dismissible={false} ariaLabelledBy="alerta-continuidade-titulo" panelClassName="max-w-md p-page">
     <div className="space-y-page">
       <div className="space-y-gutter">
         <h2 id="alerta-continuidade-titulo" className="text-headline-md font-semibold">Esta compra ainda está em andamento</h2>
         <p>Esta compra foi iniciada há mais de um dia. Deseja continuar ou encerrá-la?</p>
-        {iniciadaEm && !Number.isNaN(iniciadaEm.getTime()) && <p className="text-body-md text-foreground-muted">Iniciada em <time dateTime={alerta?.iniciadaEm}>{iniciadaEm.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</time>.</p>}
+        {alerta?.iniciadaEm && <p className="text-body-md text-foreground-muted">Iniciada em <time dateTime={alerta.iniciadaEm}>{formatarDataContextual(alerta.iniciadaEm, { incluirHora: true })}</time>.</p>}
       </div>
       {erro && <p role="alert" className="rounded-card bg-error/10 p-gutter text-error">{erro}</p>}
       <div className="flex flex-col gap-2">

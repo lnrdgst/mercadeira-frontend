@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ScrollToEndAction } from '../../../shared/components/ScrollToEndAction'
+import { formatarDataContextual } from '../../../shared/formatarDataContextual'
 import { Link, Navigate, useNavigate, useParams } from 'react-router'
 import type { ApiRequestError } from '../../../shared/api/apiClient'
 import { useSession } from '../../auth/session/sessionContext'
@@ -354,9 +355,7 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
               <p className="text-body-md text-foreground-muted">
                 Iniciada em{' '}
                 <time dateTime={compra.iniciadaEm}>
-                  {new Date(compra.iniciadaEm).toLocaleDateString('pt-BR', { dateStyle: 'short' })}
-                  {' às '}
-                  {new Date(compra.iniciadaEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                  {formatarDataContextual(compra.iniciadaEm, { incluirHora: true })}
                 </time>
               </p>
             </div>

@@ -21,24 +21,12 @@ import { Modal } from '../../../shared/components/Modal'
 import { useFamilyContext } from '../session/familyContext'
 import type { MembroFamiliaResponse, SolicitacaoFamiliaResponse } from '../types/family'
 import { normalizarNomeFamilia, validarNomeFamilia } from '../utils/nomeFamilia'
+import { formatarDataContextual } from '../../../shared/formatarDataContextual'
 
 const papelLabel = {
   ADMINISTRADOR: 'Administrador(a)',
   MEMBRO: 'Membro',
 } as const
-
-function formatarData(data: string) {
-  const value = new Date(data)
-
-  if (Number.isNaN(value.getTime())) {
-    return null
-  }
-
-  return new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(value)
-}
 
 function removerPrefixoFamilia(nome: string) {
   return nome.trim().replace(/^fam[ií]lia(?:\s+|$)/i, '').trim()
@@ -503,7 +491,7 @@ export function FamiliaPage() {
             <ul className="space-y-gutter">
               {solicitacoesVisiveis.map((solicitacao) => {
                 const emProcessamento = solicitacaoEmProcessamentoId === solicitacao.id
-                const dataFormatada = formatarData(solicitacao.solicitadaEm)
+                const dataFormatada = formatarDataContextual(solicitacao.solicitadaEm, { incluirHora: true })
 
                 return (
                   <li key={solicitacao.id} className="space-y-gutter rounded-card border border-amber-100 bg-surface p-page shadow-soft">

@@ -1,5 +1,6 @@
 import type { CompraResponse, ItemCompraResponse } from '../types/shopping'
 import { ItemCompraCard } from './ItemCompraCard'
+import { formatarDataContextual } from '../../../shared/formatarDataContextual'
 
 const grupos: { status: ItemCompraResponse['status']; titulo: string }[] = [
   { status: 'NO_CARRINHO', titulo: 'Comprados' },
@@ -15,7 +16,7 @@ export function CompraResumo({ compra }: { compra: CompraResponse }) {
   return <div className="space-y-page">
     {finalizada && <div className="space-y-1 rounded-card border border-primary/20 bg-primary/5 p-page">
       {compra.finalizadaPor && <p className="break-words">Finalizada por {compra.finalizadaPor.nome}</p>}
-      {compra.finalizadaEm && <p className="text-label-lg text-foreground-muted"><time dateTime={compra.finalizadaEm}>{new Date(compra.finalizadaEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</time></p>}
+      {compra.finalizadaEm && <p className="text-label-lg text-foreground-muted"><time dateTime={compra.finalizadaEm}>{formatarDataContextual(compra.finalizadaEm, { incluirHora: true })}</time></p>}
       <p className="text-body-md text-foreground-muted">Os itens desta compra não podem mais ser alterados.</p>
     </div>}
     <section aria-labelledby="resumo-contagens" className="space-y-gutter">

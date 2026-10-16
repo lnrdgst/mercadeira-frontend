@@ -9,6 +9,7 @@ import type { MinhaSolicitacaoPendenteResponse, SolicitacaoFamiliaResponse } fro
 import { buscarListas } from "../../shopping-lists/api/shoppingListsApi";
 import { resumirRegistrosFinanceiros } from "../../shopping-lists/components/resumoFinanceiroCompra";
 import { formatarValorMonetario } from "../../../shared/formatarValorMonetario";
+import { formatarDataContextual } from "../../../shared/formatarDataContextual";
 import { buscarCompra } from "../../shopping/api/shoppingApi";
 import type { CompraResponse } from "../../shopping/types/shopping";
 import { AlertaContinuidadeCompraModal } from "../../shopping/components/AlertaContinuidadeCompraModal";
@@ -203,19 +204,6 @@ export function InicioPage() {
   const compraEmAndamentoVisivel = familiaCompraEmAndamentoId === familiaSelecionada.id && !erroCompraEmAndamento
     ? compraEmAndamento
     : null;
-  const formatarFinalizacao = (valor: string) => {
-    const data = new Date(valor);
-    const dataFormatada = data.toLocaleDateString("pt-BR");
-    const horaFormatada = data.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-    if (Number.isNaN(data.getTime())) return `${dataFormatada} às ${horaFormatada}`;
-    try {
-      const diaDaSemana = new Intl.DateTimeFormat("pt-BR", { weekday: "long" }).format(data);
-      const diaFormatado = diaDaSemana ? `${diaDaSemana[0].toUpperCase()}${diaDaSemana.slice(1)}` : "";
-      return diaFormatado ? `${dataFormatada} · ${diaFormatado} às ${horaFormatada}` : `${dataFormatada} às ${horaFormatada}`;
-    } catch {
-      return `${dataFormatada} às ${horaFormatada}`;
-    }
-  };
   const resumoFinanceiroUltimaCompra = ultimaCompraFinalizada
     ? resumirRegistrosFinanceiros(ultimaCompraFinalizada.registrosFinanceiros, ultimaCompraFinalizada.totalRegistrado)
     : null;
@@ -276,7 +264,7 @@ export function InicioPage() {
                     Última compra finalizada:
                     <br />
                     <time dateTime={ultimaCompraFinalizada.finalizadaEm}>
-                      {formatarFinalizacao(ultimaCompraFinalizada.finalizadaEm)}
+                      {formatarDataContextual(ultimaCompraFinalizada.finalizadaEm, { incluirHora: true })}
                     </time>
                     <br />
                     <span className="font-normal">

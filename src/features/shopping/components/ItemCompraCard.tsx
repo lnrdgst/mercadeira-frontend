@@ -5,6 +5,7 @@ import { unidadeMedidaLabels } from '../../shopping-lists/types/shoppingList'
 import type { AcaoRemocaoItemCompra, AtualizarDadosItemCompraRequest, ItemCompraResponse } from '../types/shopping'
 import { DadosCompraItem } from './DadosCompraItem'
 import { formatarValorMonetario } from '../../../shared/formatarValorMonetario'
+import { formatarDataContextual } from '../../../shared/formatarDataContextual'
 
 const statusLabels: Record<ItemCompraResponse['status'], string> = {
   PENDENTE: 'Pendente',
@@ -23,7 +24,7 @@ const acaoLabels = {
 }
 
 function DataAutoria({ valor }: { valor: string | null }) {
-  return valor ? <> · <time dateTime={valor}>{new Date(valor).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</time></> : null
+  return valor ? <> · <time dateTime={valor}>{formatarDataContextual(valor, { incluirHora: true })}</time></> : null
 }
 
 type ItemCompraCardProps = { item: ItemCompraResponse; token?: string; familiaId?: string; listaId?: string } & ({

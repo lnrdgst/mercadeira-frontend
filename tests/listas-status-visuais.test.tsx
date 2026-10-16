@@ -19,7 +19,7 @@ test('mantém preparação neutra, apresenta andamento em verde e finalizada em 
   expect(screen.getByText('Em preparação')).toBeVisible()
   expect(screen.getByText('Em andamento')).toBeVisible()
   expect(within(finalizada).getAllByText('Finalizada')).toHaveLength(2)
-  expect(finalizada).toHaveTextContent('Finalizada em 07/10/2026 às 16:34')
+  expect(finalizada).toHaveTextContent('Finalizada em Quarta-feira, 07/10/2026 às 16:34')
   expect(andamento).not.toHaveTextContent('Finalizada em')
   expect(finalizadaSemData).not.toHaveTextContent('Finalizada em')
   expect(screen.getByRole('link', { name: 'Nova lista de compras' })).toBeVisible()

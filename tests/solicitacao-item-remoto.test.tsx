@@ -89,7 +89,9 @@ test('formulário reutiliza autosuggest, envia só dados do contrato e mostra su
   const { posts, gets } = await preparar(compra(), async () => Response.json(atualizada))
   await clicar('+ Solicitar novo item')
   const dialog = screen.getByRole('dialog', { name: 'Solicitar novo item' })
-  expect(dialog).toHaveClass('overflow-hidden', 'flex-col', 'max-h-[calc(100dvh-2rem)]')
+  expect(dialog.closest('[data-modal-portal]')?.parentElement).toBe(document.body)
+  expect(dialog).toHaveClass('overflow-hidden', 'flex-col', 'max-h-[calc(100dvh-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))]')
+  expect(screen.getByRole('button', { name: 'Fechar modal' })).toBeInTheDocument()
   expect(within(dialog).getByRole('button', { name: 'Enviar solicitação' }).parentElement).toHaveClass('sticky', 'bottom-0')
   expect(within(dialog).queryByLabelText('Marca')).not.toBeInTheDocument()
   expect(within(dialog).queryByLabelText('Observações')).not.toBeInTheDocument()
@@ -109,8 +111,21 @@ test('formulário reutiliza autosuggest, envia só dados do contrato e mostra su
   expect(screen.getByText('Aguardando aprovação')).toBeVisible()
   expect(screen.getByText('1,125 L')).toBeVisible()
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Fechar modal' })).not.toBeInTheDocument()
   expect(gets()).toHaveLength(2)
   expect(screen.getByText('Esta compra não possui itens.')).toBeVisible()
+})
+
+test('cancelar desmonta o formulário e o overlay do Portal sem criar outro modal', async () => {
+  await preparar()
+  await clicar('+ Solicitar novo item')
+  const dialog = screen.getByRole('dialog', { name: 'Solicitar novo item' })
+  expect(document.querySelectorAll('[data-modal-portal]')).toHaveLength(1)
+
+  await act(async () => { fireEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' })) })
+
+  expect(screen.queryByRole('dialog', { name: 'Solicitar novo item' })).not.toBeInTheDocument()
+  expect(document.querySelector('[data-modal-portal]')).not.toBeInTheDocument()
 })
 
 test.each(['   ', '0', '1.2345'])('validação rejeita descrição/quantidade inválida (%s) sem POST', async (valor) => {

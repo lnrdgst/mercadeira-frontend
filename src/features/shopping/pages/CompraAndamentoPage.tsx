@@ -7,7 +7,7 @@ import { useSession } from '../../auth/session/sessionContext'
 import { useAuthenticatedUser } from '../../auth/user/AuthenticatedUserContext'
 import { useFamilyContext } from '../../family/session/familyContext'
 import { categoriaCompraLabels } from '../../shopping-lists/types/shoppingList'
-import { adicionarItemCompra, alterarMinhaPresenca, atualizarDadosItemCompra, buscarCompra, cancelarSolicitacaoPresenca, cancelarSolicitacaoResponsabilidade, colocarItemNoCarrinho, decidirSolicitacaoItemCompra, decidirSolicitacaoPresenca, decidirSolicitacaoResponsabilidade, removerItemCompra, restaurarItemNoCarrinho, solicitarItemCompra, solicitarMinhaPresenca, solicitarResponsabilidade, transferirResponsabilidade } from '../api/shoppingApi'
+import { adicionarItemCompra, alterarMinhaPresenca, atualizarLancamentoItemCompra, buscarCompra, cancelarSolicitacaoPresenca, cancelarSolicitacaoResponsabilidade, colocarItemNoCarrinho, criarLancamentoItemCompra, decidirSolicitacaoItemCompra, decidirSolicitacaoPresenca, decidirSolicitacaoResponsabilidade, removerItemCompra, removerLancamentoItemCompra, restaurarItemNoCarrinho, solicitarItemCompra, solicitarMinhaPresenca, solicitarResponsabilidade, transferirResponsabilidade } from '../api/shoppingApi'
 import { AdicionarItemCompraDialog } from '../components/AdicionarItemCompraDialog'
 import { SolicitacoesItensCompra } from '../components/SolicitacoesItensCompra'
 import { ItemCompraCard } from '../components/ItemCompraCard'
@@ -16,7 +16,7 @@ import { MinhaPresenca } from '../components/MinhaPresenca'
 import { EncerramentoAdministrativoCompra } from '../components/EncerramentoAdministrativoCompra'
 import { AlertaContinuidadeCompraModal } from '../components/AlertaContinuidadeCompraModal'
 import { useCompraTransacional } from '../session/CompraTransacionalContext'
-import type { AcaoRemocaoItemCompra, AdicionarItemCompraRequest, AtualizarDadosItemCompraRequest, CompraResponse, ItemCompraResponse } from '../types/shopping'
+import type { AcaoRemocaoItemCompra, AdicionarItemCompraRequest, CompraResponse, ItemCompraResponse, SalvarLancamentoItemCompraRequest } from '../types/shopping'
 
 export function CompraAndamentoPage() {
   const { listaId } = useParams()
@@ -78,8 +78,6 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
   const carregando = resultado?.chave !== chave || resultado?.token !== token
   const compra = !carregando ? resultado?.compra : undefined
   const erro = !carregando ? resultado?.erro : undefined
-  const usuarioEstaPresente = compra?.participantes.some((participante) => participante.usuarioId === usuario?.id && participante.presencaOperacional?.estado === 'PRESENTE') === true
-  const podeRegistrarDadosCompra = compra?.contextoUsuario.podeAdicionarItemDuranteCompra === true && usuarioEstaPresente
   useEffect(() => {
     atualizarStatusCompra(listaId, compra?.status ?? null)
   }, [atualizarStatusCompra, compra?.status, listaId])
@@ -169,12 +167,24 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
     await executar(async () => atualizarItem(await colocarItemNoCarrinho(token, familiaId, listaId, itemId)))
   }
 
-  async function atualizarDadosCompra(itemId: string, dados: AtualizarDadosItemCompraRequest) {
-    if (!podeRegistrarDadosCompra || compra?.itens.find((item) => item.id === itemId)?.status !== 'NO_CARRINHO') throw new Error('A atualização dos dados da compra não está disponível para este item.')
-    await executar(async () => {
-      await atualizarDadosItemCompra(token, familiaId, listaId, itemId, dados)
-      atualizarCompra(await buscarCompra(token, familiaId, listaId))
-    })
+  function garantirGerenciamentoLancamentos(itemId: string) {
+    const item = compra?.itens.find((existente) => existente.id === itemId)
+    if (!item || item.status !== 'NO_CARRINHO' || item.podeGerenciarLancamentos !== true) throw new Error('O gerenciamento de lançamentos não está disponível para este item.')
+  }
+
+  async function criarLancamento(itemId: string, dados: SalvarLancamentoItemCompraRequest) {
+    garantirGerenciamentoLancamentos(itemId)
+    atualizarItem(await criarLancamentoItemCompra(token, familiaId, listaId, itemId, dados))
+  }
+
+  async function atualizarLancamento(itemId: string, lancamentoId: string, dados: SalvarLancamentoItemCompraRequest) {
+    garantirGerenciamentoLancamentos(itemId)
+    atualizarItem(await atualizarLancamentoItemCompra(token, familiaId, listaId, itemId, lancamentoId, dados))
+  }
+
+  async function removerLancamento(itemId: string, lancamentoId: string) {
+    garantirGerenciamentoLancamentos(itemId)
+    atualizarItem(await removerLancamentoItemCompra(token, familiaId, listaId, itemId, lancamentoId))
   }
 
   async function adicionarItem(data: AdicionarItemCompraRequest) {
@@ -443,8 +453,9 @@ function AndamentoCompra({ token, familiaId, listaId }: { token: string; familia
                     onRestaurar={restaurarNoCarrinho}
                     onRemover={removerItem}
                     onReconciliar={reconciliarCompra}
-                    podeInformarDadosCompra={podeRegistrarDadosCompra}
-                    onAtualizarDadosCompra={atualizarDadosCompra}
+                    onCriarLancamento={criarLancamento}
+                    onAtualizarLancamento={atualizarLancamento}
+                    onRemoverLancamento={removerLancamento}
                     token={token}
                     familiaId={familiaId}
                     listaId={listaId}

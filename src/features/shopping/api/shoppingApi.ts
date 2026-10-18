@@ -1,5 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import type { AcaoRemocaoItemCompra, AdicionarItemCompraRequest, AdicionarRegistroFinanceiroCompraRequest, AtualizarDadosItemCompraRequest, CompraResponse, DeclaracaoPresenca, ItemCompraResponse, SolicitacaoItemCompraResponse, SolicitarItemCompraRequest } from '../types/shopping'
+import type { AcaoRemocaoItemCompra, AdicionarItemCompraRequest, AdicionarRegistroFinanceiroCompraRequest, CompraResponse, DeclaracaoPresenca, ItemCompraResponse, SalvarLancamentoItemCompraRequest, SolicitacaoItemCompraResponse, SolicitarItemCompraRequest } from '../types/shopping'
 
 export async function solicitarItemCompra(token: string, compraId: string, data: SolicitarItemCompraRequest) {
   const { descricao, quantidade, unidadeMedida } = data
@@ -137,12 +137,30 @@ export async function colocarItemNoCarrinho(token: string, familiaId: string, li
   return response.data
 }
 
-export async function atualizarDadosItemCompra(token: string, familiaId: string, listaId: string, itemCompraId: string, data: AtualizarDadosItemCompraRequest) {
+export async function criarLancamentoItemCompra(token: string, familiaId: string, listaId: string, itemCompraId: string, data: SalvarLancamentoItemCompraRequest) {
   const response = await apiRequest<ItemCompraResponse>(
-    `/familias/${familiaId}/listas/${listaId}/compra/itens/${itemCompraId}/dados-compra`,
+    `/familias/${familiaId}/listas/${listaId}/compra/itens/${itemCompraId}/lancamentos`,
+    { token, method: 'POST', body: data },
+  )
+  if (!response.data) throw new Error('Não foi possível registrar o valor deste item.')
+  return response.data
+}
+
+export async function atualizarLancamentoItemCompra(token: string, familiaId: string, listaId: string, itemCompraId: string, lancamentoId: string, data: SalvarLancamentoItemCompraRequest) {
+  const response = await apiRequest<ItemCompraResponse>(
+    `/familias/${familiaId}/listas/${listaId}/compra/itens/${itemCompraId}/lancamentos/${lancamentoId}`,
     { token, method: 'PUT', body: data },
   )
-  if (response.status !== 200 || !response.data) throw new Error('Não foi possível atualizar os dados da compra deste item.')
+  if (!response.data) throw new Error('Não foi possível atualizar o valor deste item.')
+  return response.data
+}
+
+export async function removerLancamentoItemCompra(token: string, familiaId: string, listaId: string, itemCompraId: string, lancamentoId: string) {
+  const response = await apiRequest<ItemCompraResponse>(
+    `/familias/${familiaId}/listas/${listaId}/compra/itens/${itemCompraId}/lancamentos/${lancamentoId}`,
+    { token, method: 'DELETE' },
+  )
+  if (!response.data) throw new Error('Não foi possível remover o valor deste item.')
   return response.data
 }
 

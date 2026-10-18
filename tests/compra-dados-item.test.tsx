@@ -1,159 +1,44 @@
-import { act, screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import { expect, test, vi } from 'vitest'
-import { atualizarDadosItemCompra } from '../src/features/shopping/api/shoppingApi'
+import { criarLancamentoItemCompra, atualizarLancamentoItemCompra, removerLancamentoItemCompra } from '../src/features/shopping/api/shoppingApi'
 import { DadosCompraItem } from '../src/features/shopping/components/DadosCompraItem'
-import { converterNumeroBrasileiro } from '../src/features/shopping/components/dadosCompraItemValor'
 import type { ItemCompraResponse } from '../src/features/shopping/types/shopping'
-import { deferred, renderApp } from './helpers'
+import { renderApp } from './helpers'
 
-const itemBase: ItemCompraResponse = {
-  id: 'item-a', descricao: 'Arroz', quantidade: null, unidadeMedida: null, marca: null, observacoes: null, ordemExibicao: 1,
-  status: 'NO_CARRINHO', adicionadoDuranteCompra: false, adicionadoPor: null, adicionadoEm: null, colocadoNoCarrinhoPor: null, colocadoNoCarrinhoEm: null, remocao: null, restauracao: null,
-  acoes: { podeColocarNoCarrinho: false, podeRestaurarNoCarrinho: false, podeSolicitarRemocao: true, podeRemoverDiretamente: true, podeDecidirRemocao: false },
-}
+const item: ItemCompraResponse = { id: 'item-a', descricao: 'Arroz', quantidade: null, unidadeMedida: null, marca: null, observacoes: null, ordemExibicao: 1, status: 'NO_CARRINHO', adicionadoDuranteCompra: false, adicionadoPor: null, adicionadoEm: null, colocadoNoCarrinhoPor: null, colocadoNoCarrinhoEm: null, remocao: null, restauracao: null, valorTotal: 10, podeGerenciarLancamentos: true, lancamentos: [{ id: 'l-1', precoUnitario: 5, quantidade: 2, valorTotal: 10 }], acoes: { podeColocarNoCarrinho: false, podeRestaurarNoCarrinho: false, podeSolicitarRemocao: true, podeRemoverDiretamente: true, podeDecidirRemocao: false } }
+const props = { item, disabled: false, podeGerenciar: true, onCriar: vi.fn(async () => {}), onAtualizar: vi.fn(async () => {}), onRemover: vi.fn(async () => {}) }
 
-test('converte preço brasileiro em número para a API sem duplicar R$', () => {
-  expect(converterNumeroBrasileiro('27,00', 4)).toBe(27)
-  expect(converterNumeroBrasileiro('0,89', 4)).toBe(0.89)
-  expect(converterNumeroBrasileiro('27.00', 4)).toBe(27)
-  expect(converterNumeroBrasileiro('0', 4)).toBeNull()
-})
-
-test('ao informar preço, inicia localmente a quantidade em 1 e apresenta o total devolvido pelo backend', async () => {
-  const onSalvar = vi.fn(async () => {})
-  const { user, rerender } = renderApp(<DadosCompraItem item={itemBase} disabled={false} podeEditar onSalvar={onSalvar} />)
-
-  await user.click(screen.getByRole('button', { name: 'Informar R$' }))
-  const preco = screen.getByRole('button', { name: 'Preço unitário' })
-  expect(screen.queryByRole('textbox', { name: 'Preço unitário' })).not.toBeInTheDocument()
+test('confirma preço antes de persistir o lançamento e usa a quantidade padrão', async () => {
+  const { user } = renderApp(<DadosCompraItem {...props} />)
+  await user.click(screen.getByRole('button', { name: 'Registrar outro preço' }))
+  await user.click(screen.getByRole('button', { name: 'Número 3' }))
+  expect(props.onCriar).not.toHaveBeenCalled()
+  await user.click(screen.getByRole('button', { name: 'Continuar' }))
   expect(screen.getByRole('textbox', { name: 'Quantidade comprada' })).toHaveValue('1')
-  await user.click(preco)
-  expect(screen.getByRole('dialog')).toHaveTextContent('Preço unitário')
-  for (const tecla of ['2', '7', ',', '0', '0']) await user.click(screen.getByRole('button', { name: tecla === ',' ? 'Vírgula decimal' : `Número ${tecla}` }))
-  expect(onSalvar).not.toHaveBeenCalled()
-  await user.click(screen.getByRole('button', { name: 'Confirmar' }))
-  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-  expect(preco).toHaveTextContent(/R\$\s*27,00/)
-  expect(onSalvar).toHaveBeenCalledTimes(1)
-  expect(screen.getByRole('textbox', { name: 'Quantidade comprada' })).toHaveValue('1')
-  await user.click(screen.getByRole('button', { name: 'Salvar R$' }))
-
-  expect(onSalvar).toHaveBeenCalledTimes(1)
-  expect(onSalvar).toHaveBeenCalledWith({ precoUnitario: 27, quantidadeComprada: 1 })
-  rerender(<DadosCompraItem item={{ ...itemBase, precoUnitario: 27, quantidadeComprada: 2, valorTotal: 54 }} disabled={false} podeEditar onSalvar={onSalvar} />)
-  const resumo = screen.getByLabelText('Dados da compra: Arroz')
-  expect(resumo).toHaveTextContent(/Preço unitário:\s*R\$\s*27,00/)
-  expect(resumo).toHaveTextContent('Quantidade: 2')
-  expect(resumo).toHaveTextContent(/Total:\s*R\$\s*54,00/)
+  await user.click(screen.getByRole('button', { name: 'Confirmar lançamento' }))
+  expect(props.onCriar).toHaveBeenCalledWith({ precoUnitario: 3, quantidade: 1 })
 })
 
-test('não sobrescreve quantidade previamente informada ao digitar preço', async () => {
-  const onSalvar = vi.fn(async () => {})
-  const { user } = renderApp(<DadosCompraItem item={itemBase} disabled={false} podeEditar onSalvar={onSalvar} />)
-
-  await user.click(screen.getByRole('button', { name: 'Informar R$' }))
-  const quantidade = screen.getByRole('textbox', { name: 'Quantidade comprada' })
-  await user.clear(quantidade)
-  await user.type(quantidade, '3')
-  await user.click(screen.getByRole('button', { name: 'Preço unitário' }))
-  await user.click(screen.getByRole('button', { name: 'Número 1' }))
-  await user.click(screen.getByRole('button', { name: 'Número 0' }))
-  await user.click(screen.getByRole('button', { name: 'Confirmar' }))
-
-  expect(screen.getByRole('textbox', { name: 'Quantidade comprada' })).toHaveValue('3')
+test('edita e exclui um lançamento em fluxos separados', async () => {
+  const { user } = renderApp(<DadosCompraItem {...props} />)
+  await user.click(screen.getByRole('button', { name: 'Editar' }))
+  await user.click(screen.getByRole('button', { name: 'Continuar' }))
+  await user.click(screen.getByRole('button', { name: 'Confirmar lançamento' }))
+  expect(props.onAtualizar).toHaveBeenCalledWith('l-1', { precoUnitario: 5, quantidade: 2 })
+  await user.click(screen.getByRole('button', { name: 'Excluir' }))
+  const dialog = screen.getByRole('dialog')
+  expect(dialog).toHaveTextContent('Excluir lançamento?')
+  await user.click(within(dialog).getByRole('button', { name: 'Excluir' }))
+  expect(props.onRemover).toHaveBeenCalledWith('l-1')
 })
 
-test('confirma preço no teclado monetário e salva alterações posteriores de quantidade', async () => {
-  const onSalvar = vi.fn(async () => {})
-  const { user } = renderApp(<DadosCompraItem item={{ ...itemBase, precoUnitario: 0.89, quantidadeComprada: 10, valorTotal: 8.9 }} disabled={false} podeEditar onSalvar={onSalvar} />)
-
-  await user.click(screen.getByRole('button', { name: 'Alterar R$' }))
-  await user.click(screen.getByRole('button', { name: 'Diminuir quantidade' }))
-  await user.click(screen.getByRole('button', { name: 'Preço unitário' }))
-  for (const _ of ['0', ',', '8', '9']) await user.click(screen.getByRole('button', { name: 'Apagar último dígito' }))
-  await user.click(screen.getByRole('button', { name: 'Número 0' }))
-  await user.click(screen.getByRole('button', { name: 'Vírgula decimal' }))
-  await user.click(screen.getByRole('button', { name: 'Número 9' }))
-  await user.click(screen.getByRole('button', { name: 'Confirmar' }))
-  expect(onSalvar).toHaveBeenCalledWith({ precoUnitario: 0.9, quantidadeComprada: 9 })
-  await user.click(screen.getByRole('button', { name: 'Aumentar quantidade' }))
-  await user.click(screen.getByRole('button', { name: 'Salvar R$' }))
-  expect(onSalvar).toHaveBeenLastCalledWith({ precoUnitario: 0.9, quantidadeComprada: 10 })
-  expect(onSalvar).toHaveBeenCalledTimes(2)
-})
-
-test('falha na confirmação preserva preço e permite repetir pelo botão', async () => {
-  const onSalvar = vi.fn().mockRejectedValueOnce(new Error('Falha ao salvar')).mockResolvedValueOnce(undefined)
-  const { user } = renderApp(<DadosCompraItem item={itemBase} disabled={false} podeEditar onSalvar={onSalvar} />)
-  await user.click(screen.getByRole('button', { name: 'Informar R$' }))
-  await user.click(screen.getByRole('button', { name: 'Preço unitário' }))
-  await user.click(screen.getByRole('button', { name: 'Número 5' }))
-  await user.click(screen.getByRole('button', { name: 'Confirmar' }))
-  expect(await screen.findByRole('alert')).toHaveTextContent('Falha ao salvar')
-  expect(screen.getByRole('button', { name: 'Preço unitário' })).toHaveTextContent('5')
-  await user.click(screen.getByRole('button', { name: 'Salvar R$' }))
-  expect(onSalvar).toHaveBeenCalledTimes(2)
-  expect(onSalvar).toHaveBeenLastCalledWith({ precoUnitario: 5, quantidadeComprada: 1 })
-})
-
-test('bloqueia envios concorrentes e permite confirmar outro preço depois', async () => {
-  const pendente = deferred<void>()
-  const onSalvar = vi.fn().mockImplementationOnce(() => pendente.promise).mockResolvedValue(undefined)
-  const { user } = renderApp(<DadosCompraItem item={itemBase} disabled={false} podeEditar onSalvar={onSalvar} />)
-  await user.click(screen.getByRole('button', { name: 'Informar R$' }))
-  await user.click(screen.getByRole('button', { name: 'Preço unitário' }))
-  await user.click(screen.getByRole('button', { name: 'Número 5' }))
-  await user.dblClick(screen.getByRole('button', { name: 'Confirmar' }))
-  expect(onSalvar).toHaveBeenCalledTimes(1)
-  expect(screen.getByRole('button', { name: 'Salvando...' })).toBeDisabled()
-  await act(async () => pendente.resolve())
-  await user.click(screen.getByRole('button', { name: 'Preço unitário' }))
-  await user.click(screen.getByRole('button', { name: 'Apagar último dígito' }))
-  await user.click(screen.getByRole('button', { name: 'Número 7' }))
-  await user.click(screen.getByRole('button', { name: 'Confirmar' }))
-  expect(onSalvar).toHaveBeenCalledTimes(2)
-  expect(onSalvar).toHaveBeenLastCalledWith({ precoUnitario: 7, quantidadeComprada: 1 })
-})
-
-test('fecha o editor pelo ícone sem persistir dados locais', async () => {
-  const onSalvar = vi.fn(async () => {})
-  const { user } = renderApp(<DadosCompraItem item={itemBase} disabled={false} podeEditar onSalvar={onSalvar} />)
-
-  await user.click(screen.getByRole('button', { name: 'Informar R$' }))
-  expect(screen.getByRole('button', { name: 'Preço unitário' })).toBeInTheDocument()
-  await user.click(screen.getByRole('button', { name: 'Cancelar edição' }))
-  expect(onSalvar).not.toHaveBeenCalled()
-  expect(screen.queryByRole('button', { name: 'Preço unitário' })).not.toBeInTheDocument()
-})
-
-test('cancelar o teclado monetário preserva o último preço confirmado', async () => {
-  const { user } = renderApp(<DadosCompraItem item={{ ...itemBase, precoUnitario: 10, quantidadeComprada: 1, valorTotal: 10 }} disabled={false} podeEditar onSalvar={vi.fn(async () => {})} />)
-
-  await user.click(screen.getByRole('button', { name: 'Alterar R$' }))
-  const preco = screen.getByRole('button', { name: 'Preço unitário' })
-  await user.click(preco)
-  await user.click(screen.getByRole('button', { name: 'Apagar último dígito' }))
-  await user.click(screen.getByRole('button', { name: 'Número 5' }))
-  await user.click(screen.getByRole('button', { name: 'Cancelar' }))
-
-  expect(preco).toHaveTextContent(/R\$\s*10/)
-})
-
-test('preserva a quantidade já registrada ao reabrir o editor', async () => {
-  const { user } = renderApp(<DadosCompraItem item={{ ...itemBase, quantidadeComprada: 3 }} disabled={false} podeEditar onSalvar={vi.fn(async () => {})} />)
-
-  await user.click(screen.getByRole('button', { name: 'Alterar R$' }))
-
-  expect(screen.getByRole('textbox', { name: 'Quantidade comprada' })).toHaveValue('3')
-})
-
-test('envia o PUT de dados da compra com payload numérico', async () => {
+test('usa endpoints de lançamentos com payload numérico', async () => {
   const fetch = vi.mocked(globalThis.fetch)
-  fetch.mockResolvedValueOnce(Response.json({ ...itemBase, precoUnitario: 27, quantidadeComprada: 2, valorTotal: 54 }, { status: 200 }))
-
-  await atualizarDadosItemCompra('token', 'familia', 'lista', 'item', { precoUnitario: 27, quantidadeComprada: 2 })
-
-  expect(fetch).toHaveBeenCalledWith(expect.stringMatching(/familias\/familia\/listas\/lista\/compra\/itens\/item\/dados-compra$/), expect.objectContaining({
-    method: 'PUT', body: JSON.stringify({ precoUnitario: 27, quantidadeComprada: 2 }),
-  }))
+  fetch.mockResolvedValueOnce(Response.json(item, { status: 200 })).mockResolvedValueOnce(Response.json(item, { status: 200 })).mockResolvedValueOnce(Response.json(item, { status: 200 }))
+  await criarLancamentoItemCompra('token', 'familia', 'lista', 'item', { precoUnitario: 2.5, quantidade: 2 })
+  await atualizarLancamentoItemCompra('token', 'familia', 'lista', 'item', 'lancamento', { precoUnitario: 3, quantidade: 1 })
+  await removerLancamentoItemCompra('token', 'familia', 'lista', 'item', 'lancamento')
+  expect(fetch).toHaveBeenNthCalledWith(1, expect.stringMatching(/itens\/item\/lancamentos$/), expect.objectContaining({ method: 'POST', body: JSON.stringify({ precoUnitario: 2.5, quantidade: 2 }) }))
+  expect(fetch).toHaveBeenNthCalledWith(2, expect.stringMatching(/itens\/item\/lancamentos\/lancamento$/), expect.objectContaining({ method: 'PUT' }))
+  expect(fetch).toHaveBeenNthCalledWith(3, expect.stringMatching(/itens\/item\/lancamentos\/lancamento$/), expect.objectContaining({ method: 'DELETE' }))
 })

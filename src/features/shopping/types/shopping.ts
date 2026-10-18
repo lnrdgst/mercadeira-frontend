@@ -143,9 +143,10 @@ export interface ItemCompraResponse {
   unidadeMedida: UnidadeMedida | null
   marca: string | null
   observacoes: string | null
-  precoUnitario?: number | null
-  quantidadeComprada?: number | null
+  /** Valores informados durante a compra, na mesma ordem retornada pela API. */
+  lancamentos?: LancamentoItemCompraResponse[]
   valorTotal?: number | null
+  podeGerenciarLancamentos?: boolean
   ordemExibicao: number
   status: 'PENDENTE' | 'NO_CARRINHO' | 'REMOCAO_SOLICITADA' | 'REMOVIDO'
   remocao: RemocaoItemCompraResponse | null
@@ -157,6 +158,17 @@ export interface ItemCompraResponse {
   colocadoNoCarrinhoEm: string | null
 }
 
+export interface LancamentoItemCompraResponse {
+  id: string
+  precoUnitario: number
+  quantidade: number
+  valorTotal?: number | null
+}
+
+export interface SalvarLancamentoItemCompraRequest {
+  precoUnitario: number
+  quantidade: number
+}
 export interface CompraResponse {
   id: string
   listaId: string
@@ -205,9 +217,4 @@ export interface RegistroFinanceiroCompraResponse {
 export interface AdicionarRegistroFinanceiroCompraRequest {
   valor: number
   estabelecimentoNome: string | null
-}
-
-export interface AtualizarDadosItemCompraRequest {
-  precoUnitario: number | null
-  quantidadeComprada: number | null
 }

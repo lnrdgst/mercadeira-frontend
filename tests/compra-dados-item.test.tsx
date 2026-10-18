@@ -21,11 +21,11 @@ test('confirma preço antes de persistir o lançamento e usa a quantidade padrã
 
 test('edita e exclui um lançamento em fluxos separados', async () => {
   const { user } = renderApp(<DadosCompraItem {...props} />)
-  await user.click(screen.getByRole('button', { name: 'Editar' }))
+  await user.click(screen.getByRole('button', { name: /Editar lançamento/ }))
   await user.click(screen.getByRole('button', { name: 'Continuar' }))
   await user.click(screen.getByRole('button', { name: 'Confirmar lançamento' }))
   expect(props.onAtualizar).toHaveBeenCalledWith('l-1', { precoUnitario: 5, quantidade: 2 })
-  await user.click(screen.getByRole('button', { name: 'Excluir' }))
+  await user.click(screen.getByRole('button', { name: /Excluir lançamento/ }))
   const dialog = screen.getByRole('dialog')
   expect(dialog).toHaveTextContent('Excluir lançamento?')
   await user.click(within(dialog).getByRole('button', { name: 'Excluir' }))

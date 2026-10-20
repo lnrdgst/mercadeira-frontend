@@ -124,7 +124,7 @@ test('modal da Compra carrega sugestões, preenche descrição e unidade e prese
   fireEvent.change(descricao, { target: { value: 'Item livre' } })
   fireEvent.click(within(dialog).getByRole('button', { name: 'Adicionar' }))
   expect(post).toHaveBeenCalledOnce()
-  expect(JSON.parse(String(http.mock.calls.find(([, options]) => options?.method === 'POST')?.[1]?.body))).toEqual({ descricao: 'Item livre', quantidade: null, unidadeMedida: 'PACOTE', marca: null, observacoes: null })
+  expect(JSON.parse(String(http.mock.calls.find(([, options]) => options?.method === 'POST')?.[1]?.body))).toEqual({ descricao: 'Item livre', quantidade: 1, unidadeMedida: 'PACOTE', marca: null, observacoes: null })
 })
 
 test('offline suspende sem apagar dados; online reconcilia imediatamente a Compra completa e retoma um único timer', async () => {

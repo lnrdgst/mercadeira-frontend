@@ -29,7 +29,11 @@ export function ItemFieldsForm({ item, submitting, stickyActions = false, solici
   const [marca, setMarca] = useState(item?.marca || '')
   const [observacoes, setObservacoes] = useState(item?.observacoes || '')
 
-  const [quantidade, setQuantidade] = useState(item?.quantidade?.toString() ?? '')
+  const quantidadeMinima = solicitacaoRemota ? 0.001 : 0.5
+  const quantidadeInicial = item
+    ? (item.quantidade === null ? '' : String(Math.max(quantidadeMinima, item.quantidade)))
+    : (solicitacaoRemota ? '' : '1')
+  const [quantidade, setQuantidade] = useState(quantidadeInicial)
   const [erroValidacao, setErroValidacao] = useState<string | null>(null)
   const quantidadeMaxima = solicitacaoRemota ? 999999999.999 : 99999
   const titulo = solicitacaoRemota ? 'Solicitar novo item' : item ? 'Modficar item' : 'Adicionar item'
@@ -50,7 +54,7 @@ export function ItemFieldsForm({ item, submitting, stickyActions = false, solici
       setErroValidacao('Informe uma descrição de até 200 caracteres.')
       return
     }
-    if (solicitacaoRemota && quantidadeNumerica !== null && (quantidadeNumerica < 0.001 || quantidadeNumerica > quantidadeMaxima || !/^\d+(?:\.\d{1,3})?$/.test(quantidade))) {
+    if (quantidadeNumerica !== null && (quantidadeNumerica < quantidadeMinima || quantidadeNumerica > quantidadeMaxima || (solicitacaoRemota && !/^\d+(?:\.\d{1,3})?$/.test(quantidade)))) {
       setErroValidacao('Informe uma quantidade positiva com até três casas decimais, ou deixe em branco.')
       return
     }
@@ -69,7 +73,7 @@ export function ItemFieldsForm({ item, submitting, stickyActions = false, solici
 
     const novaQuantidade = Math.min(
       quantidadeMaxima,
-      Math.max(0, atual + delta),
+      Math.max(quantidadeMinima, atual + delta),
     )
 
     setQuantidade(
@@ -105,7 +109,7 @@ export function ItemFieldsForm({ item, submitting, stickyActions = false, solici
                 <button
                   type="button"
                   onClick={() => alterarQuantidade(-0.5)}
-                  disabled={submitting || Number(quantidade) <= 0}
+                  disabled={submitting || Number(quantidade) <= quantidadeMinima}
                   aria-label="Diminuir quantidade"
                   className="flex min-w-touch items-center justify-center border-r border-foreground/20 text-xl font-semibold text-foreground transition-colors hover:bg-foreground/5 disabled:opacity-40"
                 >
@@ -125,16 +129,16 @@ export function ItemFieldsForm({ item, submitting, stickyActions = false, solici
 
                     const numero = Number(valor)
 
-                    if (numero >= 0 && numero <= quantidadeMaxima) {
+                    if (numero >= quantidadeMinima && numero <= quantidadeMaxima) {
                       setQuantidade(valor)
                     }
                   }}
                   type="number"
-                  min={solicitacaoRemota ? '0.001' : '0'}
+                  min={String(quantidadeMinima)}
                   max={quantidadeMaxima}
                   step={solicitacaoRemota ? '0.001' : '0.5'}
                   disabled={submitting}
-                  placeholder="0"
+                  placeholder={solicitacaoRemota ? '0' : '1'}
                   className="min-w-0 flex-1 bg-transparent px-1 text-center font-semibold outline-none disabled:opacity-60"
                 />
 

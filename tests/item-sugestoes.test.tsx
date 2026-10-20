@@ -65,6 +65,7 @@ test('seleção preserva os demais campos e ainda permite inclusão livre', asyn
   const input = screen.getByRole('combobox', { name: 'Descrição' })
   await user.type(input, 'ar')
   await user.click(await screen.findByRole('option', { name: /Arroz integral/ }))
+  await user.clear(screen.getByLabelText('Quantidade'))
   await user.type(screen.getByLabelText('Quantidade'), '3')
   await user.click(screen.getByRole('button', { name: 'Adicionar' }))
   expect(onSubmit).toHaveBeenCalledWith({ descricao: 'Arroz integral', unidadeMedida: 'PACOTE', quantidade: 3, marca: null, observacoes: null })
@@ -92,4 +93,34 @@ test('401 da busca encerra a sessão e formulário sem sugestão não consulta h
   const semSugestoes = renderApp(<ItemFieldsForm submitting={false} onCancel={vi.fn()} onSubmit={vi.fn()} />)
   expect(semSugestoes.container.querySelector('input')).toBeVisible()
   expect(fetchMock.mock.calls).toHaveLength(chamadasAntes)
+})
+
+test('novo item inicia em 1, respeita mínimo 0,5 e envia a quantidade válida', async () => {
+  const onSubmit = vi.fn(async () => {})
+  const { user } = renderApp(<ItemFieldsForm submitting={false} onCancel={vi.fn()} onSubmit={onSubmit} />)
+  const quantidade = screen.getByLabelText('Quantidade')
+  await user.type(screen.getByLabelText('Descrição'), 'Arroz')
+  expect(quantidade).toHaveValue(1)
+  await user.click(screen.getByRole('button', { name: 'Diminuir quantidade' }))
+  expect(quantidade).toHaveValue(0.5)
+  expect(screen.getByRole('button', { name: 'Diminuir quantidade' })).toBeDisabled()
+  await user.click(screen.getByRole('button', { name: 'Adicionar' }))
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ quantidade: 0.5 }))
+})
+
+test.each(['0', '-1'])('não aceita quantidade inválida %s', async (valor) => {
+  const onSubmit = vi.fn(async () => {})
+  const { user } = renderApp(<ItemFieldsForm submitting={false} onCancel={vi.fn()} onSubmit={onSubmit} />)
+  const quantidade = screen.getByLabelText('Quantidade')
+  await user.type(screen.getByLabelText('Descrição'), 'Arroz')
+  await user.clear(quantidade)
+  await user.type(quantidade, valor)
+  expect(quantidade).toHaveValue(null)
+  await user.click(screen.getByRole('button', { name: 'Adicionar' }))
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ quantidade: null }))
+})
+
+test('edição preserva a quantidade persistida', () => {
+  renderApp(<ItemFieldsForm item={{ descricao: 'Arroz', quantidade: 2, unidadeMedida: null, marca: null, observacoes: null }} submitting={false} onCancel={vi.fn()} onSubmit={vi.fn()} />)
+  expect(screen.getByLabelText('Quantidade')).toHaveValue(2)
 })

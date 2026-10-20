@@ -19,6 +19,14 @@ test('confirma preço antes de persistir o lançamento e usa a quantidade padrã
   expect(props.onCriar).toHaveBeenCalledWith({ precoUnitario: 3, quantidade: 1 })
 })
 
+test('leitura de preço substitui temporariamente a modal de preço no Portal', async () => {
+  const { user } = renderApp(<DadosCompraItem {...props} />)
+  await user.click(screen.getByRole('button', { name: 'Registrar outro preço' }))
+  await user.click(screen.getByRole('button', { name: 'Ler o preço da etiqueta' }))
+  expect(document.querySelectorAll('[data-modal-portal]')).toHaveLength(1)
+  expect(screen.getByRole('dialog')).toHaveAccessibleName('Ler preço')
+})
+
 test('edita e exclui um lançamento em fluxos separados', async () => {
   const { user } = renderApp(<DadosCompraItem {...props} />)
   await user.click(screen.getByRole('button', { name: /Editar lançamento/ }))

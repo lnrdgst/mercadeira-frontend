@@ -129,7 +129,7 @@ export function ItemFieldsForm({ item, submitting, stickyActions = false, solici
 
                     const numero = Number(valor)
 
-                    if (numero >= quantidadeMinima && numero <= quantidadeMaxima) {
+                    if ((solicitacaoRemota ? numero >= 0 : numero >= quantidadeMinima) && numero <= quantidadeMaxima) {
                       setQuantidade(valor)
                     }
                   }}
